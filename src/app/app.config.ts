@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, ErrorHandler } from '@angular/core';
+import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -7,13 +7,19 @@ import Aura from '@primeng/themes/aura';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
-import { GlobalErrorHandler } from './services/error-handler.service';
+import { loadingInterceptor } from './interceptors/loading.interceptor';
+import { errorInterceptor } from './interceptors/error.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(
+      withInterceptors([
+        loadingInterceptor,  // Loading automático
+        errorInterceptor,    // Error handling automático
+        authInterceptor      // Auth (já existente)
+      ])
+    ),
     provideAnimations(),
     providePrimeNG({
       theme: {
@@ -23,8 +29,6 @@ export const appConfig: ApplicationConfig = {
           cssLayer: false
         }
       }
-    }),
-    // Global Error Handler
-    { provide: ErrorHandler, useClass: GlobalErrorHandler }
+    })
   ]
 };

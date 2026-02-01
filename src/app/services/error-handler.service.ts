@@ -1,83 +1,35 @@
-import { ErrorHandler, Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Injectable, signal, inject } from '@angular/core';
+import { MessageService } from 'primeng/api';
 
 /**
- * Global Error Handler para capturar e tratar todos os erros da aplicação.
- * - Não expõe detalhes técnicos ao usuário
- * - Loga erros para monitoramento
- * - Redireciona para páginas de erro quando apropriado
+ * Error Handler Service
+ *
+ * Gerencia erros da aplicação de forma centralizada
+ * Usado pelo errorInterceptor automaticamente
  */
-@Injectable()
-export class GlobalErrorHandler implements ErrorHandler {
-  private router = inject(Router);
+@Injectable({
+  providedIn: 'root'
+})
+export class ErrorHandlerService {
+  private messageService = inject(MessageService, { optional: true });
 
-  handleError(error: Error | any): void {
-    // Log para console (em produção, enviar para serviço de monitoramento)
-    const errorMessage = this.getClientMessage(error);
-    const stackTrace = this.getClientStack(error);
+  lastError = signal<string | null>(null);
 
-    console.error('Global Error:', {
-      message: errorMessage,
-      stack: stackTrace?.substring(0, 500), // Limitar tamanho do stack
-      timestamp: new Date().toISOString()
+  handleError(errorMessage: string) {
+    this.lastError.set(errorMessage);
+
+    console.error('Error:', errorMessage);
+
+    // Mostra toast se MessageService disponível
+    this.messageService?.add({
+      severity: 'error',
+      summary: 'Erro',
+      detail: errorMessage,
+      life: 5000
     });
-
-    // Redirecionar para página de erro se for erro crítico
-    if (this.isCriticalError(error)) {
-      this.router.navigate(['/error'], {
-        queryParams: {
-          code: 'UNEXPECTED_ERROR',
-          message: 'Ocorreu um erro inesperado. Tente novamente.'
-        }
-      });
-    }
   }
 
-  /**
-   * Extrai mensagem amigável do erro.
-   */
-  private getClientMessage(error: any): string {
-    if (!error) {
-      return 'Erro desconhecido';
-    }
-
-    if (error.rejection) {
-      return error.rejection.message || error.rejection;
-    }
-
-    return error.message || error.toString();
-  }
-
-  /**
-   * Extrai stack trace do erro.
-   */
-  private getClientStack(error: any): string | undefined {
-    if (!error) {
-      return undefined;
-    }
-
-    if (error.rejection) {
-      return error.rejection.stack;
-    }
-
-    return error.stack;
-  }
-
-  /**
-   * Verifica se é um erro crítico que requer redirecionamento.
-   */
-  private isCriticalError(error: any): boolean {
-    // Não redirecionar para erros de rede (usuário pode tentar novamente)
-    if (error?.status === 0 || error?.message?.includes('Http failure')) {
-      return false;
-    }
-
-    // Não redirecionar para erros 4xx (erro do cliente)
-    if (error?.status >= 400 && error?.status < 500) {
-      return false;
-    }
-
-    // Redirecionar para erros 5xx ou erros não tratados
-    return true;
+  clearError() {
+    this.lastError.set(null);
   }
 }

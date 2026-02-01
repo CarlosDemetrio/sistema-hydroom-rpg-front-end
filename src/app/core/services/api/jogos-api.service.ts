@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Jogo, Participante, CreateJogoDto, UpdateJogoDto } from '../../models';
 import { environment } from '../../../../environments/environment';
 
@@ -14,7 +14,9 @@ export interface JogoFilters {
 
 /**
  * API Service for Games (Jogos) endpoints
- * Handles all HTTP communication with /api/jogos
+ *
+ * ✅ USA OBSERVABLES (padrão Angular/RxJS)
+ * ❌ NÃO USA PROMISES
  */
 @Injectable({
   providedIn: 'root'
@@ -27,7 +29,7 @@ export class JogosApiService {
    * List all games (filtered by role on backend)
    * Mestre sees all, Jogador sees only participated games
    */
-  async listJogos(filters?: JogoFilters): Promise<Jogo[]> {
+  listJogos(filters?: JogoFilters): Observable<Jogo[]> {
     let params = new HttpParams();
     if (filters?.status) {
       params = params.set('status', filters.status);
@@ -36,46 +38,36 @@ export class JogosApiService {
       params = params.set('search', filters.search);
     }
 
-    return firstValueFrom(
-      this.http.get<Jogo[]>(this.baseUrl, { params })
-    );
+    return this.http.get<Jogo[]>(this.baseUrl, { params });
   }
 
   /**
    * Get game details by ID
    */
-  async getJogo(id: number): Promise<Jogo> {
-    return firstValueFrom(
-      this.http.get<Jogo>(`${this.baseUrl}/${id}`)
-    );
+  getJogo(id: number): Observable<Jogo> {
+    return this.http.get<Jogo>(`${this.baseUrl}/${id}`);
   }
 
   /**
    * Create new game (Mestre only)
    */
-  async createJogo(jogo: CreateJogoDto): Promise<Jogo> {
-    return firstValueFrom(
-      this.http.post<Jogo>(this.baseUrl, jogo)
-    );
+  createJogo(jogo: CreateJogoDto): Observable<Jogo> {
+    return this.http.post<Jogo>(this.baseUrl, jogo);
   }
 
   /**
    * Update existing game (Mestre only)
    */
-  async updateJogo(id: number, jogo: UpdateJogoDto): Promise<Jogo> {
-    return firstValueFrom(
-      this.http.put<Jogo>(`${this.baseUrl}/${id}`, jogo)
-    );
+  updateJogo(id: number, jogo: UpdateJogoDto): Observable<Jogo> {
+    return this.http.put<Jogo>(`${this.baseUrl}/${id}`, jogo);
   }
 
   /**
    * Delete game (Mestre only)
    * Cascades: deletes participantes, updates fichas (jogoId = null)
    */
-  async deleteJogo(id: number): Promise<void> {
-    return firstValueFrom(
-      this.http.delete<void>(`${this.baseUrl}/${id}`)
-    );
+  deleteJogo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
   // ===== Participant Management =====
@@ -83,43 +75,35 @@ export class JogosApiService {
   /**
    * List participants for a game
    */
-  async listParticipantes(jogoId: number): Promise<Participante[]> {
-    return firstValueFrom(
-      this.http.get<Participante[]>(`${this.baseUrl}/${jogoId}/participantes`)
-    );
+  listParticipantes(jogoId: number): Observable<Participante[]> {
+    return this.http.get<Participante[]>(`${this.baseUrl}/${jogoId}/participantes`);
   }
 
   /**
    * Request to join game (Jogador only)
    */
-  async solicitarParticipacao(jogoId: number, fichaId: number): Promise<Participante> {
-    return firstValueFrom(
-      this.http.post<Participante>(`${this.baseUrl}/${jogoId}/participantes`, { fichaId })
-    );
+  solicitarParticipacao(jogoId: number, fichaId: number): Observable<Participante> {
+    return this.http.post<Participante>(`${this.baseUrl}/${jogoId}/participantes`, { fichaId });
   }
 
   /**
    * Approve or reject participant (Mestre only)
    */
-  async updateParticipante(
+  updateParticipante(
     jogoId: number,
     participanteId: number,
     status: 'APROVADO' | 'REJEITADO'
-  ): Promise<Participante> {
-    return firstValueFrom(
-      this.http.put<Participante>(
-        `${this.baseUrl}/${jogoId}/participantes/${participanteId}`,
-        { status }
-      )
+  ): Observable<Participante> {
+    return this.http.put<Participante>(
+      `${this.baseUrl}/${jogoId}/participantes/${participanteId}`,
+      { status }
     );
   }
 
   /**
    * Remove participant (Mestre or Jogador self)
    */
-  async removerParticipante(jogoId: number, participanteId: number): Promise<void> {
-    return firstValueFrom(
-      this.http.delete<void>(`${this.baseUrl}/${jogoId}/participantes/${participanteId}`)
-    );
+  removerParticipante(jogoId: number, participanteId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${jogoId}/participantes/${participanteId}`);
   }
 }
