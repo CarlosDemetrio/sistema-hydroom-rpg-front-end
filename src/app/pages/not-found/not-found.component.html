@@ -1,0 +1,27 @@
+<div class="flex align-items-center justify-content-center min-h-screen surface-ground">
+  <div class="flex flex-column align-items-center text-center gap-4 p-4">
+    <i class="pi pi-exclamation-triangle text-8xl text-orange-500"></i>
+
+    <h1 class="text-9xl font-bold text-primary m-0">404</h1>
+    <h2 class="text-4xl font-semibold text-color m-0">Página não encontrada</h2>
+    <p class="text-xl text-color-secondary m-0 max-w-30rem">
+      A página que você está procurando não existe ou foi movida.
+    </p>
+
+    <div class="flex gap-3 mt-4">
+      <p-button
+        label="Voltar"
+        icon="pi pi-arrow-left"
+        (onClick)="goBack()"
+        [outlined]="true">
+      </p-button>
+
+      <p-button
+        label="Ir para Home"
+        icon="pi pi-home"
+        (onClick)="goHome()"
+        [raised]="true">
+      </p-button>
+    </div>
+  </div>
+</div>

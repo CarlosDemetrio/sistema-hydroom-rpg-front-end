@@ -1,10 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>FichaControladorFrontEnd</title>
+
+  <!-- Content Security Policy - Proteção contra XSS -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self';
+                 style-src 'self' 'unsafe-inline';
+                 img-src 'self' data: https:;
+                 font-src 'self' data:;
+                 connect-src 'self' http://localhost:8080 ws://localhost:*;">
+
+  <!-- Security Headers -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="format-detection" content="telephone=no">
+
+  <title>Ficha Controlador RPG</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sistema de gerenciamento de fichas de personagens de RPG">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>

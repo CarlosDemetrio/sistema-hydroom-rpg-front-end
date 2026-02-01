@@ -1,1 +1,27 @@
-/* You can add global styles to this file, and also import other style files */
+/* PrimeNG 21 - Theme is configured in app.config.ts */
+/* NO CSS imports needed for PrimeNG components */
+
+/* PrimeIcons */
+@import 'primeicons/primeicons.css';
+
+/* PrimeFlex Utilities */
+@import 'primeflex/primeflex.css';
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--surface-ground);
+  color: var(--text-color);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
