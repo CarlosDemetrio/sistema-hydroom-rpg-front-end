@@ -10,28 +10,41 @@ import { FichaBusinessService } from '../../../../core/services/business/ficha-b
 import { CurrentGameService } from '../../../../core/services';
 import { AuthService } from '../../../../services/auth.service';
 import { LoadingSpinnerComponent } from '../../../../shared';
-import { IdentificacaoSectionComponent } from './sections';
-import { ProgressaoSectionComponent } from './sections';
-import { DescricaoFisicaSectionComponent } from './sections';
-import { AtributosSectionComponent } from './sections';
-import { VidaSectionComponent } from './sections';
-import { ObservacoesSectionComponent } from './sections';
+import {
+  IdentificacaoSectionComponent,
+  ProgressaoSectionComponent,
+  DescricaoFisicaSectionComponent,
+  AtributosSectionComponent,
+  VidaSectionComponent,
+  ObservacoesSectionComponent,
+  PericiasSectionComponent,
+  EquipamentosSectionComponent,
+  VantagensSectionComponent,
+  TitulosRunasSectionComponent
+} from './sections';
 
 /**
  * Ficha Form Component (SMART)
  *
- * Formulário de Criação/Edição de Fichas
+ * Formulário de Criação/Edição de Fichas - TODAS as 10 seções ✅
  *
  * Responsabilidades:
- * - Orquestra formulário reativo
+ * - Orquestra formulário reativo com 10 seções
  * - Gerencia navegação entre seções
  * - Salva/atualiza ficha via FichaBusinessService
  * - Integra com CurrentGameService (jogo atual)
  *
- * Componentes modulares (DUMB):
- * - IdentificacaoSectionComponent
- * - ProgressaoSectionComponent
- * - (mais seções podem ser adicionadas)
+ * Seções implementadas (10/10):
+ * 1. Identificacao - Nome, origem, índole, linhagem
+ * 2. Progressao - Nível, XP, renascimento, insolitus, nvs
+ * 3. Descricao Fisica - Altura, peso, aparência
+ * 4. Atributos - FOR, DES, CON, INT, SAB, CAR
+ * 5. Vida - Vida, sangue
+ * 6. Observacoes - Anotações livres
+ * 7. Pericias - Lista de perícias
+ * 8. Equipamentos - Armas, armaduras, itens
+ * 9. Vantagens - Vantagens/desvantagens
+ * 10. Titulos/Runas - Títulos e runas especiais
  */
 @Component({
   selector: 'app-ficha-form',
@@ -47,7 +60,11 @@ import { ObservacoesSectionComponent } from './sections';
     DescricaoFisicaSectionComponent,
     AtributosSectionComponent,
     VidaSectionComponent,
-    ObservacoesSectionComponent
+    ObservacoesSectionComponent,
+    PericiasSectionComponent,
+    EquipamentosSectionComponent,
+    VantagensSectionComponent,
+    TitulosRunasSectionComponent
   ],
   providers: [MessageService],
   templateUrl: './ficha-form.component.html'
@@ -75,13 +92,17 @@ export class FichaFormComponent implements OnInit {
   // Main Form
   fichaForm!: FormGroup;
 
-  // Form Groups por seção
+  // Form Groups por seção (10 seções)
   identificacaoForm!: FormGroup;
   progressaoForm!: FormGroup;
   descricaoFisicaForm!: FormGroup;
   atributosForm!: FormGroup;
   vidaForm!: FormGroup;
   observacoesForm!: FormGroup;
+  periciasForm!: FormGroup;
+  equipamentosForm!: FormGroup;
+  vantagensForm!: FormGroup;
+  titulosRunasForm!: FormGroup;
 
   ngOnInit() {
     // Verifica se tem jogo selecionado
@@ -162,14 +183,38 @@ export class FichaFormComponent implements OnInit {
       observacoes: ['', [Validators.maxLength(5000)]]
     });
 
-    // Form principal (agrega todas as seções)
+    // Seção 7: Perícias (FormArray dinâmico)
+    this.periciasForm = this.fb.group({
+      pericias: this.fb.array([])
+    });
+
+    // Seção 8: Equipamentos (FormArray dinâmico)
+    this.equipamentosForm = this.fb.group({
+      equipamentos: this.fb.array([])
+    });
+
+    // Seção 9: Vantagens (FormArray dinâmico)
+    this.vantagensForm = this.fb.group({
+      vantagens: this.fb.array([])
+    });
+
+    // Seção 10: Títulos e Runas (FormArray dinâmico)
+    this.titulosRunasForm = this.fb.group({
+      titulosRunas: this.fb.array([])
+    });
+
+    // Form principal (agrega TODAS as 10 seções)
     this.fichaForm = this.fb.group({
       identificacao: this.identificacaoForm,
       progressao: this.progressaoForm,
       descricaoFisica: this.descricaoFisicaForm,
       atributos: this.atributosForm,
       vida: this.vidaForm,
-      observacoes: this.observacoesForm
+      observacoes: this.observacoesForm,
+      pericias: this.periciasForm,
+      equipamentos: this.equipamentosForm,
+      vantagens: this.vantagensForm,
+      titulosRunas: this.titulosRunasForm
     });
   }
 

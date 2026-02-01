@@ -60,20 +60,33 @@
           ></app-observacoes-section>
         </div>
 
-        <!-- TODO: Adicionar mais seções no futuro -->
-        <!--
+        <!-- Seção 7: Perícias -->
         <div class="col-12">
-          <app-descricao-fisica-section [form]="descricaoFisicaForm"></app-descricao-fisica-section>
+          <app-pericias-section
+            [form]="periciasForm"
+          ></app-pericias-section>
         </div>
 
+        <!-- Seção 8: Equipamentos -->
         <div class="col-12">
-          <app-atributos-section [form]="atributosForm"></app-atributos-section>
+          <app-equipamentos-section
+            [form]="equipamentosForm"
+          ></app-equipamentos-section>
         </div>
 
+        <!-- Seção 9: Vantagens/Desvantagens -->
         <div class="col-12">
-          <app-vida-section [form]="vidaForm"></app-vida-section>
+          <app-vantagens-section
+            [form]="vantagensForm"
+          ></app-vantagens-section>
         </div>
-        -->
+
+        <!-- Seção 10: Títulos e Runas -->
+        <div class="col-12">
+          <app-titulos-runas-section
+            [form]="titulosRunasForm"
+          ></app-titulos-runas-section>
+        </div>
 
         <!-- Actions -->
         <div class="col-12">
