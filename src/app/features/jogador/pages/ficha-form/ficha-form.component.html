@@ -1,0 +1,103 @@
+<div class="p-4">
+  <!-- Header -->
+  <div class="mb-4">
+    <h1 class="text-3xl font-bold m-0 mb-2">
+      {{ isEditMode() ? 'Editar Ficha' : 'Criar Nova Ficha' }}
+    </h1>
+    @if (currentGame()) {
+      <p class="text-color-secondary m-0">
+        Jogo: <span class="font-semibold">{{ currentGame()!.nome }}</span>
+      </p>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <app-loading-spinner message="Carregando ficha..."></app-loading-spinner>
+  } @else {
+    <!-- Form -->
+    <form [formGroup]="fichaForm" (ngSubmit)="onSubmit()">
+      <div class="grid">
+        <!-- Seção 1: Identificação -->
+        <div class="col-12">
+          <app-identificacao-section
+            [form]="identificacaoForm"
+          ></app-identificacao-section>
+        </div>
+
+        <!-- Seção 2: Progressão -->
+        <div class="col-12">
+          <app-progressao-section
+            [form]="progressaoForm"
+          ></app-progressao-section>
+        </div>
+
+        <!-- Seção 3: Descrição Física -->
+        <div class="col-12">
+          <app-descricao-fisica-section
+            [form]="descricaoFisicaForm"
+          ></app-descricao-fisica-section>
+        </div>
+
+        <!-- Seção 4: Atributos -->
+        <div class="col-12">
+          <app-atributos-section
+            [form]="atributosForm"
+          ></app-atributos-section>
+        </div>
+
+        <!-- Seção 5: Vida e Saúde -->
+        <div class="col-12">
+          <app-vida-section
+            [form]="vidaForm"
+          ></app-vida-section>
+        </div>
+
+        <!-- Seção 6: Observações -->
+        <div class="col-12">
+          <app-observacoes-section
+            [form]="observacoesForm"
+          ></app-observacoes-section>
+        </div>
+
+        <!-- TODO: Adicionar mais seções no futuro -->
+        <!--
+        <div class="col-12">
+          <app-descricao-fisica-section [form]="descricaoFisicaForm"></app-descricao-fisica-section>
+        </div>
+
+        <div class="col-12">
+          <app-atributos-section [form]="atributosForm"></app-atributos-section>
+        </div>
+
+        <div class="col-12">
+          <app-vida-section [form]="vidaForm"></app-vida-section>
+        </div>
+        -->
+
+        <!-- Actions -->
+        <div class="col-12">
+          <div class="flex gap-2 justify-content-end">
+            <p-button
+              label="Cancelar"
+              icon="pi pi-times"
+              [text]="true"
+              severity="secondary"
+              (onClick)="onCancel()"
+              [disabled]="isSaving()"
+            ></p-button>
+            <p-button
+              [label]="isEditMode() ? 'Salvar Alterações' : 'Criar Ficha'"
+              icon="pi pi-check"
+              type="submit"
+              [loading]="isSaving()"
+              [disabled]="isSaving()"
+            ></p-button>
+          </div>
+        </div>
+      </div>
+    </form>
+  }
+</div>
+
+<p-toast></p-toast>

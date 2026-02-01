@@ -5,158 +5,151 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../../../services/auth.service';
 import { FichaBusinessService } from '../../../core/services/business/ficha-business.service';
-import { JogoBusinessService } from '../../../core/services/business/jogo-business.service';
-import { Jogo } from '../../../core/models';
+import { CurrentGameService } from '../../../core/services/current-game.service';
 
 /**
  * Jogador Dashboard Component
  *
- * Dashboard for Jogador role with character stats and quick actions
- * SMART COMPONENT - uses stores and business logic
+ * 🎯 FOCO: FICHAS do jogo atual
+ *
+ * Dashboard focado em:
+ * - Minhas fichas do jogo selecionado
+ * - Quick actions: Criar ficha, Ver todas
+ * - Stats relevantes ao jogo atual
  */
 @Component({
   selector: 'app-jogador-dashboard',
   standalone: true,
   imports: [CardModule, ButtonModule],
   template: `
-    <div class="grid">
+    <div class="grid p-4">
       <!-- Welcome Header -->
       <div class="col-12">
         <h1 class="text-4xl font-bold mb-2">
           Bem-vindo, {{ authService.currentUser()?.name }}!
         </h1>
-        <p class="text-xl text-color-secondary mb-4">
-          Suas aventuras aguardam!
-        </p>
+        @if (hasGame()) {
+          <p class="text-xl text-color-secondary mb-4">
+            Jogo: <span class="font-semibold">{{ currentGame()?.nome }}</span>
+          </p>
+        } @else {
+          <p class="text-xl text-color-secondary mb-4">
+            Selecione um jogo no topo da página para começar
+          </p>
+        }
       </div>
 
-      <!-- Stats Cards -->
-      <div class="col-12 md:col-4">
-        <p-card>
-          <div class="flex align-items-center gap-3">
-            <div class="flex align-items-center justify-content-center bg-primary border-round" [style]="{ width: '3rem', height: '3rem' }">
-              <i class="pi pi-id-card text-2xl text-primary-contrast"></i>
+      @if (hasGame()) {
+        <!-- Stats Card -->
+        <div class="col-12 md:col-6">
+          <p-card>
+            <div class="flex align-items-center gap-3">
+              <div class="flex align-items-center justify-content-center bg-primary border-round w-4rem h-4rem">
+                <i class="pi pi-id-card text-2xl text-primary-contrast"></i>
+              </div>
+              <div>
+                <div class="text-2xl font-bold">{{ totalFichasNoJogo() }}</div>
+                <div class="text-sm text-color-secondary">Minhas Fichas neste Jogo</div>
+              </div>
             </div>
-            <div>
-              <div class="text-2xl font-bold">{{ totalFichas() }}</div>
-              <div class="text-sm text-color-secondary">Personagens</div>
-            </div>
+          </p-card>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-12">
+          <div class="flex justify-content-between align-items-center mb-3">
+            <h2 class="text-2xl font-bold m-0">Minhas Fichas</h2>
+            <p-button
+              label="Nova Ficha"
+              icon="pi pi-plus"
+              (onClick)="criarFicha()"
+            ></p-button>
           </div>
-        </p-card>
-      </div>
 
-      <div class="col-12 md:col-4">
-        <p-card>
-          <div class="flex align-items-center gap-3">
-            <div class="flex align-items-center justify-content-center bg-green-500 border-round" [style]="{ width: '3rem', height: '3rem' }">
-              <i class="pi pi-check-circle text-2xl" [style]="{ color: 'white' }"></i>
-            </div>
-            <div>
-              <div class="text-2xl font-bold">{{ jogosAtivos() }}</div>
-              <div class="text-sm text-color-secondary">Jogos Ativos</div>
-            </div>
-          </div>
-        </p-card>
-      </div>
-
-      <div class="col-12 md:col-4">
-        <p-card>
-          <div class="flex align-items-center gap-3">
-            <div class="flex align-items-center justify-content-center bg-orange-500 border-round" [style]="{ width: '3rem', height: '3rem' }">
-              <i class="pi pi-clock text-2xl" [style]="{ color: 'white' }"></i>
-            </div>
-            <div>
-              <div class="text-2xl font-bold">{{ solicitacoesPendentes() }}</div>
-              <div class="text-sm text-color-secondary">Pendentes</div>
-            </div>
-          </div>
-        </p-card>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="col-12">
-        <h2 class="text-2xl font-bold mb-3">Ações Rápidas</h2>
-        <div class="grid">
-          <div class="col-12 md:col-6 lg:col-4">
+          @if (fichasDoJogoAtual().length === 0) {
             <p-card>
-              <div class="flex flex-column align-items-center text-center gap-3 p-2">
-                <i class="pi pi-plus-circle text-5xl text-primary"></i>
-                <h3 class="text-xl font-semibold m-0">Nova Ficha</h3>
-                <p class="text-sm text-color-secondary m-0">
-                  Crie um novo personagem
-                </p>
+              <div class="text-center py-4">
+                <i class="pi pi-inbox text-6xl text-color-secondary mb-3"></i>
+                <p class="text-xl font-semibold mb-2">Nenhuma ficha neste jogo</p>
+                <p class="text-color-secondary mb-3">Crie sua primeira ficha para começar a jogar!</p>
                 <p-button
-                  label="Criar"
-                  icon="pi pi-arrow-right"
-                  class="w-full"
+                  label="Criar Primeira Ficha"
+                  icon="pi pi-plus"
                   (onClick)="criarFicha()"
                 ></p-button>
               </div>
             </p-card>
-          </div>
+          } @else {
+            <div class="grid">
+              @for (ficha of fichasRecentes(); track ficha.id) {
+                <div class="col-12 md:col-6 lg:col-4">
+                  <p-card>
+                    <div class="flex flex-column gap-2">
+                      <div class="flex justify-content-between align-items-center">
+                        <h3 class="font-bold text-xl m-0">{{ ficha.nome }}</h3>
+                        @if (ficha.progressao) {
+                          <span class="text-sm bg-primary-reverse text-primary border-round px-2 py-1">
+                            Nível {{ ficha.progressao.nivel }}
+                          </span>
+                        }
+                      </div>
 
-          <div class="col-12 md:col-6 lg:col-4">
-            <p-card>
-              <div class="flex flex-column align-items-center text-center gap-3 p-2">
-                <i class="pi pi-list text-5xl text-primary"></i>
-                <h3 class="text-xl font-semibold m-0">Minhas Fichas</h3>
-                <p class="text-sm text-color-secondary m-0">
-                  Veja todos os personagens
-                </p>
+                      @if (ficha.identificacao) {
+                        <p class="text-sm text-color-secondary m-0">
+                          {{ ficha.identificacao.origem || 'Origem não definida' }}
+                        </p>
+                      }
+
+                      <div class="flex gap-2 mt-2">
+                        <p-button
+                          label="Ver"
+                          icon="pi pi-eye"
+                          [text]="true"
+                          class="flex-1"
+                          (onClick)="verFicha(ficha.id!)"
+                        ></p-button>
+                        <p-button
+                          label="Editar"
+                          icon="pi pi-pencil"
+                          [text]="true"
+                          severity="secondary"
+                          class="flex-1"
+                          (onClick)="editarFicha(ficha.id!)"
+                        ></p-button>
+                      </div>
+                    </div>
+                  </p-card>
+                </div>
+              }
+            </div>
+
+            @if (totalFichasNoJogo() > 5) {
+              <div class="col-12 text-center mt-3">
                 <p-button
-                  label="Ver Fichas"
+                  label="Ver Todas as Fichas"
                   icon="pi pi-arrow-right"
-                  class="w-full"
-                  [outlined]="true"
+                  [text]="true"
                   (onClick)="verFichas()"
                 ></p-button>
               </div>
-            </p-card>
-          </div>
-
-          <div class="col-12 md:col-6 lg:col-4">
-            <p-card>
-              <div class="flex flex-column align-items-center text-center gap-3 p-2">
-                <i class="pi pi-search text-5xl text-primary"></i>
-                <h3 class="text-xl font-semibold m-0">Buscar Jogos</h3>
-                <p class="text-sm text-color-secondary m-0">
-                  Encontre campanhas abertas
-                </p>
-                <p-button
-                  label="Buscar"
-                  icon="pi pi-arrow-right"
-                  class="w-full"
-                  [outlined]="true"
-                  (onClick)="buscarJogos()"
-                ></p-button>
-              </div>
-            </p-card>
-          </div>
+            }
+          }
         </div>
-      </div>
-
-      <!-- Recent Characters -->
-      @if (fichasRecentes().length > 0) {
+      } @else {
+        <!-- No Game Selected -->
         <div class="col-12">
-          <h2 class="text-2xl font-bold mb-3">Personagens Recentes</h2>
           <p-card>
-            <div class="flex flex-column gap-3">
-              @for (ficha of fichasRecentes(); track ficha.id) {
-                <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
-                  <div>
-                    <div class="font-bold text-lg">{{ ficha.nome }}</div>
-                    <div class="text-sm text-color-secondary">
-                      Nível {{ ficha.progressao?.nivel || 1 }}
-                    </div>
-                  </div>
-                  <p-button
-                    label="Ver Ficha"
-                    icon="pi pi-arrow-right"
-                    [text]="true"
-                    (onClick)="verFicha(ficha.id!)"
-                  ></p-button>
-                </div>
-              }
+            <div class="text-center py-6">
+              <i class="pi pi-info-circle text-6xl text-color-secondary mb-4"></i>
+              <h2 class="text-2xl font-semibold mb-2">Nenhum jogo selecionado</h2>
+              <p class="text-color-secondary mb-4">
+                Selecione um jogo no menu superior para ver suas fichas e começar a jogar.
+              </p>
+              <p-button
+                label="Buscar Jogos"
+                icon="pi pi-search"
+                (onClick)="buscarJogos()"
+              ></p-button>
             </div>
           </p-card>
         </div>
@@ -167,13 +160,37 @@ import { Jogo } from '../../../core/models';
 export class JogadorDashboardComponent {
   authService = inject(AuthService);
   private fichaService = inject(FichaBusinessService);
-  private jogoService = inject(JogoBusinessService);
+  private currentGameService = inject(CurrentGameService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 
-  // Exposed state from services
-  totalFichas = this.fichaService.totalFichas;
-  fichasRecentes = this.fichaService.fichasRecentes;
+  // Jogo atual
+  currentGame = this.currentGameService.currentGame;
+  hasGame = this.currentGameService.hasCurrentGame;
+
+  // Fichas do jogo atual
+  fichasDoJogoAtual = computed(() => {
+    const gameId = this.currentGameService.currentGameId();
+    if (!gameId) return [];
+
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) return [];
+
+    return this.fichaService.fichas().filter(f =>
+      f.jogoId === gameId &&
+      f.jogadorId === Number(userId)
+    );
+  });
+
+  // Stats
+  totalFichasNoJogo = computed(() => this.fichasDoJogoAtual().length);
+
+  fichasRecentes = computed(() => {
+    return this.fichasDoJogoAtual()
+      .slice()
+      .sort((a, b) => new Date(b.dataAtualizacao || 0).getTime() - new Date(a.dataAtualizacao || 0).getTime())
+      .slice(0, 5);
+  });
 
   // Load data on init
   constructor() {
@@ -181,31 +198,8 @@ export class JogadorDashboardComponent {
       this.fichaService.loadFichas().pipe(
         takeUntilDestroyed(this.destroyRef)
       ).subscribe();
-
-      this.jogoService.loadJogos().pipe(
-        takeUntilDestroyed(this.destroyRef)
-      ).subscribe();
     });
   }
-
-  jogosAtivos = computed(() => {
-    const userId = this.authService.currentUser()?.id;
-    if (!userId) return 0;
-
-    return this.jogoService.jogos().filter((jogo: Jogo) =>
-      jogo.status === 'ATIVO' &&
-      jogo.participantes?.some(p => p.jogadorId === Number(userId) && p.status === 'APROVADO')
-    ).length;
-  });
-
-  solicitacoesPendentes = computed(() => {
-    const userId = this.authService.currentUser()?.id;
-    if (!userId) return 0;
-
-    return this.jogoService.jogos().filter((jogo: Jogo) =>
-      jogo.participantes?.some(p => p.jogadorId === Number(userId) && p.status === 'PENDENTE')
-    ).length;
-  });
 
   // Navigation methods
   criarFicha() {
@@ -222,5 +216,9 @@ export class JogadorDashboardComponent {
 
   verFicha(id: number) {
     this.router.navigate(['/jogador/fichas', id]);
+  }
+
+  editarFicha(id: number) {
+    this.router.navigate(['/jogador/fichas', id, 'edit']);
   }
 }

@@ -1,29 +1,31 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import {Component, effect, inject, signal} from '@angular/core';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
-import { CurrentGameService } from '../../../core/services/current-game.service';
 import { AuthService } from '../../../services/auth.service';
+import {CurrentGameService} from '../../../core/services';
+import {Select} from 'primeng/select';
+import {FormsModule} from '@angular/forms';
 
 /**
- * App Header Component
+ * App Header Component (SIMPLIFIED)
  *
- * 🎯 CORE UX - Header com seletor de jogo atual
+ * 🎯 Header básico - aguardando backend para funcionalidades avançadas
  *
- * Features:
+ * Features implementadas:
  * - Logo + Nome do app
- * - Seletor de "Jogo Atual" (dropdown)
  * - User menu (avatar + dropdown)
- * - Badge de notificações (futuro)
+ *
+ * TODO (aguardando backend):
+ * - Seletor de "Jogo Atual" (precisa GET /api/users/me/jogos)
+ * - Badge de notificações
  */
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [FormsModule, SelectModule, ButtonModule, AvatarModule, MenuModule],
+  imports: [ButtonModule, AvatarModule, MenuModule, Select, FormsModule],
   template: `
     <header class="surface-card border-bottom-1 surface-border p-3">
       <div class="flex flex-column md:flex-row align-items-center justify-content-between gap-3">

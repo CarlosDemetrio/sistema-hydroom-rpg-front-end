@@ -2,11 +2,11 @@ import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
 import { LoginComponent } from './pages/login/login.component';
-import { HomeComponent } from './pages/home/home.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { UnauthorizedComponent } from './pages/unauthorized/unauthorized.component';
 import { OAuthCallbackComponent } from './pages/oauth-callback/oauth-callback.component';
+import { MainLayoutComponent } from './shared/layout/main-layout.component';
 
 export const routes: Routes = [
   {
@@ -19,7 +19,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    component: HomeComponent,
+    component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
       {

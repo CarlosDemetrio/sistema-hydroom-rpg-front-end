@@ -8,7 +8,7 @@ import { JogoBusinessService } from './business/jogo-business.service';
  *
  * Conceito:
  * - Usuário seleciona um jogo ativo
- * - Todo o sistema mostra apenas dados desse jogo
+ * - Tod o o sistema mostra apenas dados desse jogo
  * - Persiste no localStorage
  * - Mestre pode trocar entre jogos
  * - Jogador vê apenas jogos que participa
