@@ -119,8 +119,7 @@ export class MestreDashboardComponent {
   // Load data on init
   constructor() {
     effect(() => {
-      this.jogoFacade.loadJogos();
-      this.jogoFacade.loadFichas();
+      this.jogoFacade.loadJogos().subscribe();
     });
   }
 

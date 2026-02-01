@@ -1,4 +1,5 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,16 +12,15 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { JogosStore } from '../../../../core/stores/jogos.store';
-import { Jogo, JogoStatus } from '../../../../core/models/jogo.model';
-import { EmptyStateComponent } from '../../../../shared/components/empty-state.component';
-import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner.component';
+import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
+import { Jogo, JogoStatus } from '../../../../core/models';
+import { EmptyStateComponent, LoadingSpinnerComponent } from '../../../../shared';
 
 /**
  * Jogos List Component (Mestre)
  *
  * Lista todos os jogos criados pelo mestre com filtros e busca
- * SMART COMPONENT - usa JogosStore
+ * SMART COMPONENT - usa JogoManagementFacadeService
  */
 @Component({
   selector: 'app-jogos-list',
@@ -93,14 +93,8 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
         </div>
 
         <!-- Loading State -->
-        @if (jogosStore.loading()) {
+        @if (loading()) {
           <app-loading-spinner message="Carregando jogos..."></app-loading-spinner>
-        } @else if (jogosStore.error()) {
-          <app-empty-state
-            icon="pi-exclamation-triangle"
-            message="Erro ao carregar jogos"
-            [description]="jogosStore.error()!"
-          ></app-empty-state>
         } @else if (jogosFiltrados().length === 0 && !searchTerm() && !statusFilter()) {
           <app-empty-state
             icon="pi-book"
@@ -197,10 +191,11 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
   `
 })
 export class JogosListComponent {
-  jogosStore = inject(JogosStore);
+  private jogoFacade = inject(JogoManagementFacadeService);
   private router = inject(Router);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
+  private destroyRef = inject(DestroyRef);
 
   // Filters
   searchTerm = signal('');
@@ -213,9 +208,13 @@ export class JogosListComponent {
     { label: 'Finalizado', value: 'FINALIZADO' as JogoStatus }
   ];
 
+  // State
+  jogos = this.jogoFacade.jogos;
+  loading = this.jogoFacade.loading;
+
   // Computed filtered list
   jogosFiltrados = computed(() => {
-    let jogos = this.jogosStore.jogos();
+    let jogos = this.jogoFacade.jogos();
 
     // Filter by search term
     const search = this.searchTerm().toLowerCase();
@@ -237,7 +236,9 @@ export class JogosListComponent {
 
   // Load data on init
   constructor() {
-    this.jogosStore.loadJogos();
+    this.jogoFacade.loadJogos().pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
   }
 
   // Navigation methods
@@ -273,21 +274,25 @@ export class JogosListComponent {
     });
   }
 
-  async excluirJogo(id: number) {
-    try {
-      await this.jogosStore.deleteJogo(id);
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Sucesso',
-        detail: 'Jogo excluído com sucesso'
-      });
-    } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Erro',
-        detail: 'Erro ao excluir jogo'
-      });
-    }
+  excluirJogo(id: number) {
+    this.jogoFacade.deleteJogo(id).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Jogo excluído com sucesso'
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao excluir jogo'
+        });
+      }
+    });
   }
 
   // Status helpers

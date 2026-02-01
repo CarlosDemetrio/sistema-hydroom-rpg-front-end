@@ -1,25 +1,26 @@
-import { Component, inject, signal, effect, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { JogosStore } from '../../../../core/stores/jogos.store';
-import { JogoStatus } from '../../../../core/models/jogo.model';
-import { FormFieldErrorComponent } from '../../../../shared/components/form-field-error.component';
-import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner.component';
+import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
+import { JogoStatus } from '../../../../core/models';
+import { FormFieldErrorComponent } from '../../../../shared';
+import { LoadingSpinnerComponent } from '../../../../shared';
+import { Textarea } from 'primeng/textarea';
 
 /**
  * Jogo Form Component (Create/Edit)
  *
  * Formulário para criar ou editar jogos
- * SMART COMPONENT - usa JogosStore e reactive forms
+ * SMART COMPONENT - usa JogoManagementFacadeService e reactive forms
  */
 @Component({
   selector: 'app-jogo-form',
@@ -30,7 +31,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
     CardModule,
     ButtonModule,
     InputTextModule,
-    InputTextareaModule,
+    Textarea,
     InputNumberModule,
     SelectModule,
     ToastModule,
@@ -49,7 +50,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
         </p>
       </div>
 
-      @if (jogosStore.loading() && isEditMode()) {
+      @if (loading() && isEditMode()) {
         <app-loading-spinner message="Carregando jogo..."></app-loading-spinner>
       } @else {
         <p-card>
@@ -68,7 +69,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
                   class="w-full"
                 />
                 <app-form-field-error
-                  [errors]="jogoForm.get('nome')?.errors"
+                  [errors]="jogoForm.get('nome')?.errors || null"
                   [touched]="jogoForm.get('nome')?.touched || false"
                 ></app-form-field-error>
               </div>
@@ -87,13 +88,13 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
                   class="w-full"
                 ></textarea>
                 <app-form-field-error
-                  [errors]="jogoForm.get('descricao')?.errors"
+                  [errors]="jogoForm.get('descricao')?.errors || null"
                   [touched]="jogoForm.get('descricao')?.touched || false"
                 ></app-form-field-error>
               </div>
 
               <!-- Status -->
-              <div class="col-12 md:col-6">
+              <div class="col-12">
                 <label for="status" class="block font-semibold mb-2">
                   Status <span class="text-red-500">*</span>
                 </label>
@@ -107,28 +108,8 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
                   class="w-full"
                 ></p-select>
                 <app-form-field-error
-                  [errors]="jogoForm.get('status')?.errors"
+                  [errors]="jogoForm.get('status')?.errors || null"
                   [touched]="jogoForm.get('status')?.touched || false"
-                ></app-form-field-error>
-              </div>
-
-              <!-- Max Participantes -->
-              <div class="col-12 md:col-6">
-                <label for="maxParticipantes" class="block font-semibold mb-2">
-                  Máximo de Participantes <span class="text-red-500">*</span>
-                </label>
-                <p-inputnumber
-                  id="maxParticipantes"
-                  formControlName="maxParticipantes"
-                  [min]="1"
-                  [max]="20"
-                  [showButtons]="true"
-                  placeholder="Ex: 6"
-                  class="w-full"
-                ></p-inputnumber>
-                <app-form-field-error
-                  [errors]="jogoForm.get('maxParticipantes')?.errors"
-                  [touched]="jogoForm.get('maxParticipantes')?.touched || false"
                 ></app-form-field-error>
               </div>
 
@@ -139,7 +120,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
                     label="Cancelar"
                     icon="pi pi-times"
                     [outlined]="true"
-                    severity="secondary"
+                    [severity]="'secondary'"
                     (onClick)="cancel()"
                   ></p-button>
                   <p-button
@@ -161,15 +142,17 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
   `
 })
 export class JogoFormComponent implements OnInit {
-  jogosStore = inject(JogosStore);
+  private jogoFacade = inject(JogoManagementFacadeService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
   private messageService = inject(MessageService);
+  private destroyRef = inject(DestroyRef);
 
   isEditMode = signal(false);
   jogoId = signal<number | null>(null);
   isSaving = signal(false);
+  loading = this.jogoFacade.loading;
 
   statusOptions = [
     { label: 'Ativo', value: 'ATIVO' as JogoStatus },
@@ -180,8 +163,7 @@ export class JogoFormComponent implements OnInit {
   jogoForm: FormGroup = this.fb.group({
     nome: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
     descricao: ['', [Validators.maxLength(500)]],
-    status: ['ATIVO', [Validators.required]],
-    maxParticipantes: [6, [Validators.required, Validators.min(1), Validators.max(20)]]
+    status: ['ATIVO', [Validators.required]]
   });
 
   ngOnInit() {
@@ -195,22 +177,20 @@ export class JogoFormComponent implements OnInit {
   }
 
   loadJogo(id: number) {
-    effect(() => {
-      const jogo = this.jogosStore.jogos().find(j => j.id === id);
-      if (jogo) {
+    this.jogoFacade.getJogo(id).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (jogo) => {
         this.jogoForm.patchValue({
           nome: jogo.nome,
           descricao: jogo.descricao || '',
-          status: jogo.status,
-          maxParticipantes: jogo.maxParticipantes || 6
+          status: jogo.status
         });
       }
     });
-
-    this.jogosStore.loadJogos();
   }
 
-  async onSubmit() {
+  onSubmit() {
     if (this.jogoForm.invalid) {
       Object.keys(this.jogoForm.controls).forEach(key => {
         this.jogoForm.get(key)?.markAsTouched();
@@ -220,56 +200,60 @@ export class JogoFormComponent implements OnInit {
 
     this.isSaving.set(true);
 
-    try {
-      const formValue = this.jogoForm.value;
+    const formValue = this.jogoForm.value;
 
-      if (this.isEditMode() && this.jogoId()) {
-        // Update existing jogo
-        await this.jogosStore.updateJogo(this.jogoId()!, {
-          id: this.jogoId()!,
-          nome: formValue.nome,
-          descricao: formValue.descricao,
-          status: formValue.status,
-          maxParticipantes: formValue.maxParticipantes,
-          mestreId: 0, // Will be set by backend
-          dataCriacao: new Date(),
-          dataAtualizacao: new Date()
-        });
-
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Jogo atualizado com sucesso!'
-        });
-      } else {
-        // Create new jogo
-        await this.jogosStore.createJogo({
-          nome: formValue.nome,
-          descricao: formValue.descricao,
-          status: formValue.status,
-          maxParticipantes: formValue.maxParticipantes
-        });
-
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Jogo criado com sucesso!'
-        });
-      }
-
-      // Navigate back to list after short delay
-      setTimeout(() => {
-        this.router.navigate(['/mestre/jogos']);
-      }, 1500);
-
-    } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Erro',
-        detail: this.isEditMode() ? 'Erro ao atualizar jogo' : 'Erro ao criar jogo'
+    if (this.isEditMode() && this.jogoId()) {
+      // Update existing jogo
+      this.jogoFacade.updateJogo(this.jogoId()!, {
+        nome: formValue.nome,
+        descricao: formValue.descricao,
+        status: formValue.status
+      }).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: 'Jogo atualizado com sucesso!'
+          });
+          setTimeout(() => this.router.navigate(['/mestre/jogos']), 1500);
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: 'Erro ao atualizar jogo'
+          });
+          this.isSaving.set(false);
+        }
       });
-    } finally {
-      this.isSaving.set(false);
+    } else {
+      // Create new jogo
+      this.jogoFacade.createJogo({
+        nome: formValue.nome,
+        descricao: formValue.descricao,
+        status: formValue.status
+      }).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: 'Jogo criado com sucesso!'
+          });
+          setTimeout(() => this.router.navigate(['/mestre/jogos']), 1500);
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: 'Erro ao criar jogo'
+          });
+          this.isSaving.set(false);
+        }
+      });
     }
   }
 

@@ -1,4 +1,5 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { TabsModule } from 'primeng/tabs';
@@ -6,20 +7,22 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { JogosStore } from '../../../../core/stores/jogos.store';
-import { FichasStore } from '../../../../core/stores/fichas.store';
-import { ParticipanteStatus } from '../../../../core/models/participante.model';
-import { EmptyStateComponent } from '../../../../shared/components/empty-state.component';
-import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner.component';
+import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
+import { FichaBusinessService } from '../../../../core/services/business/ficha-business.service';
+import { ParticipanteBusinessService } from '../../../../core/services/business/participante-business.service';
+import { ParticipanteStatus } from '../../../../core/models';
+import { EmptyStateComponent } from '../../../../shared';
+import { LoadingSpinnerComponent } from '../../../../shared';
 
 /**
  * Jogo Detail Component
  *
  * Visualização detalhada do jogo com tabs
- * SMART COMPONENT - usa JogosStore e FichasStore
+ * SMART COMPONENT - usa Facades e Business Services
  */
 @Component({
   selector: 'app-jogo-detail',
@@ -31,6 +34,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
     ButtonModule,
     TableModule,
     TagModule,
+    TooltipModule,
     ConfirmDialogModule,
     ToastModule,
     EmptyStateComponent,
@@ -39,7 +43,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
   providers: [ConfirmationService, MessageService],
   template: `
     <div class="p-4">
-      @if (jogosStore.loading()) {
+      @if (jogoFacade.loading()) {
         <app-loading-spinner message="Carregando jogo..."></app-loading-spinner>
       } @else if (!jogo()) {
         <app-empty-state
@@ -58,7 +62,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
                 [severity]="getStatusSeverity(jogo()!.status)"
               ></p-tag>
               <span class="text-color-secondary">
-                {{ participantes().length }}/{{ jogo()!.maxParticipantes || 0 }} participantes
+                {{ participantes().length }} participantes
               </span>
             </div>
           </div>
@@ -73,7 +77,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
             <p-button
               label="Excluir"
               icon="pi pi-trash"
-              severity="danger"
+              [severity]="'danger'"
               [outlined]="true"
               (onClick)="confirmarExclusao()"
             ></p-button>
@@ -81,177 +85,180 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
         </div>
 
         <!-- Tabs -->
-        <p-tabs [value]="activeTabIndex()">
-          <!-- Tab 1: Informações -->
-          <p-tabpanel header="Informações" [value]="0">
-            <p-card>
-              <div class="grid">
-                <div class="col-12 md:col-6">
-                  <h3 class="text-xl font-bold mb-3">Detalhes do Jogo</h3>
-                  <div class="flex flex-column gap-3">
-                    <div>
-                      <span class="font-semibold">Nome:</span>
-                      <p class="m-0 mt-1">{{ jogo()!.nome }}</p>
-                    </div>
+        <p-tabs [value]="activeTabIndex().toString()">
+          <p-tablist>
+            <p-tab value="0">Informações</p-tab>
+            <p-tab value="1">Participantes</p-tab>
+            <p-tab value="2">Fichas</p-tab>
+          </p-tablist>
 
-                    @if (jogo()!.descricao) {
+          <p-tabpanels>
+            <!-- Tab 1: Informações -->
+            <p-tabpanel value="0">
+              <p-card>
+                <div class="grid">
+                  <div class="col-12 md:col-6">
+                    <h3 class="text-xl font-bold mb-3">Detalhes do Jogo</h3>
+                    <div class="flex flex-column gap-3">
                       <div>
-                        <span class="font-semibold">Descrição:</span>
-                        <p class="m-0 mt-1">{{ jogo()!.descricao }}</p>
+                        <span class="font-semibold">Nome:</span>
+                        <p class="m-0 mt-1">{{ jogo()!.nome }}</p>
                       </div>
-                    }
 
-                    <div>
-                      <span class="font-semibold">Status:</span>
-                      <p class="m-0 mt-1">{{ getStatusLabel(jogo()!.status) }}</p>
+                      @if (jogo()!.descricao) {
+                        <div>
+                          <span class="font-semibold">Descrição:</span>
+                          <p class="m-0 mt-1">{{ jogo()!.descricao }}</p>
+                        </div>
+                      }
+
+                      <div>
+                        <span class="font-semibold">Status:</span>
+                        <p class="m-0 mt-1">{{ getStatusLabel(jogo()!.status) }}</p>
+                      </div>
                     </div>
+                  </div>
 
-                    <div>
-                      <span class="font-semibold">Máximo de Participantes:</span>
-                      <p class="m-0 mt-1">{{ jogo()!.maxParticipantes || 0 }}</p>
+                  <div class="col-12 md:col-6">
+                    <h3 class="text-xl font-bold mb-3">Estatísticas</h3>
+                    <div class="flex flex-column gap-3">
+                      <div>
+                        <span class="font-semibold">Total de Participantes:</span>
+                        <p class="m-0 mt-1">{{ participantes().length }}</p>
+                      </div>
+
+                      <div>
+                        <span class="font-semibold">Aprovados:</span>
+                        <p class="m-0 mt-1">{{ participantesAprovados().length }}</p>
+                      </div>
+
+                      <div>
+                        <span class="font-semibold">Pendentes:</span>
+                        <p class="m-0 mt-1">{{ participantesPendentes().length }}</p>
+                      </div>
+
+                      <div>
+                        <span class="font-semibold">Data de Criação:</span>
+                        <p class="m-0 mt-1">{{ jogo()!.dataCriacao | date:'dd/MM/yyyy HH:mm' }}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
+              </p-card>
+            </p-tabpanel>
 
-                <div class="col-12 md:col-6">
-                  <h3 class="text-xl font-bold mb-3">Estatísticas</h3>
-                  <div class="flex flex-column gap-3">
-                    <div>
-                      <span class="font-semibold">Total de Participantes:</span>
-                      <p class="m-0 mt-1">{{ participantes().length }}</p>
-                    </div>
+            <!-- Tab 2: Participantes -->
+            <p-tabpanel value="1">
+              <p-card>
+                @if (participantes().length === 0) {
+                  <app-empty-state
+                    icon="pi-users"
+                    message="Nenhum participante"
+                    description="Aguarde jogadores solicitarem participação neste jogo"
+                  ></app-empty-state>
+                } @else {
+                  <p-table [value]="participantes()" [rowHover]="true">
+                    <ng-template #header>
+                      <tr>
+                        <th>Jogador</th>
+                        <th>Ficha</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th class="text-center">Ações</th>
+                      </tr>
+                    </ng-template>
 
-                    <div>
-                      <span class="font-semibold">Aprovados:</span>
-                      <p class="m-0 mt-1">{{ participantesAprovados().length }}</p>
-                    </div>
-
-                    <div>
-                      <span class="font-semibold">Pendentes:</span>
-                      <p class="m-0 mt-1">{{ participantesPendentes().length }}</p>
-                    </div>
-
-                    <div>
-                      <span class="font-semibold">Data de Criação:</span>
-                      <p class="m-0 mt-1">{{ jogo()!.dataCriacao | date:'dd/MM/yyyy HH:mm' }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </p-card>
-          </p-tabpanel>
-
-          <!-- Tab 2: Participantes -->
-          <p-tabpanel header="Participantes" [value]="1">
-            <p-card>
-              @if (participantes().length === 0) {
-                <app-empty-state
-                  icon="pi-users"
-                  message="Nenhum participante"
-                  description="Aguarde jogadores solicitarem participação neste jogo"
-                ></app-empty-state>
-              } @else {
-                <p-table [value]="participantes()" [rowHover]="true">
-                  <ng-template #header>
-                    <tr>
-                      <th>Jogador</th>
-                      <th>Ficha</th>
-                      <th>Status</th>
-                      <th>Data</th>
-                      <th class="text-center">Ações</th>
-                    </tr>
-                  </ng-template>
-
-                  <ng-template #body let-participante>
-                    <tr>
-                      <td>
-                        <div class="font-semibold">{{ participante.jogador?.name || 'Jogador #' + participante.jogadorId }}</div>
-                      </td>
-                      <td>
-                        @if (participante.ficha) {
-                          {{ participante.ficha.nome }}
-                        } @else {
-                          <span class="text-color-secondary">Sem ficha</span>
-                        }
-                      </td>
-                      <td>
-                        <p-tag
-                          [value]="getParticipanteStatusLabel(participante.status)"
-                          [severity]="getParticipanteStatusSeverity(participante.status)"
-                        ></p-tag>
-                      </td>
-                      <td>{{ participante.dataParticipacao | date:'dd/MM/yyyy' }}</td>
-                      <td class="text-center">
-                        <div class="flex gap-2 justify-content-center">
-                          @if (participante.status === 'PENDENTE') {
+                    <ng-template #body let-participante>
+                      <tr>
+                        <td>
+                          <div class="font-semibold">{{ participante.jogador?.name || 'Jogador #' + participante.jogadorId }}</div>
+                        </td>
+                        <td>
+                          @if (participante.ficha) {
+                            {{ participante.ficha.nome }}
+                          } @else {
+                            <span class="text-color-secondary">Sem ficha</span>
+                          }
+                        </td>
+                        <td>
+                          <p-tag
+                            [value]="getParticipanteStatusLabel(participante.status)"
+                            [severity]="getParticipanteStatusSeverity(participante.status)"
+                          ></p-tag>
+                        </td>
+                        <td>{{ participante.dataParticipacao | date:'dd/MM/yyyy' }}</td>
+                        <td class="text-center">
+                          <div class="flex gap-2 justify-content-center">
+                            @if (participante.status === 'PENDENTE') {
+                              <p-button
+                                icon="pi pi-check"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="success"
+                                pTooltip="Aprovar"
+                                (onClick)="aprovarParticipante(participante.id)"
+                              ></p-button>
+                              <p-button
+                                icon="pi pi-times"
+                                [rounded]="true"
+                                [text]="true"
+                                [severity]="'danger'"
+                                pTooltip="Rejeitar"
+                                (onClick)="rejeitarParticipante(participante.id)"
+                              ></p-button>
+                            }
                             <p-button
-                              icon="pi pi-check"
-                              [rounded]="true"
-                              [text]="true"
-                              severity="success"
-                              pTooltip="Aprovar"
-                              (onClick)="aprovarParticipante(participante.id)"
-                            ></p-button>
-                            <p-button
-                              icon="pi pi-times"
+                              icon="pi pi-trash"
                               [rounded]="true"
                               [text]="true"
                               [severity]="'danger'"
-                              pTooltip="Rejeitar"
-                              (onClick)="rejeitarParticipante(participante.id)"
+                              pTooltip="Remover"
+                              (onClick)="removerParticipante(participante.id)"
                             ></p-button>
-                          }
-                          <p-button
-                            icon="pi pi-trash"
-                            [rounded]="true"
-                            [text]="true"
-                            [severity]="'danger'"
-                            pTooltip="Remover"
-                            (onClick)="removerParticipante(participante.id)"
-                          ></p-button>
-                        </div>
-                      </td>
-                    </tr>
-                  </ng-template>
-                </p-table>
-              }
-            </p-card>
-          </p-tabpanel>
+                          </div>
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+                }
+              </p-card>
+            </p-tabpanel>
 
-          <!-- Tab 3: Fichas -->
-          <p-tabpanel header="Fichas" [value]="2">
-            <p-card>
-              @if (fichasDoJogo().length === 0) {
-                <app-empty-state
-                  icon="pi-id-card"
-                  message="Nenhuma ficha"
-                  description="Ainda não há fichas vinculadas a este jogo"
-                ></app-empty-state>
-              } @else {
-                <div class="grid">
-                  @for (ficha of fichasDoJogo(); track ficha.id) {
-                    <div class="col-12 md:col-6 lg:col-4">
-                      <p-card>
-                        <div class="flex flex-column gap-2">
-                          <h4 class="font-bold text-lg m-0">{{ ficha.nome }}</h4>
-                          @if (ficha.progressao) {
-                            <span class="text-sm text-color-secondary">Nível {{ ficha.progressao.nivel }}</span>
-                          }
-                          <p-button
-                            label="Ver Ficha"
-                            icon="pi pi-eye"
-                            [text]="true"
-                            class="w-full"
-                            (onClick)="verFicha(ficha.id!)"
-                          ></p-button>
-                        </div>
-                      </p-card>
-                    </div>
-                  }
-                </div>
-              }
-            </p-card>
-          </p-tabpanel>
+            <!-- Tab 3: Fichas -->
+            <p-tabpanel value="2">
+              <p-card>
+                @if (fichasDoJogo().length === 0) {
+                  <app-empty-state
+                    icon="pi-id-card"
+                    message="Nenhuma ficha"
+                    description="Ainda não há fichas vinculadas a este jogo"
+                  ></app-empty-state>
+                } @else {
+                  <div class="grid">
+                    @for (ficha of fichasDoJogo(); track ficha.id) {
+                      <div class="col-12 md:col-6 lg:col-4">
+                        <p-card>
+                          <div class="flex flex-column gap-2">
+                            <h4 class="font-bold text-lg m-0">{{ ficha.nome }}</h4>
+                            @if (ficha.progressao) {
+                              <span class="text-sm text-color-secondary">Nível {{ ficha.progressao.nivel }}</span>
+                            }
+                            <p-button
+                              label="Ver Ficha"
+                              icon="pi pi-eye"
+                              [text]="true"
+                              class="w-full"
+                              (onClick)="verFicha(ficha.id!)"
+                            ></p-button>
+                          </div>
+                        </p-card>
+                      </div>
+                    }
+                  </div>
+                }
+              </p-card>
+            </p-tabpanel>
+          </p-tabpanels>
         </p-tabs>
       }
     </div>
@@ -261,26 +268,28 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
   `
 })
 export class JogoDetailComponent implements OnInit {
-  jogosStore = inject(JogosStore);
-  fichasStore = inject(FichasStore);
+  jogoFacade = inject(JogoManagementFacadeService); // público para template
+  private participanteService = inject(ParticipanteBusinessService);
+  private fichaService = inject(FichaBusinessService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
+  private destroyRef = inject(DestroyRef);
 
   jogoId = signal<number | null>(null);
-  activeTabIndex = signal(0);
+  activeTabIndex = signal<string>('0');
 
   jogo = computed(() => {
     const id = this.jogoId();
     if (!id) return null;
-    return this.jogosStore.jogos().find(j => j.id === id) || null;
+    return this.jogoFacade.jogos().find(j => j.id === id) || null;
   });
 
   participantes = computed(() => {
     const id = this.jogoId();
     if (!id) return [];
-    return this.jogosStore.getParticipantes(id);
+    return this.jogoFacade.jogos().find(j => j.id === id)?.participantes || [];
   });
 
   participantesAprovados = computed(() =>
@@ -294,15 +303,21 @@ export class JogoDetailComponent implements OnInit {
   fichasDoJogo = computed(() => {
     const id = this.jogoId();
     if (!id) return [];
-    return this.fichasStore.fichas().filter(f => f.jogoId === id);
+    return this.fichaService.fichas().filter(f => f.jogoId === id);
   });
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.jogoId.set(Number(id));
-      this.jogosStore.loadJogos();
-      this.fichasStore.loadFichas();
+
+      this.jogoFacade.loadJogos().pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+
+      this.fichaService.loadFichas().pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
     }
   }
 
@@ -318,80 +333,96 @@ export class JogoDetailComponent implements OnInit {
       acceptLabel: 'Sim, Excluir',
       rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
-      accept: async () => {
-        try {
-          await this.jogosStore.deleteJogo(this.jogoId()!);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Sucesso',
-            detail: 'Jogo excluído com sucesso'
-          });
-          this.router.navigate(['/mestre/jogos']);
-        } catch (error) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Erro ao excluir jogo'
-          });
-        }
+      accept: () => {
+        this.jogoFacade.deleteJogo(this.jogoId()!).pipe(
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Jogo excluído com sucesso'
+            });
+            this.router.navigate(['/mestre/jogos']);
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: 'Erro ao excluir jogo'
+            });
+          }
+        });
       }
     });
   }
 
-  async aprovarParticipante(participanteId: number) {
-    try {
-      await this.jogosStore.updateParticipanteStatus(this.jogoId()!, participanteId, 'APROVADO');
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Sucesso',
-        detail: 'Participante aprovado'
-      });
-    } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Erro',
-        detail: 'Erro ao aprovar participante'
-      });
-    }
+  aprovarParticipante(participanteId: number) {
+    this.participanteService.aprovarParticipante(this.jogoId()!, participanteId).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Participante aprovado'
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao aprovar participante'
+        });
+      }
+    });
   }
 
-  async rejeitarParticipante(participanteId: number) {
-    try {
-      await this.jogosStore.updateParticipanteStatus(this.jogoId()!, participanteId, 'REJEITADO');
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Sucesso',
-        detail: 'Participante rejeitado'
-      });
-    } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Erro',
-        detail: 'Erro ao rejeitar participante'
-      });
-    }
+  rejeitarParticipante(participanteId: number) {
+    this.participanteService.rejeitarParticipante(this.jogoId()!, participanteId).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Participante rejeitado'
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao rejeitar participante'
+        });
+      }
+    });
   }
 
-  async removerParticipante(participanteId: number) {
+  removerParticipante(participanteId: number) {
     this.confirmationService.confirm({
       message: 'Tem certeza que deseja remover este participante?',
       header: 'Confirmar Remoção',
       icon: 'pi pi-exclamation-triangle',
-      accept: async () => {
-        try {
-          await this.jogosStore.deleteParticipante(this.jogoId()!, participanteId);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Sucesso',
-            detail: 'Participante removido'
-          });
-        } catch (error) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Erro ao remover participante'
-          });
-        }
+      accept: () => {
+        this.participanteService.removerParticipante(this.jogoId()!, participanteId).pipe(
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Participante removido'
+            });
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: 'Erro ao remover participante'
+            });
+          }
+        });
       }
     });
   }

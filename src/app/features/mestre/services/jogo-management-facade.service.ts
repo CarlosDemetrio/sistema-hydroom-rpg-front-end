@@ -1,36 +1,43 @@
 import { Injectable, inject, computed } from '@angular/core';
-import { JogosStore } from '../../../core/stores/jogos.store';
-import { FichasStore } from '../../../core/stores/fichas.store';
-import { JogosApiService } from '../../../core/services/api/jogos-api.service';
-import { Jogo, JogoStatus } from '../../../core/models/jogo.model';
-import { Participante } from '../../../core/models/participante.model';
+import { Observable, forkJoin } from 'rxjs';
+import { JogoBusinessService } from '../../../core/services/business/jogo-business.service';
+import { ParticipanteBusinessService } from '../../../core/services/business/participante-business.service';
+import { FichaBusinessService } from '../../../core/services/business/ficha-business.service';
+import { Jogo, JogoStatus, Participante } from '../../../core/models';
 
 /**
  * Jogo Management Facade Service
  *
- * ✅ ARQUITETURA CORRETA:
- * Component → Facade → API Service → Backend
- *                ↓ (response)
- *            Store.setState()
+ * ✅ RESPONSABILIDADE ÚNICA: COORDENAÇÃO
+ *
+ * - Delega para Business Services
+ * - Coordena múltiplos services quando necessário
+ * - Expõe API simplificada para Components
+ *
+ * NÃO tem:
+ * - Lógica de negócio (está nos Business Services)
+ * - Chamadas HTTP diretas (está nos API Services via Business Services)
+ * - Manipulação de Store (está nos Business Services)
  */
 @Injectable({
   providedIn: 'root'
 })
 export class JogoManagementFacadeService {
-  private jogosStore = inject(JogosStore);
-  private fichasStore = inject(FichasStore);
-  private jogosApi = inject(JogosApiService);
+  // Inject Business Services
+  private jogoService = inject(JogoBusinessService);
+  private participanteService = inject(ParticipanteBusinessService);
+  private fichaService = inject(FichaBusinessService);
 
-  // Exposed state (read-only)
-  jogos = this.jogosStore.jogos;
-  loading = this.jogosStore.loading;
-  error = this.jogosStore.error;
+  // Exposed state (delegação)
+  jogos = this.jogoService.jogos;
+  loading = this.jogoService.loading;
+  error = this.jogoService.error;
 
-  // Computed stats
-  totalJogos = computed(() => this.jogosStore.jogos().length);
+  // Computed stats (pode combinar múltiplos services)
+  totalJogos = computed(() => this.jogoService.jogos().length);
 
   totalJogadores = computed(() => {
-    const jogos = this.jogosStore.jogos();
+    const jogos = this.jogoService.jogos();
     const uniqueJogadores = new Set<number>();
     jogos.forEach(jogo => {
       jogo.participantes?.forEach(p => {
@@ -41,102 +48,88 @@ export class JogoManagementFacadeService {
   });
 
   jogosRecentes = computed(() => {
-    return this.jogosStore.jogos()
+    return this.jogoService.jogos()
       .slice()
       .sort((a, b) => new Date(b.dataCriacao || 0).getTime() - new Date(a.dataCriacao || 0).getTime())
       .slice(0, 5);
   });
 
   // ============================================
-  // LOAD METHODS (API → Store)
-  // ⚠️ Loading e Error gerenciados automaticamente pelos interceptors
+  // DELEGAÇÃO SIMPLES (1:1 com Business Service)
   // ============================================
 
-  async loadJogos(filters?: { status?: JogoStatus; search?: string }) {
-    const jogos = await this.jogosApi.listJogos(filters);
-    this.jogosStore.setJogos(jogos);
+  loadJogos(filters?: { status?: JogoStatus; search?: string }): Observable<Jogo[]> {
+    return this.jogoService.loadJogos(filters);
   }
 
-  async loadParticipantes(jogoId: number) {
-    const participantes = await this.jogosApi.listParticipantes(jogoId);
-    this.jogosStore.setParticipantes(jogoId, participantes);
+  getJogo(id: number): Observable<Jogo> {
+    return this.jogoService.getJogo(id);
+  }
+
+  createJogo(data: { nome: string; descricao?: string; status?: JogoStatus }): Observable<Jogo> {
+    return this.jogoService.createJogo(data);
+  }
+
+  updateJogo(id: number, data: Partial<Jogo>): Observable<Jogo> {
+    return this.jogoService.updateJogo(id, data);
+  }
+
+  deleteJogo(id: number): Observable<void> {
+    return this.jogoService.deleteJogo(id);
+  }
+
+  // Participantes
+  loadParticipantes(jogoId: number): Observable<Participante[]> {
+    return this.participanteService.loadParticipantes(jogoId);
+  }
+
+  aprovarParticipante(jogoId: number, participanteId: number): Observable<Participante> {
+    return this.participanteService.aprovarParticipante(jogoId, participanteId);
+  }
+
+  rejeitarParticipante(jogoId: number, participanteId: number): Observable<Participante> {
+    return this.participanteService.rejeitarParticipante(jogoId, participanteId);
+  }
+
+  removerParticipante(jogoId: number, participanteId: number): Observable<void> {
+    return this.participanteService.removerParticipante(jogoId, participanteId);
   }
 
   // ============================================
-  // CRUD METHODS (API → Store)
-  // ⚠️ Loading e Error gerenciados automaticamente pelos interceptors
+  // COORDENAÇÃO (combina múltiplos services)
   // ============================================
 
-  async createJogo(data: { nome: string; descricao?: string; status?: JogoStatus }) {
-    const novoJogo = await this.jogosApi.createJogo(data);
-    this.jogosStore.addJogo(novoJogo);
-    return novoJogo;
+  /**
+   * Carrega jogo com participantes e fichas em paralelo
+   * Exemplo de COORDENAÇÃO entre múltiplos services
+   */
+  loadJogoComplete(jogoId: number): Observable<{
+    jogo: Jogo;
+    participantes: Participante[];
+    fichas: any[];
+  }> {
+    return forkJoin({
+      jogo: this.jogoService.getJogo(jogoId),
+      participantes: this.participanteService.loadParticipantes(jogoId),
+      fichas: this.fichaService.loadFichas({ jogoId })
+    });
   }
 
-  async updateJogo(id: number, data: Partial<Jogo>) {
-    const jogoAtualizado = await this.jogosApi.updateJogo(id, data);
-    this.jogosStore.updateJogoInState(id, jogoAtualizado);
-    return jogoAtualizado;
+  /**
+   * Computed de participantes aprovados
+   */
+  getParticipantesAprovados(jogoId: number) {
+    return computed(() =>
+      this.participanteService.getParticipantesByStatus(jogoId, 'APROVADO')
+    );
   }
 
-  async deleteJogo(id: number) {
-    await this.jogosApi.deleteJogo(id);
-    this.jogosStore.removeJogo(id);
-  }
-
-  // ============================================
-  // PARTICIPANTE MANAGEMENT (API → Store)
-  // ============================================
-
-  async aprovarParticipante(jogoId: number, participanteId: number) {
-    const updated = await this.jogosApi.updateParticipante(jogoId, participanteId, 'APROVADO');
-    this.jogosStore.updateParticipanteInState(jogoId, participanteId, updated);
-  }
-
-  async rejeitarParticipante(jogoId: number, participanteId: number) {
-    const updated = await this.jogosApi.updateParticipante(jogoId, participanteId, 'REJEITADO');
-    this.jogosStore.updateParticipanteInState(jogoId, participanteId, updated);
-  }
-
-  async removerParticipante(jogoId: number, participanteId: number) {
-    await this.jogosApi.removerParticipante(jogoId, participanteId);
-    this.jogosStore.removeParticipante(jogoId, participanteId);
-  }
-
-  // GETTERS
-  getJogo(id: number): Jogo | undefined {
-    return this.jogosStore.jogos().find(j => j.id === id);
-  }
-
-  getParticipantes(jogoId: number): Participante[] {
-    return this.jogosStore.getParticipantes(jogoId);
-  }
-
-  getParticipantesAprovados(jogoId: number): Participante[] {
-    return this.getParticipantes(jogoId).filter(p => p.status === 'APROVADO');
-  }
-
-  getParticipantesPendentes(jogoId: number): Participante[] {
-    return this.getParticipantes(jogoId).filter(p => p.status === 'PENDENTE');
-  }
-
-  getFichasDoJogo(jogoId: number) {
-    return this.fichasStore.fichas().filter(f => f.jogoId === jogoId);
-  }
-
-  // FILTER (client-side)
-  filterJogos(jogos: Jogo[], searchTerm: string, status?: JogoStatus): Jogo[] {
-    let filtered = jogos;
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(j =>
-        j.nome.toLowerCase().includes(search) ||
-        j.descricao?.toLowerCase().includes(search)
-      );
-    }
-    if (status) {
-      filtered = filtered.filter(j => j.status === status);
-    }
-    return filtered;
+  /**
+   * Computed de participantes pendentes
+   */
+  getParticipantesPendentes(jogoId: number) {
+    return computed(() =>
+      this.participanteService.getParticipantesByStatus(jogoId, 'PENDENTE')
+    );
   }
 }

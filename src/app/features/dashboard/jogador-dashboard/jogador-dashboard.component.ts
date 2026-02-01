@@ -1,10 +1,12 @@
-import { Component, inject, computed, effect } from '@angular/core';
+import { Component, inject, computed, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import { FichasStore } from '../../../core/stores/fichas.store';
-import { JogosStore } from '../../../core/stores/jogos.store';
 import { AuthService } from '../../../services/auth.service';
+import { FichaBusinessService } from '../../../core/services/business/ficha-business.service';
+import { JogoBusinessService } from '../../../core/services/business/jogo-business.service';
+import { Jogo } from '../../../core/models';
 
 /**
  * Jogador Dashboard Component
@@ -164,26 +166,33 @@ import { AuthService } from '../../../services/auth.service';
 })
 export class JogadorDashboardComponent {
   authService = inject(AuthService);
-  private fichasStore = inject(FichasStore);
-  private jogosStore = inject(JogosStore);
+  private fichaService = inject(FichaBusinessService);
+  private jogoService = inject(JogoBusinessService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+
+  // Exposed state from services
+  totalFichas = this.fichaService.totalFichas;
+  fichasRecentes = this.fichaService.fichasRecentes;
 
   // Load data on init
   constructor() {
     effect(() => {
-      this.fichasStore.loadFichas();
-      this.jogosStore.loadJogos();
+      this.fichaService.loadFichas().pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+
+      this.jogoService.loadJogos().pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
     });
   }
-
-  // Computed stats
-  totalFichas = computed(() => this.fichasStore.fichas().length);
 
   jogosAtivos = computed(() => {
     const userId = this.authService.currentUser()?.id;
     if (!userId) return 0;
 
-    return this.jogosStore.jogos().filter(jogo =>
+    return this.jogoService.jogos().filter((jogo: Jogo) =>
       jogo.status === 'ATIVO' &&
       jogo.participantes?.some(p => p.jogadorId === Number(userId) && p.status === 'APROVADO')
     ).length;
@@ -193,16 +202,9 @@ export class JogadorDashboardComponent {
     const userId = this.authService.currentUser()?.id;
     if (!userId) return 0;
 
-    return this.jogosStore.jogos().filter(jogo =>
+    return this.jogoService.jogos().filter((jogo: Jogo) =>
       jogo.participantes?.some(p => p.jogadorId === Number(userId) && p.status === 'PENDENTE')
     ).length;
-  });
-
-  fichasRecentes = computed(() => {
-    return this.fichasStore.fichas()
-      .slice()
-      .sort((a, b) => (b.id || 0) - (a.id || 0))
-      .slice(0, 5);
   });
 
   // Navigation methods

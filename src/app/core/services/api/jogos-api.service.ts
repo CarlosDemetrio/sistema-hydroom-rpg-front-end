@@ -14,9 +14,6 @@ export interface JogoFilters {
 
 /**
  * API Service for Games (Jogos) endpoints
- *
- * ✅ USA OBSERVABLES (padrão Angular/RxJS)
- * ❌ NÃO USA PROMISES
  */
 @Injectable({
   providedIn: 'root'
