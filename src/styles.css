@@ -1,27 +1,497 @@
 /* PrimeNG 21 - Theme is configured in app.config.ts */
 /* NO CSS imports needed for PrimeNG components */
 
+/* ========================================
+   🎨 CONFIGURAÇÃO DE CORES
+   ========================================
+
+   TODAS as cores são configuráveis em:
+   src/app/theme/theme-colors.ts
+
+   Para mudar o tema (ex: de Sky para outro):
+   1. Abra src/app/theme/theme-colors.ts
+   2. Altere PRIMARY_COLORS (ex: sky → blue, purple, etc)
+   3. Salve - as cores serão aplicadas automaticamente!
+
+   Cores atuais:
+   - Primary: Sky #0ea5e9 (azul vibrante)
+   - Light Surface: Zinc (neutro)
+   - Dark Surface: Slate (azulado)
+   ======================================== */
+
 /* PrimeIcons */
 @import 'primeicons/primeicons.css';
 
 /* PrimeFlex Utilities */
 @import 'primeflex/primeflex.css';
 
-/* Global Styles */
+/* ========================================
+   GLOBAL STYLES - Following Best Practices
+   ======================================== */
+
+/* Reset básico */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* ========================================
+   CSS VARIABLES - Generated from theme-colors.ts
+   ======================================== */
+:root {
+  /* Primary Colors - Light Mode */
+  --app-primary: #0ea5e9;
+  --app-primary-hover: #0284c7;
+  --app-primary-active: #0369a1;
+  --app-primary-contrast: #ffffff;
+
+  /* Background */
+  --app-bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+  --app-bg-solid: #ffffff;
+
+  /* Text */
+  --app-text-primary: #3f3f46;
+  --app-text-secondary: #71717a;
+  --app-text-muted: #a1a1aa;
+
+  /* Surface */
+  --app-surface-card: #ffffff;
+  --app-surface-100: #f4f4f5;
+  --app-surface-200: #e4e4e7;
+  --app-surface-border: #e4e4e7;
+
+  /* Shadows */
+  --app-shadow-card: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -2px rgba(14, 165, 233, 0.05);
+  --app-shadow-hover: 0 20px 25px -5px rgba(14, 165, 233, 0.15), 0 10px 10px -5px rgba(14, 165, 233, 0.08);
+  --app-shadow-button: 0 4px 6px -1px rgba(14, 165, 233, 0.3), 0 2px 4px -2px rgba(14, 165, 233, 0.2);
+  --app-shadow-button-hover: 0 10px 15px -3px rgba(14, 165, 233, 0.4), 0 4px 6px -4px rgba(14, 165, 233, 0.3);
+  --app-shadow-focus: 0 0 0 4px rgba(14, 165, 233, 0.2);
+
+  /* Gradients */
+  --app-gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  --app-gradient-reverse: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+
+  /* Scrollbar */
+  --app-scrollbar-track: #f4f4f5;
+  --app-scrollbar-thumb: #a1a1aa;
+  --app-scrollbar-thumb-hover: #0ea5e9;
+}
+
+.app-dark {
+  /* Primary Colors - Dark Mode */
+  --app-primary: #38bdf8;
+  --app-primary-hover: #7dd3fc;
+  --app-primary-active: #bae6fd;
+  --app-primary-contrast: #0f172a;
+
+  /* Background */
+  --app-bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  --app-bg-solid: #020617;
+
+  /* Text */
+  --app-text-primary: #f8fafc;
+  --app-text-secondary: #94a3b8;
+  --app-text-muted: #64748b;
+
+  /* Surface */
+  --app-surface-card: #1e293b;
+  --app-surface-100: #334155;
+  --app-surface-200: #475569;
+  --app-surface-border: #475569;
+
+  /* Shadows */
+  --app-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --app-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --app-shadow-button: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --app-shadow-button-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --app-shadow-focus: 0 0 0 4px rgba(56, 189, 248, 0.2);
+
+  /* Gradients */
+  --app-gradient-primary: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%);
+  --app-gradient-reverse: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+
+  /* Scrollbar */
+  --app-scrollbar-track: #334155;
+  --app-scrollbar-thumb: #64748b;
+  --app-scrollbar-thumb-hover: #38bdf8;
+}
+
+/* ========================================
+   GLOBAL STYLES
+   ======================================== */
+
 html {
   scroll-behavior: smooth;
+  /* Base font size para rem units (PrimeNG usa rem) */
+  font-size: 14px;
 }
 
 body {
-  font-family: var(--font-family);
-  background-color: var(--surface-ground);
-  color: var(--text-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--app-bg-gradient);
+  color: var(--app-text-primary);
   overflow-x: hidden;
   min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Transição suave para mudanças de tema (light/dark) */
+  transition: background 0.3s ease, color 0.3s ease;
 }
+
+/* ========================================
+   ANIMATIONS - PrimeNG Components
+   ======================================== */
+
+/* Entrada e saída de overlays ancorados (Select, DatePicker, Menu, etc) */
+.p-anchored-overlay-enter-active {
+  animation: p-overlay-enter 0.2s ease-out;
+}
+
+.p-anchored-overlay-leave-active {
+  animation: p-overlay-leave 0.15s ease-in;
+}
+
+/* Entrada e saída de collapsibles (Accordion, Panel, etc) */
+.p-collapsible-enter-active {
+  animation: p-collapsible-enter 0.3s ease-out;
+}
+
+.p-collapsible-leave-active {
+  animation: p-collapsible-leave 0.2s ease-in;
+}
+
+/* Dialog/Modal animations */
+.p-dialog-enter-active {
+  animation: p-dialog-enter 0.3s ease-out;
+}
+
+.p-dialog-leave-active {
+  animation: p-dialog-leave 0.2s ease-in;
+}
+
+/* Toast message animations */
+.p-toast-message-enter-active {
+  animation: p-toast-enter 0.3s ease-out;
+}
+
+.p-toast-message-leave-active {
+  animation: p-toast-leave 0.2s ease-in;
+}
+
+/* ========================================
+   KEYFRAMES DEFINITIONS
+   ======================================== */
+
+@keyframes p-overlay-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes p-overlay-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+@keyframes p-collapsible-enter {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
+
+@keyframes p-collapsible-leave {
+  from {
+    max-height: 1000px;
+    opacity: 1;
+  }
+  to {
+    max-height: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes p-dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes p-dialog-leave {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes p-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes p-toast-leave {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Smooth transitions para elementos interativos */
+.smooth-transition {
+  transition: all 0.2s ease;
+}
+
+/* Card hover effect */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--app-shadow-hover);
+}
+
+/* Focus visible para acessibilidade */
+*:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+  box-shadow: var(--app-shadow-focus);
+}
+
+/* ========================================
+   GRADIENT BACKGROUNDS
+   ======================================== */
+
+/* Primary gradient (Sky) */
+.bg-primary-gradient {
+  background: var(--app-gradient-primary);
+}
+
+/* Primary reverse gradient (Light Sky) */
+.bg-primary-reverse {
+  background: var(--app-gradient-reverse) !important;
+}
+
+/* Surface gradient */
+.bg-surface-gradient {
+  background: linear-gradient(135deg, var(--app-bg-solid) 0%, var(--app-surface-100) 100%);
+}
+
+/* ========================================
+   COLOR UTILITIES
+   ======================================== */
+
+/* Primary colors */
+.text-primary {
+  color: var(--app-primary) !important;
+}
+
+.bg-primary {
+  background-color: var(--app-primary) !important;
+  color: var(--app-primary-contrast) !important;
+}
+
+/* Surface colors */
+.surface-ground {
+  background-color: transparent !important;
+}
+
+.surface-card {
+  background-color: var(--app-surface-card) !important;
+  box-shadow: var(--app-shadow-card);
+  border-radius: 12px;
+}
+
+.surface-100 {
+  background-color: var(--app-surface-100) !important;
+}
+
+.surface-border {
+  border-color: var(--app-surface-border) !important;
+}
+
+/* Text colors */
+.text-color {
+  color: var(--app-text-primary) !important;
+}
+
+.text-color-secondary {
+  color: var(--app-text-secondary) !important;
+}
+
+.text-white {
+  color: white !important;
+}
+
+/* ========================================
+   TYPOGRAPHY IMPROVEMENTS
+   ======================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+p {
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ========================================
+   PRIMENG COMPONENT OVERRIDES
+   ======================================== */
+
+/* Cards with better shadows */
+.p-card {
+  background: var(--app-surface-card) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  box-shadow: var(--app-shadow-card) !important;
+}
+
+/* Buttons with better styling */
+.p-button {
+  font-weight: 600 !important;
+  letter-spacing: 0.025em;
+  border-radius: 8px !important;
+}
+
+.p-button-raised {
+  box-shadow: var(--app-shadow-button) !important;
+}
+
+.p-button-raised:hover {
+  box-shadow: var(--app-shadow-button-hover) !important;
+}
+
+/* Toolbar */
+.p-toolbar {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--app-surface-border) !important;
+}
+
+.app-dark .p-toolbar {
+  background: rgba(30, 41, 59, 0.95) !important;
+  border-bottom: 1px solid var(--app-surface-border) !important;
+}
+
+/* Avatar - Garantir que imagens do Google apareçam */
+.p-avatar {
+  overflow: hidden !important;
+}
+
+.p-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
+.p-avatar-lg {
+  width: 3rem !important;
+  height: 3rem !important;
+  font-size: 1.25rem !important;
+}
+
+/* Menu com melhor estilo */
+.p-menu {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  background: var(--app-surface-card) !important;
+}
+
+.p-menu .p-menuitem-link {
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.p-menu .p-menuitem-link:hover {
+  background-color: var(--app-gradient-reverse) !important;
+  color: var(--app-primary) !important;
+}
+
+/* ========================================
+   SCROLLBAR CUSTOMIZATION
+   ======================================== */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--app-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--app-scrollbar-thumb-hover);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+}
+

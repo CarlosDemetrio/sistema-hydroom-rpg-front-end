@@ -17,86 +17,136 @@ import { AuthService } from '../../../services/auth.service';
   standalone: true,
   imports: [CardModule, ButtonModule],
   template: `
-    <div class="grid">
-      <!-- Welcome Header -->
-      <div class="col-12">
-        <h1 class="text-4xl font-bold mb-2">
-          Bem-vindo, Mestre {{ authService.currentUser()?.name }}!
-        </h1>
-        <p class="text-xl text-color-secondary mb-4">
-          Gerencie suas campanhas e acompanhe seus jogadores
-        </p>
+    <div class="grid p-4">
+      <!-- Welcome Header with gradient -->
+      <div class="col-12 mb-3">
+        <div class="p-5 border-round-xl bg-primary-reverse">
+          <h1 class="text-4xl font-bold mb-2 text-primary">
+            <i class="pi pi-crown mr-2"></i>
+            Bem-vindo, Mestre {{ authService.currentUser()?.name }}!
+          </h1>
+          <p class="text-xl text-color-secondary m-0">
+            Gerencie suas campanhas e acompanhe seus jogadores
+          </p>
+        </div>
       </div>
 
-      <!-- Stats Cards -->
+      <!-- Stats Cards with Sky colors -->
       <div class="col-12 md:col-4">
-        <p-card>
+        <p-card class="hover-lift">
           <div class="flex align-items-center gap-3">
-            <div class="flex align-items-center justify-content-center bg-primary border-round" [style]="{ width: '3rem', height: '3rem' }">
-              <i class="pi pi-book text-2xl text-primary-contrast"></i>
+            <div class="flex align-items-center justify-content-center border-circle bg-primary w-4rem h-4rem">
+              <i class="pi pi-book text-2xl text-white"></i>
             </div>
             <div>
-              <div class="text-2xl font-bold">{{ jogoFacade.totalJogos() }}</div>
-              <div class="text-sm text-color-secondary">Jogos Criados</div>
+              <div class="text-3xl font-bold text-primary">{{ jogoFacade.totalJogos() }}</div>
+              <div class="text-sm text-color-secondary font-semibold">Jogos Criados</div>
             </div>
           </div>
         </p-card>
       </div>
 
       <div class="col-12 md:col-4">
-        <p-card>
+        <p-card class="hover-lift">
           <div class="flex align-items-center gap-3">
-            <div class="flex align-items-center justify-content-center bg-green-500 border-round" [style]="{ width: '3rem', height: '3rem' }">
-              <i class="pi pi-users text-2xl" [style]="{ color: 'white' }"></i>
+            <div class="flex align-items-center justify-content-center border-circle bg-green-500 w-4rem h-4rem">
+              <i class="pi pi-users text-2xl text-white"></i>
             </div>
             <div>
-              <div class="text-2xl font-bold">{{ jogoFacade.totalJogadores() }}</div>
-              <div class="text-sm text-color-secondary">Jogadores Ativos</div>
+              <div class="text-3xl font-bold text-green-600">{{ jogoFacade.totalJogadores() }}</div>
+              <div class="text-sm text-color-secondary font-semibold">Jogadores Ativos</div>
             </div>
           </div>
         </p-card>
       </div>
 
       <div class="col-12 md:col-4">
-        <p-card>
+        <p-card class="hover-lift">
           <div class="flex align-items-center gap-3">
-            <div class="flex align-items-center justify-content-center bg-orange-500 border-round" [style]="{ width: '3rem', height: '3rem' }">
-              <i class="pi pi-id-card text-2xl" [style]="{ color: 'white' }"></i>
+            <div class="flex align-items-center justify-content-center border-circle bg-orange-500 w-4rem h-4rem">
+              <i class="pi pi-id-card text-2xl text-white"></i>
             </div>
             <div>
-              <div class="text-2xl font-bold">{{ totalFichas() }}</div>
-              <div class="text-sm text-color-secondary">Fichas Criadas</div>
+              <div class="text-3xl font-bold text-orange-600">{{ totalFichas() }}</div>
+              <div class="text-sm text-color-secondary font-semibold">Fichas Criadas</div>
             </div>
           </div>
         </p-card>
       </div>
 
       <!-- Quick Actions -->
-      <div class="col-12">
-        <h2 class="text-2xl font-bold mb-3">Ações Rápidas</h2>
+      <div class="col-12 mt-4">
+        <h2 class="text-2xl font-bold mb-4 flex align-items-center gap-2">
+          <i class="pi pi-bolt text-primary"></i>
+          Ações Rápidas
+        </h2>
         <div class="grid">
-          <!-- ...existing quick action cards... -->
+          <div class="col-12 md:col-4">
+            <p-card class="hover-lift cursor-pointer h-full" (click)="criarJogo()">
+              <div class="flex flex-column align-items-center text-center gap-3 py-3">
+                <div class="flex align-items-center justify-content-center border-circle bg-primary w-5rem h-5rem">
+                  <i class="pi pi-plus text-3xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold m-0 text-primary">Criar Novo Jogo</h3>
+                <p class="text-color-secondary m-0">Comece uma nova campanha</p>
+              </div>
+            </p-card>
+          </div>
+
+          <div class="col-12 md:col-4">
+            <p-card class="hover-lift cursor-pointer h-full" (click)="verJogos()">
+              <div class="flex flex-column align-items-center text-center gap-3 py-3">
+                <div class="flex align-items-center justify-content-center border-circle bg-primary w-5rem h-5rem">
+                  <i class="pi pi-list text-3xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold m-0 text-primary">Ver Todos os Jogos</h3>
+                <p class="text-color-secondary m-0">Gerencie suas campanhas</p>
+              </div>
+            </p-card>
+          </div>
+
+          <div class="col-12 md:col-4">
+            <p-card class="hover-lift cursor-pointer h-full" (click)="verConfig()">
+              <div class="flex flex-column align-items-center text-center gap-3 py-3">
+                <div class="flex align-items-center justify-content-center border-circle bg-primary w-5rem h-5rem">
+                  <i class="pi pi-cog text-3xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold m-0 text-primary">Configurações</h3>
+                <p class="text-color-secondary m-0">Customize seu sistema</p>
+              </div>
+            </p-card>
+          </div>
         </div>
       </div>
 
       <!-- Recent Games -->
       @if (jogoFacade.jogosRecentes().length > 0) {
-        <div class="col-12">
-          <h2 class="text-2xl font-bold mb-3">Jogos Recentes</h2>
+        <div class="col-12 mt-4">
+          <h2 class="text-2xl font-bold mb-4 flex align-items-center gap-2">
+            <i class="pi pi-clock text-primary"></i>
+            Jogos Recentes
+          </h2>
           <p-card>
             <div class="flex flex-column gap-3">
               @for (jogo of jogoFacade.jogosRecentes(); track jogo.id) {
-                <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
-                  <div>
-                    <div class="font-bold text-lg">{{ jogo.nome }}</div>
-                    <div class="text-sm text-color-secondary">
-                      {{ jogo.participantes?.length || 0 }} jogadores
+                <div class="flex justify-content-between align-items-center p-4 surface-100 border-round-lg hover-lift smooth-transition">
+                  <div class="flex align-items-center gap-3">
+                    <div class="flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem">
+                      <i class="pi pi-book text-white"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-xl text-primary">{{ jogo.nome }}</div>
+                      <div class="text-sm text-color-secondary flex align-items-center gap-2">
+                        <i class="pi pi-users"></i>
+                        {{ jogo.participantes?.length || 0 }} jogadores
+                      </div>
                     </div>
                   </div>
                   <p-button
                     label="Ver Detalhes"
                     icon="pi pi-arrow-right"
-                    [text]="true"
+                    iconPos="right"
+                    [outlined]="true"
                     (onClick)="verJogo(jogo.id!)"
                   ></p-button>
                 </div>
@@ -138,5 +188,9 @@ export class MestreDashboardComponent {
 
   verJogo(id: number) {
     this.router.navigate(['/mestre/jogos', id]);
+  }
+
+  voltarHome() {
+    this.router.navigate(['/']);
   }
 }

@@ -17,6 +17,7 @@ export interface UserInfo {
 })
 export class AuthService {
   private apiUrl = environment.apiUrl;
+  private backendUrl = environment.backendUrl; // ✅ URL absoluta para OAuth2
 
   // ✅ SEGURO - Usar Signals ao invés de BehaviorSubject
   private currentUserSignal = signal<UserInfo | null>(null);
@@ -39,7 +40,7 @@ export class AuthService {
   }
 
   getUserInfo(): Observable<UserInfo> {
-    return this.http.get<UserInfo>(`${this.apiUrl}/user`, { withCredentials: true }).pipe(
+    return this.http.get<UserInfo>(`${this.apiUrl}/auth/me`, { withCredentials: true }).pipe(
       tap(user => this.setCurrentUser(user))
     );
   }
@@ -49,12 +50,21 @@ export class AuthService {
     const currentUrl = window.location.pathname + window.location.search;
     sessionStorage.setItem('REDIRECT_URL', currentUrl);
 
-    window.location.href = '/oauth2/authorization/google';
+    // ✅ FIX: Usar URL absoluta do backend para OAuth2
+    // Navegador acessa diretamente localhost:8080, não passa pelo proxy Docker
+    // Isso garante que o Host header seja "localhost:8080" e não "backend:8080"
+    window.location.href = `${this.backendUrl}/oauth2/authorization/google`;
   }
 
   logout(): Observable<any> {
-    return this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
-      tap(() => this.setCurrentUser(null))
+    const url = `${this.apiUrl}/auth/logout`;
+    console.log('[LOGOUT] Iniciando logout para:', url);
+
+    return this.http.post(url, {}, { withCredentials: true }).pipe(
+      tap(() => {
+        console.log('[LOGOUT] Requisição completada com sucesso');
+        this.setCurrentUser(null);
+      })
     );
   }
 }

@@ -1,45 +1,79 @@
-<div class="flex align-items-center justify-content-center min-h-screen surface-ground">
-  <div class="w-full md:w-6 lg:w-4">
-    <p-card>
+<div class="flex align-items-center justify-content-center min-h-screen surface-ground p-3">
+  <div class="w-full md:w-8 lg:w-6 xl:w-4">
+    <p-card class="border-round-xl">
       <ng-template pTemplate="header">
-        <div class="flex align-items-center justify-content-center gap-2 p-4">
-          <i class="pi pi-book text-5xl text-primary"></i>
-          <h1 class="text-3xl font-bold m-0">Ficha Controlador RPG</h1>
+        <div class="flex flex-column align-items-center justify-content-center gap-3 p-5 bg-primary-reverse">
+          <div class="flex align-items-center justify-content-center border-circle bg-primary w-5rem h-5rem">
+            <i class="pi pi-book text-4xl text-white"></i>
+          </div>
+          <h1 class="text-4xl font-bold m-0 text-primary">Ficha Controlador RPG</h1>
+          <p class="text-lg text-color-secondary m-0 text-center">
+            Sistema de Gerenciamento de Fichas de Personagens
+          </p>
         </div>
       </ng-template>
 
       <div class="flex flex-column gap-4 p-4">
-        <div class="text-center">
-          <h2 class="text-2xl font-semibold m-0 mb-2">Bem-vindo!</h2>
-          <p class="text-color-secondary m-0">
-            Gerencie suas fichas de personagens de RPG de forma simples e eficiente.
+        <div class="text-center mb-2">
+          <h2 class="text-3xl font-bold m-0 mb-3 text-primary">Bem-vindo!</h2>
+          <p class="text-lg text-color-secondary m-0">
+            Gerencie suas fichas de personagens de RPG de forma simples, eficiente e colaborativa.
           </p>
         </div>
 
-        <div class="flex flex-column gap-3">
-          <div class="flex align-items-center gap-3">
-            <i class="pi pi-users text-2xl text-primary"></i>
-            <span class="text-lg">Organize seus jogos</span>
+        <div class="flex flex-column gap-4 p-4 surface-100 border-round-lg">
+          <div class="flex align-items-start gap-3">
+            <div class="flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem flex-shrink-0">
+              <i class="pi pi-users text-xl text-white"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold m-0 mb-2">Organize seus jogos</h3>
+              <p class="text-color-secondary m-0">
+                Crie e gerencie múltiplas campanhas com total controle
+              </p>
+            </div>
           </div>
-          <div class="flex align-items-center gap-3">
-            <i class="pi pi-id-card text-2xl text-primary"></i>
-            <span class="text-lg">Crie fichas de personagens</span>
+
+          <div class="flex align-items-start gap-3">
+            <div class="flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem flex-shrink-0">
+              <i class="pi pi-id-card text-xl text-white"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold m-0 mb-2">Crie fichas completas</h3>
+              <p class="text-color-secondary m-0">
+                Sistema completo de atributos, aptidões e progressão
+              </p>
+            </div>
           </div>
-          <div class="flex align-items-center gap-3">
-            <i class="pi pi-shield text-2xl text-primary"></i>
-            <span class="text-lg">Controle mestres e jogadores</span>
+
+          <div class="flex align-items-start gap-3">
+            <div class="flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem flex-shrink-0">
+              <i class="pi pi-shield text-xl text-white"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold m-0 mb-2">Controle de permissões</h3>
+              <p class="text-color-secondary m-0">
+                Sistema de mestres e jogadores com roles específicas
+              </p>
+            </div>
           </div>
         </div>
 
-        <p-button
-          label="Entrar com Google"
-          icon="pi pi-google"
-          (onClick)="loginWithGoogle()"
-          styleClass="w-full"
-          [raised]="true"
-          severity="primary"
-          size="large">
-        </p-button>
+        <div class="flex flex-column gap-3 mt-3">
+          <p-button
+            label="Entrar com Google"
+            icon="pi pi-google"
+            (onClick)="loginWithGoogle()"
+            styleClass="w-full"
+            [raised]="true">
+          </p-button>
+
+          <div class="text-center">
+            <p class="text-sm text-color-secondary m-0">
+              Ao entrar, você concorda com nossos termos de uso
+            </p>
+          </div>
+        </div>
       </div>
     </p-card>
   </div>

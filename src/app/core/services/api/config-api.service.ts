@@ -26,7 +26,7 @@ import { environment } from '../../../../environments/environment';
 })
 export class ConfigApiService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/config`;
+  private baseUrl = `${environment.apiUrl}/configuracoes`;
 
   // ===== Atributos (Attributes) =====
 

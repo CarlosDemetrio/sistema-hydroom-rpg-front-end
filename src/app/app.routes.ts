@@ -3,11 +3,11 @@ import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { ProfileComponent } from './pages/profile/profile.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { UnauthorizedComponent } from './pages/unauthorized/unauthorized.component';
 import { OAuthCallbackComponent } from './pages/oauth-callback/oauth-callback.component';
 import { MainLayoutComponent } from './shared/layout/main-layout.component';
-
 export const routes: Routes = [
   {
     path: 'login',
@@ -30,6 +30,10 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: DashboardComponent
+      },
+      {
+        path: 'profile',
+        component: ProfileComponent
       },
 
       // Mestre Routes

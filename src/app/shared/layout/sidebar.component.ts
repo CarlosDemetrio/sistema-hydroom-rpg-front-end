@@ -16,13 +16,23 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [MenuModule],
   template: `
-    <div class="flex flex-column h-full surface-card border-right-1 surface-border" [style]="{ width: '16rem' }">
-      <div class="p-3 border-bottom-1 surface-border">
-        <h3 class="m-0 text-xl font-bold text-primary">Menu</h3>
+    <div class="flex flex-column h-full surface-card border-right-1 surface-border shadow-1" [style]="{ width: '18rem' }">
+      <div class="p-4 border-bottom-1 surface-border bg-primary-reverse">
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-bars text-2xl text-primary"></i>
+          <h3 class="m-0 text-xl font-bold text-primary">Menu de Navegação</h3>
+        </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto p-2">
         <p-menu [model]="menuItems()" class="border-none w-full"></p-menu>
+      </div>
+
+      <div class="p-3 border-top-1 surface-border">
+        <div class="text-center text-sm text-color-secondary">
+          <p class="m-0">RPG Ficha Controlador</p>
+          <p class="m-0 text-xs">v1.0.0</p>
+        </div>
       </div>
     </div>
   `

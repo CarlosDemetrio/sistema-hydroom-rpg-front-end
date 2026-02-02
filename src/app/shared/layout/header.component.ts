@@ -6,6 +6,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from '../../services/auth.service';
+import { ThemeToggleComponent } from '../components/theme-toggle/theme-toggle.component';
 
 /**
  * Header Component (SMART)
@@ -20,10 +21,11 @@ import { AuthService } from '../../services/auth.service';
     ToolbarModule,
     ButtonModule,
     AvatarModule,
-    MenuModule
+    MenuModule,
+    ThemeToggleComponent
   ],
   template: `
-    <p-toolbar class="border-none border-bottom-1 surface-border">
+    <p-toolbar class="border-none border-bottom-1 surface-border shadow-1">
       <div class="flex align-items-center gap-3">
         <p-button
           icon="pi pi-bars"
@@ -33,50 +35,68 @@ import { AuthService } from '../../services/auth.service';
           class="lg:hidden"
         ></p-button>
 
-        <h2 class="text-2xl font-bold m-0 cursor-pointer text-primary" (click)="navigateHome()">
-          RPG Ficha Controlador
-        </h2>
+        <div class="flex align-items-center gap-2 cursor-pointer" (click)="navigateHome()">
+          <div class="flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem">
+            <i class="pi pi-book text-xl text-white"></i>
+          </div>
+          <h2 class="text-2xl font-bold m-0 text-primary hidden md:block">
+            RPG Ficha Controlador
+          </h2>
+        </div>
       </div>
 
       <div class="flex align-items-center gap-3">
+        <!-- Theme Toggle - Visível sempre -->
+        <app-theme-toggle />
+
         @if (authService.isAuthenticated()) {
           @if (hasBothRoles()) {
-            <div class="hidden md:flex align-items-center gap-2 p-2 border-round surface-100">
-              <span class="text-sm font-semibold text-color-secondary">Modo:</span>
+            <div class="hidden md:flex align-items-center gap-2 p-2 border-round-lg surface-100 border-1 surface-border">
+              <span class="text-sm font-semibold text-color-secondary px-2">Visualizar como:</span>
               <p-button
                 [label]="'Mestre'"
                 [text]="currentRole() !== 'MESTRE'"
-                [severity]="currentRole() === 'MESTRE' ? 'primary' : 'secondary'"
                 [size]="'small'"
+                [raised]="currentRole() === 'MESTRE'"
                 (onClick)="switchRole('MESTRE')"
+                icon="pi pi-crown"
               ></p-button>
               <p-button
                 [label]="'Jogador'"
                 [text]="currentRole() !== 'JOGADOR'"
-                [severity]="currentRole() === 'JOGADOR' ? 'primary' : 'secondary'"
                 [size]="'small'"
+                [raised]="currentRole() === 'JOGADOR'"
                 (onClick)="switchRole('JOGADOR')"
+                icon="pi pi-user"
               ></p-button>
             </div>
           }
 
-          <div class="flex align-items-center gap-2">
+          <div class="flex align-items-center gap-3 p-2 border-round-lg surface-100">
             <span class="hidden md:inline text-color font-semibold">
               {{ authService.currentUser()?.name }}
             </span>
 
+            <!-- Avatar com imagem do Google -->
             <p-avatar
               [label]="getInitials()"
-              [image]="authService.currentUser()?.picture"
+              [image]="authService.currentUser()?.picture || undefined"
               [shape]="'circle'"
+              [size]="'large'"
               (click)="userMenu.toggle($event)"
               class="cursor-pointer"
+              [style]="{ 'background-color': authService.currentUser()?.picture ? 'transparent' : '#0ea5e9' }"
             ></p-avatar>
 
             <p-menu #userMenu [model]="userMenuItems()" [popup]="true"></p-menu>
           </div>
         } @else {
-          <p-button [label]="'Entrar'" icon="pi pi-sign-in" (onClick)="login()"></p-button>
+          <p-button
+            [label]="'Entrar'"
+            icon="pi pi-sign-in"
+            (onClick)="login()"
+            [raised]="true"
+          ></p-button>
         }
       </div>
     </p-toolbar>
@@ -94,7 +114,10 @@ export class HeaderComponent implements OnInit {
       {
         label: 'Perfil',
         icon: 'pi pi-user',
-        command: () => this.navigateToProfile()
+        command: () => {
+          console.log('Menu: Navegando para perfil');
+          this.navigateToProfile();
+        }
       },
       {
         separator: true
@@ -102,7 +125,10 @@ export class HeaderComponent implements OnInit {
       {
         label: 'Sair',
         icon: 'pi pi-sign-out',
-        command: () => this.logout()
+        command: () => {
+          console.log('Menu: Executando logout');
+          this.logout();
+        }
       }
     ]);
   }
@@ -139,6 +165,10 @@ export class HeaderComponent implements OnInit {
   }
 
   logout() {
-    this.authService.logout();
+    console.log('[HEADER] Iniciando logout');
+    this.authService.logout().subscribe(() => {
+      console.log('[HEADER] Logout concluído, redirecionando');
+      this.router.navigate(['/login']);
+    });
   }
 }

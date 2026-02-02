@@ -1,0 +1,102 @@
+import { Injectable, signal, effect, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+
+/**
+ * Service para gerenciar o tema da aplicação (light/dark mode)
+ *
+ * Features:
+ * - Detecta preferência do sistema (prefers-color-scheme)
+ * - Persiste preferência do usuário no localStorage
+ * - Aplica classe 'app-dark' no elemento html
+ * - Signal reativo para componentes
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class ThemeService {
+  private platformId = inject(PLATFORM_ID);
+  private readonly THEME_KEY = 'app-theme';
+  private readonly DARK_CLASS = 'app-dark';
+
+  // Signal para o estado do dark mode
+  isDarkMode = signal<boolean>(false);
+
+  constructor() {
+    // Só executa no browser (não no SSR)
+    if (isPlatformBrowser(this.platformId)) {
+      this.initializeTheme();
+
+      // Effect para aplicar/remover classe quando o signal mudar
+      effect(() => {
+        const isDark = this.isDarkMode();
+        this.applyTheme(isDark);
+      });
+    }
+  }
+
+  /**
+   * Inicializa o tema baseado em:
+   * 1. Preferência salva no localStorage
+   * 2. Preferência do sistema (prefers-color-scheme)
+   * 3. Light mode como padrão
+   */
+  private initializeTheme(): void {
+    const savedTheme = localStorage.getItem(this.THEME_KEY);
+
+    if (savedTheme !== null) {
+      // Usa preferência salva
+      this.isDarkMode.set(savedTheme === 'dark');
+    } else {
+      // Usa preferência do sistema
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      this.isDarkMode.set(prefersDark);
+    }
+
+    // Escuta mudanças na preferência do sistema
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      // Só atualiza se não tiver preferência salva
+      if (localStorage.getItem(this.THEME_KEY) === null) {
+        this.isDarkMode.set(e.matches);
+      }
+    });
+  }
+
+  /**
+   * Aplica o tema adicionando/removendo a classe no elemento html
+   */
+  private applyTheme(isDark: boolean): void {
+    const htmlElement = document.documentElement;
+
+    if (isDark) {
+      htmlElement.classList.add(this.DARK_CLASS);
+    } else {
+      htmlElement.classList.remove(this.DARK_CLASS);
+    }
+
+    // Salva preferência
+    localStorage.setItem(this.THEME_KEY, isDark ? 'dark' : 'light');
+  }
+
+  /**
+   * Alterna entre light e dark mode
+   */
+  toggleTheme(): void {
+    this.isDarkMode.update(current => !current);
+  }
+
+  /**
+   * Define o tema explicitamente
+   */
+  setTheme(isDark: boolean): void {
+    this.isDarkMode.set(isDark);
+  }
+
+  /**
+   * Reseta para a preferência do sistema
+   */
+  resetToSystemPreference(): void {
+    localStorage.removeItem(this.THEME_KEY);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    this.isDarkMode.set(prefersDark);
+  }
+}

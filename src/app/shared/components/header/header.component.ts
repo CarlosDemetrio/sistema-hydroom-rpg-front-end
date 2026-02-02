@@ -140,7 +140,10 @@ export class HeaderComponent {
     {
       label: 'Sair',
       icon: 'pi pi-sign-out',
-      command: () => this.authService.logout()
+      command: () => this.authService.logout().subscribe(() => {
+        console.log('ProfileComponent: Logout concluído, redirecionando para /login');
+        this.router.navigate(['/login']);
+      })
     }
   ];
 

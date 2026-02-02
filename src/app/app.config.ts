@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeng/themes/aura';
+import { CustomPreset } from './theme/custom-preset';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
@@ -20,15 +20,17 @@ export const appConfig: ApplicationConfig = {
         authInterceptor      // Auth (já existente)
       ])
     ),
-    provideAnimations(),
+    provideAnimations(), // Animações para PrimeNG e Angular
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: CustomPreset, // Preset customizado com paleta Sky
         options: {
-          darkModeSelector: false,
-          cssLayer: false
+          darkModeSelector: '.app-dark', // Habilita dark mode com classe
+          cssLayer: false // Sem CSS Layer para maior especificidade
         }
-      }
+      },
+      ripple: true, // Ativa animações de ripple para melhor UX
+      inputStyle: 'outlined' // Estilo outlined para todos os inputs
     })
   ]
 };
