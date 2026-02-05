@@ -26,5 +26,6 @@ export * from './categoria-vantagem.model';
 export * from './config.models';
 
 // DTOs
+export * from './dtos/config-base.dto';
 export * from './dtos/jogo.dto';
 export * from './dtos/ficha.dto';

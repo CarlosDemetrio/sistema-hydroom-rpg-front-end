@@ -13,7 +13,7 @@ import {
   Raca,
   ProspeccaoConfig,
   PresencaConfig,
-  GeneroConfig
+  GeneroConfig, IndoleConfig, MembroCorpoConfig, BonusConfig
 } from '../../models';
 import { environment } from '../../../../environments/environment';
 
@@ -70,8 +70,10 @@ export class ConfigApiService {
 
   // ===== Níveis (Levels) =====
 
-  listNiveis(): Observable<NivelConfig[]> {
-    return this.http.get<NivelConfig[]>(`${this.baseUrl}/niveis`);
+  listNiveis(jogoId: number): Observable<NivelConfig[]> {
+    return this.http.get<NivelConfig[]>(`${this.baseUrl}/niveis`, {
+      params: { jogoId: jogoId.toString() }
+    });
   }
 
   createNivel(config: Partial<NivelConfig>): Observable<NivelConfig> {
@@ -88,8 +90,10 @@ export class ConfigApiService {
 
   // ===== Limitadores (Limiters) =====
 
-  listLimitadores(): Observable<LimitadorConfig[]> {
-    return this.http.get<LimitadorConfig[]>(`${this.baseUrl}/limitadores`);
+  listLimitadores(jogoId: number): Observable<LimitadorConfig[]> {
+    return this.http.get<LimitadorConfig[]>(`${this.baseUrl}/limitadores`, {
+      params: { jogoId: jogoId.toString() }
+    });
   }
 
    createLimitador(config: Partial<LimitadorConfig>): Observable<LimitadorConfig> {
@@ -106,8 +110,10 @@ export class ConfigApiService {
 
   // ===== Classes (Character Classes) =====
 
-   listClasses(): Observable<ClassePersonagem[]> {
-    return (this.http.get<ClassePersonagem[]>(`${this.baseUrl}/classes`));
+   listClasses(jogoId: number): Observable<ClassePersonagem[]> {
+    return (this.http.get<ClassePersonagem[]>(`${this.baseUrl}/classes`, {
+      params: { jogoId: jogoId.toString() }
+    }));
   }
 
    createClasse(config: Partial<ClassePersonagem>): Observable<ClassePersonagem> {
@@ -124,8 +130,10 @@ export class ConfigApiService {
 
   // ===== Vantagens (Advantages) =====
 
-   listVantagens(): Observable<VantagemConfig[]> {
-    return (this.http.get<VantagemConfig[]>(`${this.baseUrl}/vantagens`));
+   listVantagens(jogoId: number): Observable<VantagemConfig[]> {
+    return (this.http.get<VantagemConfig[]>(`${this.baseUrl}/vantagens`, {
+      params: { jogoId: jogoId.toString() }
+    }));
   }
 
    createVantagem(config: Partial<VantagemConfig>): Observable<VantagemConfig> {
@@ -160,8 +168,10 @@ export class ConfigApiService {
 
   // ===== Raças (Races) =====
 
-   listRacas(): Observable<Raca[]> {
-    return (this.http.get<Raca[]>(`${this.baseUrl}/racas`));
+   listRacas(jogoId: number): Observable<Raca[]> {
+    return (this.http.get<Raca[]>(`${this.baseUrl}/racas`, {
+      params: { jogoId: jogoId.toString() }
+    }));
   }
 
    createRaca(config: Partial<Raca>): Observable<Raca> {
@@ -178,8 +188,10 @@ export class ConfigApiService {
 
   // ===== Prospecção (Prospecting Dice) =====
 
-   listProspeccao(): Observable<ProspeccaoConfig[]> {
-    return (this.http.get<ProspeccaoConfig[]>(`${this.baseUrl}/prospeccao`));
+   listProspeccao(jogoId: number): Observable<ProspeccaoConfig[]> {
+    return (this.http.get<ProspeccaoConfig[]>(`${this.baseUrl}/prospeccao`, {
+      params: { jogoId: jogoId.toString() }
+    }));
   }
 
    createProspeccao(config: Partial<ProspeccaoConfig>): Observable<ProspeccaoConfig> {
@@ -196,8 +208,10 @@ export class ConfigApiService {
 
   // ===== Presenças (Presences/Auras) =====
 
-   listPresencas(): Observable<PresencaConfig[]> {
-    return (this.http.get<PresencaConfig[]>(`${this.baseUrl}/presencas`));
+   listPresencas(jogoId: number): Observable<PresencaConfig[]> {
+    return (this.http.get<PresencaConfig[]>(`${this.baseUrl}/presencas`, {
+      params: { jogoId: jogoId.toString() }
+    }));
   }
 
    createPresenca(config: Partial<PresencaConfig>): Observable<PresencaConfig> {
@@ -214,8 +228,10 @@ export class ConfigApiService {
 
   // ===== Gêneros (Genders) =====
 
-   listGeneros(): Observable<GeneroConfig[]> {
-    return (this.http.get<GeneroConfig[]>(`${this.baseUrl}/generos`));
+   listGeneros(jogoId: number): Observable<GeneroConfig[]> {
+    return (this.http.get<GeneroConfig[]>(`${this.baseUrl}/generos`, {
+      params: { jogoId: jogoId.toString() }
+    }));
   }
 
    createGenero(config: Partial<GeneroConfig>): Observable<GeneroConfig> {
@@ -228,5 +244,65 @@ export class ConfigApiService {
 
    deleteGenero(id: number): Observable<void> {
     return (this.http.delete<void>(`${this.baseUrl}/generos/${id}`));
+  }
+
+  // ===== Índoles (Alignments) =====
+
+  listIndoles(jogoId: number): Observable<IndoleConfig[]> {
+    return this.http.get<IndoleConfig[]>(`${this.baseUrl}/indoles`, {
+      params: { jogoId: jogoId.toString() }
+    });
+  }
+
+  createIndole(config: Partial<IndoleConfig>): Observable<IndoleConfig> {
+    return this.http.post<IndoleConfig>(`${this.baseUrl}/indoles`, config);
+  }
+
+  updateIndole(id: number, config: Partial<IndoleConfig>): Observable<IndoleConfig> {
+    return this.http.put<IndoleConfig>(`${this.baseUrl}/indoles/${id}`, config);
+  }
+
+  deleteIndole(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/indoles/${id}`);
+  }
+
+  // ===== Membros do Corpo (Body Parts) =====
+
+  listMembrosCorpo(jogoId: number): Observable<MembroCorpoConfig[]> {
+    return this.http.get<MembroCorpoConfig[]>(`${this.baseUrl}/membros-corpo`, {
+      params: { jogoId: jogoId.toString() }
+    });
+  }
+
+  createMembroCorpo(config: Partial<MembroCorpoConfig>): Observable<MembroCorpoConfig> {
+    return this.http.post<MembroCorpoConfig>(`${this.baseUrl}/membros-corpo`, config);
+  }
+
+  updateMembroCorpo(id: number, config: Partial<MembroCorpoConfig>): Observable<MembroCorpoConfig> {
+    return this.http.put<MembroCorpoConfig>(`${this.baseUrl}/membros-corpo/${id}`, config);
+  }
+
+  deleteMembroCorpo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/membros-corpo/${id}`);
+  }
+
+  // ===== Bônus (Bonuses) =====
+
+  listBonus(jogoId: number): Observable<BonusConfig[]> {
+    return this.http.get<BonusConfig[]>(`${this.baseUrl}/bonus`, {
+      params: { jogoId: jogoId.toString() }
+    });
+  }
+
+  createBonus(config: Partial<BonusConfig>): Observable<BonusConfig> {
+    return this.http.post<BonusConfig>(`${this.baseUrl}/bonus`, config);
+  }
+
+  updateBonus(id: number, config: Partial<BonusConfig>): Observable<BonusConfig> {
+    return this.http.put<BonusConfig>(`${this.baseUrl}/bonus/${id}`, config);
+  }
+
+  deleteBonus(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/bonus/${id}`);
   }
 }

@@ -1,0 +1,3825 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ficha Controlador RPG API",
+    "description": "API REST para gerenciamento de fichas de personagens de RPG.\n\n### Funcionalidades:\n- Autenticação via Google OAuth2\n- Gerenciamento de usuários (Mestres e Jogadores)\n- CRUD de fichas de personagens\n- Gerenciamento de jogos\n- Sistema de permissões baseado em roles\n\n### Segurança:\n- CSRF Protection\n- Rate Limiting (100 req/min geral, 10 req/min para auth)\n- Validação completa de inputs\n- Headers de segurança HTTP\n- Logs de auditoria\n",
+    "contact": {
+      "name": "Equipe de Desenvolvimento",
+      "url": "http://localhost:4200",
+      "email": "dev@hydroom.com.br"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Servidor de Desenvolvimento"
+    },
+    {
+      "url": "https://api.seu-dominio.com",
+      "description": "Servidor de Produção"
+    }
+  ],
+  "security": [
+    {
+      "OAuth2": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Jogos",
+      "description": "Gerenciamento de jogos/campanhas de RPG"
+    },
+    {
+      "name": "Configurações - Vantagens",
+      "description": "Gerenciamento de vantagens compráveis do jogo"
+    },
+    {
+      "name": "Configurações - Bônus",
+      "description": "Gerenciamento de bônus configuráveis (modificadores por raça, classe, etc)"
+    },
+    {
+      "name": "Configurações - Presenças",
+      "description": "Gerenciamento de níveis de presença disponíveis"
+    },
+    {
+      "name": "Configurações - Tipos de Aptidão",
+      "description": "Gerenciamento de tipos de aptidão (Física, Mental, etc)"
+    },
+    {
+      "name": "Configurações - Classes",
+      "description": "Gerenciamento de classes do jogo (Guerreiro, Mago, etc)"
+    },
+    {
+      "name": "Configurações - Gêneros",
+      "description": "Gerenciamento de gêneros disponíveis (Masculino, Feminino, Neutro, etc)"
+    },
+    {
+      "name": "Configurações - Níveis",
+      "description": "Gerenciamento de níveis e progressão de XP"
+    },
+    {
+      "name": "Configurações - Indoles",
+      "description": "Gerenciamento de indoles/alinhamentos (Leal e Bom, Caótico e Mal, etc)"
+    },
+    {
+      "name": "Configurações - Aptidões",
+      "description": "Gerenciamento de aptidões do jogo (Acrobacia, Guarda, etc)"
+    },
+    {
+      "name": "Configurações - Raças",
+      "description": "Gerenciamento de raças do jogo (Humano, Elfo, Anão, etc)"
+    },
+    {
+      "name": "Configurações - Membros do Corpo",
+      "description": "Gerenciamento de membros do corpo para integridade física (Cabeça, Torso, Braços, Pernas)"
+    },
+    {
+      "name": "Autenticação",
+      "description": "Endpoints de autenticação e informações do usuário"
+    },
+    {
+      "name": "Configurações - Atributos",
+      "description": "Gerenciamento de atributos do jogo (Força, Agilidade, etc)"
+    },
+    {
+      "name": "Configurações - Dados de Prospecção",
+      "description": "Gerenciamento de dados disponíveis para prospecção (d3, d4, d6, d8, d10, d12, d20, d100)"
+    }
+  ],
+  "paths": {
+    "/api/v1/jogos/{id}": {
+      "put": {
+        "tags": [
+          "Jogos"
+        ],
+        "summary": "Atualizar jogo (Apenas MESTRE)",
+        "description": "Atualiza informações do jogo - apenas o Mestre do jogo pode fazer isso",
+        "operationId": "atualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarJogoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JogoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Jogos"
+        ],
+        "summary": "Deletar jogo (Apenas MESTRE)",
+        "description": "Soft delete - marca o jogo como inativo - apenas o Mestre do jogo pode fazer isso",
+        "operationId": "deletar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/vantagens/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Vantagens"
+        ],
+        "summary": "Buscar vantagem por ID",
+        "operationId": "buscar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VantagemConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Vantagens"
+        ],
+        "summary": "Atualizar vantagem (Apenas MESTRE)",
+        "description": "Atualiza uma vantagem existente",
+        "operationId": "atualizar_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VantagemConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VantagemConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Vantagens"
+        ],
+        "summary": "Deletar vantagem (Apenas MESTRE)",
+        "description": "Soft delete - marca a vantagem como inativa",
+        "operationId": "deletar_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/tipos-aptidao/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Tipos de Aptidão"
+        ],
+        "summary": "Buscar tipo de aptidão por ID",
+        "operationId": "buscar_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoAptidao"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Tipos de Aptidão"
+        ],
+        "summary": "Atualizar tipo de aptidão (Apenas MESTRE)",
+        "description": "Atualiza um tipo de aptidão existente",
+        "operationId": "atualizar_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TipoAptidao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoAptidao"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Tipos de Aptidão"
+        ],
+        "summary": "Deletar tipo de aptidão (Apenas MESTRE)",
+        "description": "Soft delete - marca o tipo como inativo",
+        "operationId": "deletar_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/racas/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Raças"
+        ],
+        "summary": "Buscar raça por ID",
+        "operationId": "buscar_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Raca"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Raças"
+        ],
+        "summary": "Atualizar raça (Apenas MESTRE)",
+        "description": "Atualiza uma raça existente",
+        "operationId": "atualizar_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Raca"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Raca"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Raças"
+        ],
+        "summary": "Deletar raça (Apenas MESTRE)",
+        "description": "Soft delete - marca a raça como inativa",
+        "operationId": "deletar_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/presencas/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Presenças"
+        ],
+        "summary": "Buscar presença por ID",
+        "operationId": "buscar_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresencaConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Presenças"
+        ],
+        "summary": "Atualizar presença (Apenas MESTRE)",
+        "description": "Atualiza uma presença existente",
+        "operationId": "atualizar_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresencaConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresencaConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Presenças"
+        ],
+        "summary": "Deletar presença (Apenas MESTRE)",
+        "description": "Soft delete - marca a presença como inativa",
+        "operationId": "deletar_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/niveis/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Níveis"
+        ],
+        "summary": "Buscar nível por ID",
+        "operationId": "buscar_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NivelConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Níveis"
+        ],
+        "summary": "Atualizar nível (Apenas MESTRE)",
+        "description": "Atualiza um nível existente",
+        "operationId": "atualizar_5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NivelConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NivelConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Níveis"
+        ],
+        "summary": "Deletar nível (Apenas MESTRE)",
+        "description": "Soft delete - marca o nível como inativo",
+        "operationId": "deletar_5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/membros-corpo/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Membros do Corpo"
+        ],
+        "summary": "Buscar membro do corpo por ID",
+        "operationId": "buscar_5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembroCorpoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Membros do Corpo"
+        ],
+        "summary": "Atualizar membro do corpo (Apenas MESTRE)",
+        "description": "Atualiza um membro do corpo existente",
+        "operationId": "atualizar_6",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembroCorpoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembroCorpoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Membros do Corpo"
+        ],
+        "summary": "Deletar membro do corpo (Apenas MESTRE)",
+        "description": "Soft delete - marca o membro como inativo",
+        "operationId": "deletar_6",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/indoles/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Indoles"
+        ],
+        "summary": "Buscar indole por ID",
+        "operationId": "buscar_6",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndoleConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Indoles"
+        ],
+        "summary": "Atualizar indole (Apenas MESTRE)",
+        "description": "Atualiza uma indole existente",
+        "operationId": "atualizar_7",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IndoleConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndoleConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Indoles"
+        ],
+        "summary": "Deletar indole (Apenas MESTRE)",
+        "description": "Soft delete - marca a indole como inativa",
+        "operationId": "deletar_7",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/generos/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Gêneros"
+        ],
+        "summary": "Buscar gênero por ID",
+        "operationId": "buscar_7",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneroConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Gêneros"
+        ],
+        "summary": "Atualizar gênero (Apenas MESTRE)",
+        "description": "Atualiza um gênero existente",
+        "operationId": "atualizar_8",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneroConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneroConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Gêneros"
+        ],
+        "summary": "Deletar gênero (Apenas MESTRE)",
+        "description": "Soft delete - marca o gênero como inativo",
+        "operationId": "deletar_8",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/dados-prospeccao/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Dados de Prospecção"
+        ],
+        "summary": "Buscar dado de prospecção por ID",
+        "operationId": "buscar_8",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoProspeccaoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Dados de Prospecção"
+        ],
+        "summary": "Atualizar dado de prospecção (Apenas MESTRE)",
+        "description": "Atualiza um dado existente",
+        "operationId": "atualizar_9",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DadoProspeccaoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoProspeccaoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Dados de Prospecção"
+        ],
+        "summary": "Deletar dado de prospecção (Apenas MESTRE)",
+        "description": "Soft delete - marca o dado como inativo",
+        "operationId": "deletar_9",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/classes/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Classes"
+        ],
+        "summary": "Buscar classe por ID",
+        "operationId": "buscar_9",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassePersonagem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Classes"
+        ],
+        "summary": "Atualizar classe (Apenas MESTRE)",
+        "description": "Atualiza uma classe existente",
+        "operationId": "atualizar_10",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassePersonagem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassePersonagem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Classes"
+        ],
+        "summary": "Deletar classe (Apenas MESTRE)",
+        "description": "Soft delete - marca a classe como inativa",
+        "operationId": "deletar_10",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/bonus/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Bônus"
+        ],
+        "summary": "Buscar bônus por ID",
+        "operationId": "buscar_10",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BonusConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Bônus"
+        ],
+        "summary": "Atualizar bônus (Apenas MESTRE)",
+        "description": "Atualiza um bônus existente",
+        "operationId": "atualizar_11",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BonusConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BonusConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Bônus"
+        ],
+        "summary": "Deletar bônus (Apenas MESTRE)",
+        "description": "Soft delete - marca o bônus como inativo",
+        "operationId": "deletar_11",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/atributos/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Atributos"
+        ],
+        "summary": "Buscar atributo por ID",
+        "operationId": "buscar_11",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Atributos"
+        ],
+        "summary": "Atualizar atributo (Apenas MESTRE)",
+        "description": "Atualiza um atributo existente - apenas o Mestre pode fazer isso",
+        "operationId": "atualizar_12",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtributoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Atributos"
+        ],
+        "summary": "Deletar atributo (Apenas MESTRE)",
+        "description": "Soft delete - marca o atributo como inativo",
+        "operationId": "deletar_12",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/aptidoes/{id}": {
+      "get": {
+        "tags": [
+          "Configurações - Aptidões"
+        ],
+        "summary": "Buscar aptidão por ID",
+        "operationId": "buscar_12",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AptidaoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Configurações - Aptidões"
+        ],
+        "summary": "Atualizar aptidão (Apenas MESTRE)",
+        "description": "Atualiza uma aptidão existente",
+        "operationId": "atualizar_13",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AptidaoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AptidaoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Configurações - Aptidões"
+        ],
+        "summary": "Deletar aptidão (Apenas MESTRE)",
+        "description": "Soft delete - marca a aptidão como inativa",
+        "operationId": "deletar_13",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jogos": {
+      "get": {
+        "tags": [
+          "Jogos"
+        ],
+        "summary": "Listar jogos do usuário",
+        "description": "Retorna todos os jogos onde o usuário é Mestre ou Jogador",
+        "operationId": "listar",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JogoResumoResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Jogos"
+        ],
+        "summary": "Criar novo jogo (Apenas MESTRE)",
+        "description": "Cria um novo jogo/campanha com o usuário como Mestre",
+        "operationId": "criar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarJogoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JogoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jogos/{id}/ativar": {
+      "post": {
+        "tags": [
+          "Jogos"
+        ],
+        "summary": "Reativar jogo (Apenas MESTRE)",
+        "description": "Reativa um jogo marcado como inativo",
+        "operationId": "ativar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JogoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/vantagens": {
+      "get": {
+        "tags": [
+          "Configurações - Vantagens"
+        ],
+        "summary": "Listar vantagens de um jogo",
+        "description": "Retorna todas as vantagens ativas do jogo especificado",
+        "operationId": "listar_1",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VantagemConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Vantagens"
+        ],
+        "summary": "Criar vantagem (Apenas MESTRE)",
+        "description": "Cria uma nova vantagem para o jogo",
+        "operationId": "criar_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VantagemConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VantagemConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/tipos-aptidao": {
+      "get": {
+        "tags": [
+          "Configurações - Tipos de Aptidão"
+        ],
+        "summary": "Listar tipos de aptidão de um jogo",
+        "description": "Retorna todos os tipos de aptidão ativos do jogo especificado",
+        "operationId": "listar_2",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoAptidao"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Tipos de Aptidão"
+        ],
+        "summary": "Criar tipo de aptidão (Apenas MESTRE)",
+        "description": "Cria um novo tipo de aptidão para o jogo",
+        "operationId": "criar_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TipoAptidao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoAptidao"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/racas": {
+      "get": {
+        "tags": [
+          "Configurações - Raças"
+        ],
+        "summary": "Listar raças de um jogo",
+        "description": "Retorna todas as raças ativas do jogo especificado",
+        "operationId": "listar_3",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Raca"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Raças"
+        ],
+        "summary": "Criar raça (Apenas MESTRE)",
+        "description": "Cria uma nova raça para o jogo",
+        "operationId": "criar_3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Raca"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Raca"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/presencas": {
+      "get": {
+        "tags": [
+          "Configurações - Presenças"
+        ],
+        "summary": "Listar presenças de um jogo",
+        "description": "Retorna todas as presenças ativas do jogo especificado",
+        "operationId": "listar_4",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PresencaConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Presenças"
+        ],
+        "summary": "Criar presença (Apenas MESTRE)",
+        "description": "Cria uma nova presença para o jogo",
+        "operationId": "criar_4",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresencaConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresencaConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/niveis": {
+      "get": {
+        "tags": [
+          "Configurações - Níveis"
+        ],
+        "summary": "Listar níveis de um jogo",
+        "description": "Retorna todos os níveis ativos do jogo especificado",
+        "operationId": "listar_5",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NivelConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Níveis"
+        ],
+        "summary": "Criar nível (Apenas MESTRE)",
+        "description": "Cria um novo nível para o jogo",
+        "operationId": "criar_5",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NivelConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NivelConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/membros-corpo": {
+      "get": {
+        "tags": [
+          "Configurações - Membros do Corpo"
+        ],
+        "summary": "Listar membros do corpo de um jogo",
+        "description": "Retorna todos os membros ativos do jogo especificado",
+        "operationId": "listar_6",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MembroCorpoConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Membros do Corpo"
+        ],
+        "summary": "Criar membro do corpo (Apenas MESTRE)",
+        "description": "Cria um novo membro do corpo para o jogo",
+        "operationId": "criar_6",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembroCorpoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembroCorpoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/indoles": {
+      "get": {
+        "tags": [
+          "Configurações - Indoles"
+        ],
+        "summary": "Listar indoles de um jogo",
+        "description": "Retorna todas as indoles ativas do jogo especificado",
+        "operationId": "listar_7",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IndoleConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Indoles"
+        ],
+        "summary": "Criar indole (Apenas MESTRE)",
+        "description": "Cria uma nova indole para o jogo",
+        "operationId": "criar_7",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IndoleConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndoleConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/generos": {
+      "get": {
+        "tags": [
+          "Configurações - Gêneros"
+        ],
+        "summary": "Listar gêneros de um jogo",
+        "description": "Retorna todos os gêneros ativos do jogo especificado",
+        "operationId": "listar_8",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GeneroConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Gêneros"
+        ],
+        "summary": "Criar gênero (Apenas MESTRE)",
+        "description": "Cria um novo gênero para o jogo",
+        "operationId": "criar_8",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneroConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneroConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/dados-prospeccao": {
+      "get": {
+        "tags": [
+          "Configurações - Dados de Prospecção"
+        ],
+        "summary": "Listar dados de prospecção de um jogo",
+        "description": "Retorna todos os dados ativos do jogo especificado",
+        "operationId": "listar_9",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DadoProspeccaoConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Dados de Prospecção"
+        ],
+        "summary": "Criar dado de prospecção (Apenas MESTRE)",
+        "description": "Cria um novo dado para o jogo",
+        "operationId": "criar_9",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DadoProspeccaoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoProspeccaoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/classes": {
+      "get": {
+        "tags": [
+          "Configurações - Classes"
+        ],
+        "summary": "Listar classes de um jogo",
+        "description": "Retorna todas as classes ativas do jogo especificado",
+        "operationId": "listar_10",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClassePersonagem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Classes"
+        ],
+        "summary": "Criar classe (Apenas MESTRE)",
+        "description": "Cria uma nova classe para o jogo",
+        "operationId": "criar_10",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassePersonagem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassePersonagem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/bonus": {
+      "get": {
+        "tags": [
+          "Configurações - Bônus"
+        ],
+        "summary": "Listar bônus de um jogo",
+        "description": "Retorna todos os bônus ativos do jogo especificado",
+        "operationId": "listar_11",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BonusConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Bônus"
+        ],
+        "summary": "Criar bônus (Apenas MESTRE)",
+        "description": "Cria um novo bônus para o jogo",
+        "operationId": "criar_11",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BonusConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BonusConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/atributos": {
+      "get": {
+        "tags": [
+          "Configurações - Atributos"
+        ],
+        "summary": "Listar atributos de um jogo",
+        "description": "Retorna todos os atributos ativos do jogo especificado",
+        "operationId": "listar_12",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtributoConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Atributos"
+        ],
+        "summary": "Criar atributo (Apenas MESTRE)",
+        "description": "Cria um novo atributo para o jogo - apenas o Mestre pode fazer isso",
+        "operationId": "criar_12",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtributoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtributoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracoes/aptidoes": {
+      "get": {
+        "tags": [
+          "Configurações - Aptidões"
+        ],
+        "summary": "Listar aptidões de um jogo",
+        "description": "Retorna todas as aptidões ativas do jogo especificado",
+        "operationId": "listar_13",
+        "parameters": [
+          {
+            "name": "jogoId",
+            "in": "query",
+            "description": "ID do jogo",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AptidaoConfig"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Configurações - Aptidões"
+        ],
+        "summary": "Criar aptidão (Apenas MESTRE)",
+        "description": "Cria uma nova aptidão para o jogo",
+        "operationId": "criar_13",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AptidaoConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AptidaoConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Realizar logout",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "Logout realizado com sucesso"
+          },
+          "401": {
+            "description": "Usuário não autenticado"
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jogos/ativo": {
+      "get": {
+        "tags": [
+          "Jogos"
+        ],
+        "summary": "Buscar jogo ativo",
+        "description": "Retorna o jogo atualmente ativo onde o usuário é mestre (404 se não houver)",
+        "operationId": "buscarAtivo",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JogoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Obter dados completos do usuário autenticado",
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "description": "Dados do usuário retornados com sucesso",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuário não autenticado",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ]
+      }
+    },
+    "/api/user": {
+      "get": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Obter informações do usuário autenticado (formato simplificado)",
+        "description": "Retorna os dados do usuário logado via OAuth2 (nome, email, foto) - DEPRECATED: Use /api/v1/auth/me",
+        "operationId": "user",
+        "responses": {
+          "200": {
+            "description": "Informações do usuário retornadas com sucesso",
+            "content": {
+              "application/json": {
+                "example": {
+                  "name": "João Silva",
+                  "email": "joao@example.com",
+                  "picture": "https://example.com/photo.jpg"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuário não autenticado",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ]
+      }
+    },
+    "/api/public/health": {
+      "get": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Health check da API",
+        "description": "Verifica se a API está funcionando corretamente (endpoint público)",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "API está funcionando",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "UP",
+                  "message": "API Ficha Controlador está funcionando!"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EditarJogoRequest": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 0
+          },
+          "imagemUrl": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "dataInicio": {
+            "type": "string",
+            "format": "date"
+          },
+          "dataFim": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "nome"
+        ]
+      },
+      "JogoResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "dataInicio": {
+            "type": "string",
+            "format": "date"
+          },
+          "dataFim": {
+            "type": "string",
+            "format": "date"
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "totalParticipantes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "meuRole": {
+            "type": "string",
+            "enum": [
+              "MESTRE",
+              "JOGADOR"
+            ]
+          }
+        }
+      },
+      "Jogo": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 0
+          },
+          "imagemUrl": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "dataInicio": {
+            "type": "string",
+            "format": "date"
+          },
+          "dataFim": {
+            "type": "string",
+            "format": "date"
+          },
+          "participantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JogoParticipante"
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "nome"
+        ]
+      },
+      "JogoParticipante": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "usuario": {
+            "$ref": "#/components/schemas/Usuario"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "MESTRE",
+              "JOGADOR"
+            ]
+          },
+          "mestre": {
+            "type": "boolean"
+          },
+          "jogador": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "jogo",
+          "role",
+          "usuario"
+        ]
+      },
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2
+          },
+          "imagemUrl": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "providerId": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "nome",
+          "provider",
+          "providerId"
+        ]
+      },
+      "VantagemConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "nivelMaximo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "formulaCusto": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "descricaoEfeito": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "formulaCusto",
+          "jogo",
+          "nivelMaximo",
+          "nome"
+        ]
+      },
+      "TipoAptidao": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome"
+        ]
+      },
+      "Raca": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome"
+        ]
+      },
+      "PresencaConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "ordem": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "ativo",
+          "jogo",
+          "nome",
+          "ordem"
+        ]
+      },
+      "NivelConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nivel": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "xpNecessaria": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "pontosAtributo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "pontosAptidao": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "limitadorAtributo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "ativo",
+          "jogo",
+          "limitadorAtributo",
+          "nivel",
+          "pontosAtributo",
+          "xpNecessaria"
+        ]
+      },
+      "MembroCorpoConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "porcentagemVida": {
+            "type": "number",
+            "maximum": 1,
+            "minimum": 0.01
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome",
+          "porcentagemVida"
+        ]
+      },
+      "IndoleConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "ordem": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "ativo",
+          "jogo",
+          "nome",
+          "ordem"
+        ]
+      },
+      "GeneroConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "ordem": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "ativo",
+          "jogo",
+          "nome",
+          "ordem"
+        ]
+      },
+      "DadoProspeccaoConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "numeroFaces": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome",
+          "numeroFaces"
+        ]
+      },
+      "ClassePersonagem": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome"
+        ]
+      },
+      "BonusConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "formulaBase": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome"
+        ]
+      },
+      "AtributoConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "abreviacao": {
+            "type": "string",
+            "maxLength": 5,
+            "minLength": 2
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "formulaImpeto": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "descricaoImpeto": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "valorMinimo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "valorMaximo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome"
+        ]
+      },
+      "AptidaoConfig": {
+        "type": "object",
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jogo": {
+            "$ref": "#/components/schemas/Jogo"
+          },
+          "tipoAptidao": {
+            "$ref": "#/components/schemas/TipoAptidao"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "ordemExibicao": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "jogo",
+          "nome",
+          "tipoAptidao"
+        ]
+      },
+      "CriarJogoRequest": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "dataInicio": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "nome"
+        ]
+      },
+      "JogoResumoResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "totalParticipantes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "meuRole": {
+            "type": "string",
+            "enum": [
+              "MESTRE",
+              "JOGADOR"
+            ]
+          }
+        }
+      },
+      "UsuarioResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "email": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "imagemUrl": {
+            "type": "string"
+          },
+          "fotoPerfil": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "role": {
+            "type": "string"
+          },
+          "dataCriacao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dataUltimaAtualizacao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "OAuth2": {
+        "type": "oauth2",
+        "description": "Autenticação via Google OAuth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "/oauth2/authorization/google",
+            "tokenUrl": "/login/oauth2/code/google"
+          }
+        }
+      },
+      "Session": {
+        "type": "apiKey",
+        "description": "Sessão baseada em cookie após OAuth2",
+        "name": "SESSIONID",
+        "in": "cookie"
+      }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { NamedConfig } from './config-base.model';
 import { CategoriaVantagem } from './categoria-vantagem.model';
 
 /**
@@ -5,13 +6,9 @@ import { CategoriaVantagem } from './categoria-vantagem.model';
  * Defines advantages/perks available in the game system
  * Configured by Mestre
  */
-export interface VantagemConfig {
-  id: number;
-  nome: string;
+export interface VantagemConfig extends NamedConfig {
   categoriaVantagemId: number;
   custo: number; // XP cost
-  descricao: string;
-  ativo: boolean;
 
   // Nested object (populated by backend)
   categoriaVantagem?: CategoriaVantagem;

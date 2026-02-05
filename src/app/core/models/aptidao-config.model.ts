@@ -1,3 +1,4 @@
+import { NamedConfig } from './config-base.model';
 import { TipoAptidao } from './tipo-aptidao.model';
 
 /**
@@ -5,12 +6,8 @@ import { TipoAptidao } from './tipo-aptidao.model';
  * Defines a skill type in the game system (e.g., Espadas, Atletismo)
  * Configured by Mestre
  */
-export interface AptidaoConfig {
-  id: number;
-  nome: string;
+export interface AptidaoConfig extends NamedConfig {
   tipoAptidaoId: number;
-  ordem: number; // Display order
-  ativo: boolean;
 
   // Nested object (populated by backend)
   tipoAptidao?: TipoAptidao;
