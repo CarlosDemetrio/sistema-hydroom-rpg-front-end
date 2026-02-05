@@ -7,6 +7,38 @@
 
 ---
 
+## 🤖 PROMPT DE GERAÇÃO (Para IA)
+
+```
+Atue como um Arquiteto de Software Especialista em Angular 21 e PrimeNG 21.
+
+Gere os artefatos de código para o componente: ClassesConfigComponent
+
+### 1. Contexto de Estilização (CRÍTICO)
+* **Tema:** PrimeNG Custom Preset (Aura/Lara).
+* **Tokens:** `surface-card`, `text-color`, `text-primary`.
+* **Responsividade:** Grid (`col-12`, `md:col-6`).
+
+### 2. Angular 21
+* Signals API, inject(), @if/@for, ReactiveFormsModule.
+
+### 3. PrimeNG 21
+* Standalone, PrimeIcons, acessibilidade.
+
+### 4. Entregáveis
+#### A. `classes-config.component.ts`
+* Estende BaseConfigComponent<ClassePersonagem, ClasseConfigService>.
+
+#### B. `classes-config.component.html`
+* CRUD de classes de personagem (Guerreiro, Mago, etc).
+
+---
+**Descrição:**
+CRUD de Classes de Personagem. Campos: nome, descricao, bonusAtributos (Record<string, number>), ordemExibicao, ativo.
+```
+
+---
+
 ## 📋 Visão Geral
 
 Criar o componente de gerenciamento de **Classes de Personagem** (ex: Guerreiro, Mago, Ladino, etc.). Classes definem o arquétipo/profissão do personagem e influenciam suas características e habilidades.

@@ -7,6 +7,47 @@
 
 ---
 
+## 🤖 PROMPT DE GERAÇÃO (Para IA)
+
+```
+Atue como um Arquiteto de Software Especialista em Angular 21 e PrimeNG 21.
+
+Gere os artefatos de código para o componente: AptidoesConfigComponent
+
+### 1. Contexto de Estilização (CRÍTICO)
+* **Tema:** PrimeNG Custom Preset (Aura/Lara) configurado globalmente.
+* **Regra de Ouro:** NÃO force cores hexadecimais ou classes arbitrárias (`bg-blue-600`).
+* **Uso de Tokens:** `surface-card`, `surface-border`, `surface-ground`, `text-color`, `text-color-secondary`, `text-primary`.
+* **Responsividade:** Grid PrimeNG ou Flexbox (`flex`, `grid`, `gap-4`, `col-12`, `md:col-6`).
+
+### 2. Angular 21 - Modern Core (Strict Signals)
+* **Inputs/Outputs:** `input()`, `output()`, `model()` (APENAS Signals API).
+* **Queries:** `viewChild()`, `contentChild()` (signal-based).
+* **DI:** `inject(ServiceType)` (sem construtor).
+* **Forms:** `ReactiveFormsModule` com Typed Forms.
+* **Control Flow:** `@if`, `@for`, `@switch` (sem `*ngIf/*ngFor`).
+
+### 3. PrimeNG 21 Best Practices
+* **Componentes:** Standalone.
+* **Iconografia:** PrimeIcons (`pi pi-check`).
+* **Acessibilidade:** Todos inputs com `id` + `label`.
+
+### 4. Entregáveis
+#### A. `aptidoes-config.component.ts`
+* Estende BaseConfigComponent<AptidaoConfig, AptidaoConfigService>.
+* ChangeDetectionStrategy.OnPush.
+
+#### B. `aptidoes-config.component.html`
+* Template responsivo.
+* Select para TipoAptidao.
+
+---
+**Descrição:**
+CRUD de Aptidões (habilidades/perícias) com dropdown para Tipo de Aptidão (FISICO/MENTAL). Estende BaseConfigComponent.
+```
+
+---
+
 ## 📋 Visão Geral
 
 Criar o componente de gerenciamento de **Aptidões** (Skills) que representa as habilidades e perícias dos personagens. Aptidões são organizadas por **Tipos de Aptidão** e podem estar vinculadas a atributos base.

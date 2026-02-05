@@ -169,7 +169,7 @@ export class FichaCalculationService {
     const atributoConfig = atributos.find(
       (a: AtributoConfig) => a.nome === nomeAtributo
     );
-    return atributoConfig?.formulaCalculo || null;
+    return atributoConfig?.formulaImpeto || null;
   }
 
   /**

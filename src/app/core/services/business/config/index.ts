@@ -13,3 +13,6 @@ export * from './genero-config.service';
 export * from './indole-config.service';
 export * from './membro-corpo-config.service';
 export * from './bonus-config.service';
+
+// Facade Service
+export * from './config-facade.service';

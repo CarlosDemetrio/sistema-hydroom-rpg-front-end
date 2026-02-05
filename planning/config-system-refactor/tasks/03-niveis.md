@@ -7,6 +7,45 @@
 
 ---
 
+## 🤖 PROMPT DE GERAÇÃO (Para IA)
+
+```
+Atue como um Arquiteto de Software Especialista em Angular 21 e PrimeNG 21.
+
+Gere os artefatos de código para o componente: NiveisConfigComponent
+
+### 1. Contexto de Estilização (CRÍTICO)
+* **Tema:** PrimeNG Custom Preset (Aura/Lara).
+* **Regra de Ouro:** Sem cores hexadecimais ou classes arbitrárias.
+* **Uso de Tokens:** `surface-card`, `text-color`, `text-primary`.
+* **Responsividade:** Grid responsivo (`col-12`, `md:col-6`).
+
+### 2. Angular 21 - Modern Core
+* **Signals API:** `input()`, `output()`, `inject()`.
+* **Control Flow:** `@if`, `@for`.
+* **Forms:** ReactiveFormsModule com Typed Forms.
+
+### 3. PrimeNG 21
+* Standalone components.
+* PrimeIcons.
+* Acessibilidade com `id` + `label`.
+
+### 4. Entregáveis
+#### A. `niveis-config.component.ts`
+* Estende BaseConfigComponent<NivelConfig, NivelConfigService>.
+* Validador progressivo de XP.
+
+#### B. `niveis-config.component.html`
+* Tabela com progressão de XP.
+* Validação de valores crescentes.
+
+---
+**Descrição:**
+CRUD de Níveis com progressão de XP. Valida que XP mínimo/máximo é crescente. Campos: nivel, xpMinimo, xpMaximo, bonusAtributo, bonusAptidao.
+```
+
+---
+
 ## 📋 Visão Geral
 
 Criar o componente de gerenciamento de **Níveis** (Level Progression) que define a progressão de personagens por experiência (XP) e os benefícios ganhos em cada nível.

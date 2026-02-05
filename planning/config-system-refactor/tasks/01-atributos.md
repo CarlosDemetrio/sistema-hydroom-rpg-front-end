@@ -7,6 +7,57 @@
 
 ---
 
+## 🤖 PROMPT DE GERAÇÃO (Para IA)
+
+```
+Atue como um Arquiteto de Software Especialista em Angular 21 e PrimeNG 21.
+
+Gere os artefatos de código para o componente: AtributosConfigComponent
+
+### 1. Contexto de Estilização (CRÍTICO)
+* **Tema:** Estamos utilizando um **PrimeNG Custom Preset** (baseado em Aura/Lara) configurado globalmente.
+* **Regra de Ouro:** NÃO force cores hexadecimais ou classes de cores arbitrárias do Tailwind (ex: evite `bg-blue-600`).
+* **Uso de Tokens:** Utilize as classes utilitárias semânticas do PrimeNG ou classes do Tailwind que mapeiam para variáveis CSS do tema:
+    * Use `surface-card`, `surface-border`, `surface-ground`, `text-color`, `text-color-secondary`.
+    * Para cores primárias, confie no comportamento padrão do componente (que puxará a cor do Preset) ou use `text-primary`.
+* **Responsividade:** Utilize o sistema de grid do PrimeNG ou Flexbox com Tailwind (`flex`, `grid`, `gap-4`).
+
+### 2. Angular 21 - Modern Core (Strict Signals)
+* **Inputs/Outputs:** Use APENAS a API de Signals:
+    * `input()`, `input.required()`
+    * `output()` (no lugar de `@Output` EventEmitter)
+    * `model()` (para two-way binding, se aplicável)
+* **Queries:** `viewChild()`, `contentChild()` (obrigatório signal-based).
+* **DI:** Use `inject(ServiceType)` (nada de construtor).
+* **Forms:** Use `ReactiveFormsModule` com **Typed Forms**.
+* **Control Flow:** `@if`, `@for`, `@switch` (proibido usar `*ngIf`, `*ngFor`).
+
+### 3. PrimeNG 21 Best Practices
+* **Componentes:** Use componentes Standalone.
+* **Iconografia:** Use PrimeIcons (ex: `pi pi-check`).
+* **Propriedades:** Utilize a propriedade `fluid` (se disponível na v21 para o componente) ou a classe `p-fluid` no container para garantir largura total em mobile.
+* **Acessibilidade:** Garanta que todos os inputs tenham `aria-label` ou `id` conectado a um `label`.
+
+### 4. Entregáveis (Formato Copy-Paste para IntelliJ)
+Gere os arquivos abaixo separadamente. Não use blocos de código únicos.
+
+#### A. `atributos-config.component.ts`
+* Lógica limpa.
+* `ChangeDetectionStrategy.OnPush`.
+* Imports enxutos.
+* Estende BaseConfigComponent<AtributoConfig, AtributoConfigService>.
+
+#### B. `atributos-config.component.html`
+* Template responsivo.
+* Uso correto de ng-template (#header, #body, #emptymessage).
+
+---
+**Descrição da Funcionalidade Desejada:**
+Componente de CRUD para gerenciar Atributos do sistema de RPG (FOR, DES, CON, etc). Deve listar, criar, editar e excluir atributos com validações. Estende BaseConfigComponent para reaproveitar toda a lógica comum.
+```
+
+---
+
 ## 📋 Visão Geral
 
 Implementar o componente completo de **Atributos** (FOR, DES, CON, INT, SAB, CAR, etc.) usando a infraestrutura genérica criada em INF-0.

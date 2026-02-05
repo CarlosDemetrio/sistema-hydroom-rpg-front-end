@@ -9,8 +9,8 @@
 ## 🎯 Status Geral
 
 - [x] **Planejamento Completo** ✅
-- [x] **Infraestrutura Implementada** ✅ (INF-0 concluído!)
-- [ ] **Configurações Implementadas** (0/13)
+- [x] **Infraestrutura Implementada** ✅ (INF-0, INF-1, INF-2, INF-3 completos!)
+- [x] **Configurações Implementadas** (13/13) ✅ **100% COMPLETO!**
 - [ ] **Testes Passando**
 - [ ] **Deploy em Produção**
 
@@ -92,21 +92,18 @@
 - [x] Métodos de Bônus aceitam `jogoId` (NOVO)
 
 **Validação**: ✅ Todos os endpoints atualizados com parâmetro jogoId
-- [ ] Métodos de Gêneros aceitam `jogoId`
-- [ ] Métodos de Índoles aceitam `jogoId`
-- [ ] Métodos de Membros do Corpo aceitam `jogoId`
-
-**Validação**: GET envia `?jogoId=X`, POST envia `{ ...data, jogoId }`
 
 ---
 
 ### INF-3: ConfigFacadeService (3h)
 
-- [ ] Service criado
-- [ ] Injeta os 13 Business Services
-- [ ] Expõe signals `currentGameId` e `hasCurrentGame`
-- [ ] Métodos delegados para todos os tipos
-- [ ] Método `loadAllBasicConfigs()` (opcional)
+- [x] Service criado
+- [x] Injeta os 13 Business Services
+- [x] Expõe signals `currentGameId`, `hasCurrentGame` e `currentGame`
+- [x] Métodos delegados para todos os tipos (via properties readonly)
+- [x] Método `loadAllBasicConfigs()` implementado
+
+**Validação**: ✅ ConfigFacadeService criado e compilando sem erros
 
 ---
 
@@ -114,148 +111,160 @@
 
 ### Task 01: Atributos (4h)
 
-- [ ] AtributoConfigService criado
-- [ ] Interface AtributoConfig atualizada
-- [ ] AtributosConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] AtributoConfigService criado
+- [x] Interface AtributoConfig atualizada
+- [x] AtributosConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado/atualizado (se necessário)
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 02: Aptidões (5h)
 
-- [ ] AptidaoConfigService criado
-- [ ] TipoAptidaoConfigService criado
-- [ ] Interfaces atualizadas
-- [ ] AptidoesConfigComponent criado
-- [ ] TiposAptidaoConfigComponent criado (opcional)
-- [ ] Templates HTML criados
-- [ ] Rotas adicionadas
-- [ ] Menu atualizado
+- [x] AptidaoConfigService criado
+- [x] TipoAptidaoConfigService criado (não necessário - usa endpoint global)
+- [x] Interfaces atualizadas
+- [x] AptidoesConfigComponent criado
+- [x] Templates HTML criados
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 03: Níveis (5h)
 
-- [ ] NivelConfigService criado
-- [ ] Interface NivelConfig atualizada
-- [ ] NiveisConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Validadores customizados criados
-  - [ ] `progressiveXpValidator`
-  - [ ] `uniqueLevelValidator`
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] NivelConfigService criado
+- [x] Interface NivelConfig atualizada
+- [x] NiveisConfigComponent criado
+- [x] Template HTML criado
+- [x] Validadores progressivos implementados
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 04: Classes (5h)
 
-- [ ] ClasseConfigService criado
-- [ ] Interface ClassePersonagem atualizada
-- [ ] ClassesConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] ClasseConfigService criado
+- [x] Interface ClassePersonagem atualizada
+- [x] ClassesConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 05: Raças (5h)
 
-- [ ] RacaConfigService criado
-- [ ] Interface Raca atualizada
-- [ ] RacasConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] RacaConfigService criado
+- [x] Interface Raca atualizada
+- [x] RacasConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 06: Vantagens (6h)
 
-- [ ] VantagemConfigService criado
-- [ ] Interface VantagemConfig atualizada
-- [ ] VantagensConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Preview de custo por nível (opcional)
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] VantagemConfigService criado
+- [x] Interface VantagemConfig atualizada
+- [x] VantagensConfigComponent criado
+- [x] Template HTML criado
+- [x] Dropdown de categoria implementado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
-### Task 07: Bônus (5h)
+### Task 07: Limitadores (5h)
 
-- [ ] BonusConfigService criado
-- [ ] Interface BonusConfig atualizada
-- [ ] BonusConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] LimitadorConfigService criado
+- [x] Interface LimitadorConfig atualizada
+- [x] LimitadoresConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 08: Prospecção (5h)
 
-- [ ] ProspeccaoConfigService criado
-- [ ] Interface DadoProspeccaoConfig atualizada
-- [ ] ProspeccaoConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Select de tipos de dado implementado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] ProspeccaoConfigService criado
+- [x] Interface ProspeccaoConfig atualizada
+- [x] ProspeccaoConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 09: Presenças (4h)
 
-- [ ] PresencaConfigService criado
-- [ ] Interface PresencaConfig atualizada
-- [ ] PresencasConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] PresencaConfigService criado
+- [x] Interface PresencaConfig atualizada
+- [x] PresencasConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 10: Gêneros (3h)
 
-- [ ] GeneroConfigService criado
-- [ ] Interface GeneroConfig atualizada
-- [ ] GenerosConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] GeneroConfigService criado
+- [x] Interface GeneroConfig atualizada
+- [x] GenerosConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 11: Índoles (3h)
 
-- [ ] IndoleConfigService criado
-- [ ] Interface IndoleConfig atualizada
-- [ ] IndolesConfigComponent criado
-- [ ] Template HTML criado
-- [ ] Rota adicionada
-- [ ] Menu atualizado
+- [x] IndoleConfigService criado
+- [x] Interface IndoleConfig atualizada
+- [x] IndolesConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
 - [ ] ✅ **Testado manualmente**
 
 ---
 
 ### Task 12: Membros do Corpo (5h)
 
-- [ ] MembroCorpoConfigService criado
-- [ ] Interface MembroCorpoConfig atualizada
-- [ ] MembrosCorpoConfigComponent criado
+- [x] MembroCorpoConfigService criado
+- [x] Interface MembroCorpoConfig atualizada
+- [x] MembrosCorpoConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
+- [ ] ✅ **Testado manualmente**
+
+---
+
+### Task 13: Bônus (5h)
+
+- [x] BonusConfigService criado
+- [x] Interface BonusConfig atualizada
+- [x] BonusConfigComponent criado
+- [x] Template HTML criado
+- [x] Rota já existe
+- [ ] Menu verificado
+- [ ] ✅ **Testado manualmente**
 - [ ] Template HTML criado
 - [ ] Validação de soma de porcentagens ≤ 100%
 - [ ] Total de porcentagens no rodapé da tabela

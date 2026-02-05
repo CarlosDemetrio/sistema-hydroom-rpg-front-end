@@ -1,0 +1,196 @@
+<p-card>
+
+  @if (hasGame()) {
+    <div class="flex align-items-center gap-2 mb-3 p-3 surface-100 border-round">
+      <i class="pi pi-book text-primary"></i>
+      <span class="font-semibold text-primary">
+        Configurando: {{ currentGameName() }}
+      </span>
+    </div>
+  }
+
+  <div class="flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="text-2xl font-bold m-0 mb-2">
+        <i class="pi pi-heart text-primary mr-2"></i>
+        Índoles
+      </h2>
+      <p class="text-color-secondary m-0">
+        Configure as índoles/alinhamentos de personagem
+      </p>
+    </div>
+    <p-button
+      icon="pi pi-plus"
+      label="Nova Índole"
+      (onClick)="openDialog()"
+      [disabled]="!hasGame()"
+    ></p-button>
+  </div>
+
+  <p-table
+    [value]="items()"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[5, 10, 20]"
+    [rowHover]="true"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Ordem</th>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Status</th>
+        <th class="text-center">Ações</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-indole>
+      <tr>
+        <td class="text-center">{{ indole.ordemExibicao }}</td>
+        <td class="font-semibold">{{ indole.nome }}</td>
+        <td>
+          <span class="text-sm text-color-secondary">
+            {{ indole.descricao || '-' }}
+          </span>
+        </td>
+        <td>
+          @if (indole.ativo) {
+            <p-tag severity="success" value="Ativo"></p-tag>
+          } @else {
+            <p-tag severity="danger" value="Inativo"></p-tag>
+          }
+        </td>
+        <td class="text-center">
+          <div class="flex gap-2 justify-content-center">
+            <p-button
+              icon="pi pi-pencil"
+              [rounded]="true"
+              [text]="true"
+              [severity]="'secondary'"
+              (onClick)="openDialog(indole)"
+              pTooltip="Editar"
+            ></p-button>
+            <p-button
+              icon="pi pi-trash"
+              [rounded]="true"
+              [text]="true"
+              [severity]="'danger'"
+              (onClick)="confirmDelete(indole.id!)"
+              pTooltip="Excluir"
+            ></p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5" class="text-center p-5">
+          <div class="flex flex-column align-items-center gap-3">
+            <i class="pi pi-inbox text-6xl text-400"></i>
+            <p class="text-xl text-600 m-0">Nenhuma índole cadastrada</p>
+            @if (hasGame()) {
+              <p-button
+                label="Criar Primeira Índole"
+                icon="pi pi-plus"
+                (onClick)="openDialog()"
+              ></p-button>
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+</p-card>
+
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="editMode() ? 'Editar Índole' : 'Nova Índole'"
+  [modal]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save()">
+
+    <div class="flex flex-column gap-3">
+
+      <div class="flex flex-column gap-2">
+        <label for="nome" class="font-semibold">
+          Nome <span class="text-red-500">*</span>
+        </label>
+        <input
+          pInputText
+          id="nome"
+          formControlName="nome"
+          placeholder="Ex: Bondoso"
+        />
+        @if (form.get('nome')?.invalid && form.get('nome')?.touched) {
+          <small class="text-red-500">
+            @if (form.get('nome')?.errors?.['required']) {
+              Campo obrigatório
+            }
+            @if (form.get('nome')?.errors?.['minlength']) {
+              Mínimo de 3 caracteres
+            }
+            @if (form.get('nome')?.errors?.['uniqueName']) {
+              Este nome já está em uso
+            }
+          </small>
+        }
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="descricao" class="font-semibold">Descrição</label>
+        <textarea
+          pInputText
+          id="descricao"
+          formControlName="descricao"
+          rows="3"
+          placeholder="Descrição da índole..."
+        ></textarea>
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="ordemExibicao" class="font-semibold">
+          Ordem <span class="text-red-500">*</span>
+        </label>
+        <p-input-number
+          inputId="ordemExibicao"
+          formControlName="ordemExibicao"
+          [min]="1"
+          [showButtons]="true"
+        ></p-input-number>
+      </div>
+
+      <div class="flex align-items-center gap-2">
+        <p-checkbox
+          inputId="ativo"
+          formControlName="ativo"
+          [binary]="true"
+        ></p-checkbox>
+        <label for="ativo" class="font-semibold cursor-pointer">
+          Ativo
+        </label>
+      </div>
+
+    </div>
+
+    <div class="flex justify-content-end gap-2 mt-4">
+      <p-button
+        label="Cancelar"
+        [severity]="'secondary'"
+        (onClick)="closeDialog()"
+        [outlined]="true"
+        type="button"
+      ></p-button>
+      <p-button
+        label="Salvar"
+        icon="pi pi-check"
+        type="submit"
+        [disabled]="form.invalid"
+      ></p-button>
+    </div>
+
+  </form>
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>

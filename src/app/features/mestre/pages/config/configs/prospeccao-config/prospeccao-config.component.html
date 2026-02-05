@@ -1,0 +1,195 @@
+<p-card>
+
+  @if (hasGame()) {
+    <div class="flex align-items-center gap-2 mb-3 p-3 surface-100 border-round">
+      <i class="pi pi-book text-primary"></i>
+      <span class="font-semibold text-primary">
+        Configurando: {{ currentGameName() }}
+      </span>
+    </div>
+  }
+
+  <div class="flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="text-2xl font-bold m-0 mb-2">
+        <i class="pi pi-box text-primary mr-2"></i>
+        Dados de Prospecção
+      </h2>
+      <p class="text-color-secondary m-0">
+        Configure os dados de prospecção do sistema
+      </p>
+    </div>
+    <p-button
+      icon="pi pi-plus"
+      label="Novo Dado"
+      (onClick)="openDialog()"
+      [disabled]="!hasGame()"
+    ></p-button>
+  </div>
+
+  <p-table
+    [value]="items()"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[5, 10, 20]"
+    [rowHover]="true"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Tipo de Dado</th>
+        <th>Regras</th>
+        <th>Status</th>
+        <th class="text-center">Ações</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-dado>
+      <tr>
+        <td class="font-bold text-primary">{{ dado.tipoDado }}</td>
+        <td>
+          <span class="text-sm text-color-secondary">
+            {{ dado.regras }}
+          </span>
+        </td>
+        <td>
+          @if (dado.ativo) {
+            <p-tag severity="success" value="Ativo"></p-tag>
+          } @else {
+            <p-tag severity="danger" value="Inativo"></p-tag>
+          }
+        </td>
+        <td class="text-center">
+          <div class="flex gap-2 justify-content-center">
+            <p-button
+              icon="pi pi-pencil"
+              [rounded]="true"
+              [text]="true"
+              [severity]="'secondary'"
+              (onClick)="openDialog(dado)"
+              pTooltip="Editar"
+            ></p-button>
+            <p-button
+              icon="pi pi-trash"
+              [rounded]="true"
+              [text]="true"
+              [severity]="'danger'"
+              (onClick)="confirmDelete(dado.id!)"
+              pTooltip="Excluir"
+            ></p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="4" class="text-center p-5">
+          <div class="flex flex-column align-items-center gap-3">
+            <i class="pi pi-inbox text-6xl text-400"></i>
+            <p class="text-xl text-600 m-0">Nenhum dado cadastrado</p>
+            @if (hasGame()) {
+              <p-button
+                label="Criar Primeiro Dado"
+                icon="pi pi-plus"
+                (onClick)="openDialog()"
+              ></p-button>
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+</p-card>
+
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="editMode() ? 'Editar Dado' : 'Novo Dado'"
+  [modal]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save()">
+
+    <div class="flex flex-column gap-3">
+
+      <div class="grid">
+        <div class="col-12 md:col-6">
+          <div class="flex flex-column gap-2">
+            <label for="tipoDado" class="font-semibold">
+              Tipo de Dado <span class="text-red-500">*</span>
+            </label>
+            <input
+              pInputText
+              id="tipoDado"
+              formControlName="tipoDado"
+              placeholder="Ex: D6"
+            />
+            @if (form.get('tipoDado')?.invalid && form.get('tipoDado')?.touched) {
+              <small class="text-red-500">Campo obrigatório</small>
+            }
+          </div>
+        </div>
+
+        <div class="col-12 md:col-6">
+          <div class="flex flex-column gap-2">
+            <label for="ordemExibicao" class="font-semibold">
+              Ordem <span class="text-red-500">*</span>
+            </label>
+            <p-input-number
+              inputId="ordemExibicao"
+              formControlName="ordemExibicao"
+              [min]="1"
+              [showButtons]="true"
+            ></p-input-number>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="regras" class="font-semibold">
+          Regras <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          pInputText
+          id="regras"
+          formControlName="regras"
+          rows="4"
+          placeholder="Descrição das regras..."
+        ></textarea>
+        @if (form.get('regras')?.invalid && form.get('regras')?.touched) {
+          <small class="text-red-500">Campo obrigatório</small>
+        }
+      </div>
+
+      <div class="flex align-items-center gap-2">
+        <p-checkbox
+          inputId="ativo"
+          formControlName="ativo"
+          [binary]="true"
+        ></p-checkbox>
+        <label for="ativo" class="font-semibold cursor-pointer">
+          Ativo
+        </label>
+      </div>
+
+    </div>
+
+    <div class="flex justify-content-end gap-2 mt-4">
+      <p-button
+        label="Cancelar"
+        [severity]="'secondary'"
+        (onClick)="closeDialog()"
+        [outlined]="true"
+        type="button"
+      ></p-button>
+      <p-button
+        label="Salvar"
+        icon="pi pi-check"
+        type="submit"
+        [disabled]="form.invalid"
+      ></p-button>
+    </div>
+
+  </form>
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>

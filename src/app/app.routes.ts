@@ -74,43 +74,55 @@ export const routes: Routes = [
               },
               {
                 path: 'atributos',
-                loadComponent: () => import('./features/mestre/pages/config/configs/atributos-config.component').then(m => m.AtributosConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/atributos-config/atributos-config.component').then(m => m.AtributosConfigComponent)
               },
               {
                 path: 'aptidoes',
-                loadComponent: () => import('./features/mestre/pages/config/configs/aptidoes-config.component').then(m => m.AptidoesConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/aptidoes-config/aptidoes-config.component').then(m => m.AptidoesConfigComponent)
               },
               {
                 path: 'niveis',
-                loadComponent: () => import('./features/mestre/pages/config/configs/niveis-config.component').then(m => m.NiveisConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/niveis-config/niveis-config.component').then(m => m.NiveisConfigComponent)
               },
               {
                 path: 'limitadores',
-                loadComponent: () => import('./features/mestre/pages/config/configs/limitadores-config.component').then(m => m.LimitadoresConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/limitadores-config/limitadores-config.component').then(m => m.LimitadoresConfigComponent)
               },
               {
                 path: 'classes',
-                loadComponent: () => import('./features/mestre/pages/config/configs/classes-config.component').then(m => m.ClassesConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/classes-config/classes-config.component').then(m => m.ClassesConfigComponent)
               },
               {
                 path: 'vantagens',
-                loadComponent: () => import('./features/mestre/pages/config/configs/vantagens-config.component').then(m => m.VantagensConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/vantagens-config/vantagens-config.component').then(m => m.VantagensConfigComponent)
               },
               {
                 path: 'racas',
-                loadComponent: () => import('./features/mestre/pages/config/configs/racas-config.component').then(m => m.RacasConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/racas-config/racas-config.component').then(m => m.RacasConfigComponent)
               },
               {
                 path: 'prospeccao',
-                loadComponent: () => import('./features/mestre/pages/config/configs/prospeccao-config.component').then(m => m.ProspeccaoConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/prospeccao-config/prospeccao-config.component').then(m => m.ProspeccaoConfigComponent)
               },
               {
                 path: 'presencas',
-                loadComponent: () => import('./features/mestre/pages/config/configs/presencas-config.component').then(m => m.PresencasConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/presencas-config/presencas-config.component').then(m => m.PresencasConfigComponent)
               },
               {
                 path: 'generos',
-                loadComponent: () => import('./features/mestre/pages/config/configs/generos-config.component').then(m => m.GenerosConfigComponent)
+                loadComponent: () => import('./features/mestre/pages/config/configs/generos-config/generos-config.component').then(m => m.GenerosConfigComponent)
+              },
+              {
+                path: 'indoles',
+                loadComponent: () => import('./features/mestre/pages/config/configs/indoles-config/indoles-config.component').then(m => m.IndolesConfigComponent)
+              },
+              {
+                path: 'membros-corpo',
+                loadComponent: () => import('./features/mestre/pages/config/configs/membros-corpo-config/membros-corpo-config.component').then(m => m.MembrosCorpoConfigComponent)
+              },
+              {
+                path: 'bonus',
+                loadComponent: () => import('./features/mestre/pages/config/configs/bonus-config/bonus-config.component').then(m => m.BonusConfigComponent)
               }
             ]
           }
