@@ -1,5 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
-import { MessageService } from 'primeng/api';
+import { ToastService } from './toast.service';
 
 /**
  * Error Handler Service
@@ -11,7 +11,7 @@ import { MessageService } from 'primeng/api';
   providedIn: 'root'
 })
 export class ErrorHandlerService {
-  private messageService = inject(MessageService, { optional: true });
+  private toastService = inject(ToastService);
 
   lastError = signal<string | null>(null);
 
@@ -20,13 +20,8 @@ export class ErrorHandlerService {
 
     console.error('Error:', errorMessage);
 
-    // Mostra toast se MessageService disponível
-    this.messageService?.add({
-      severity: 'error',
-      summary: 'Erro',
-      detail: errorMessage,
-      life: 5000
-    });
+    // Mostra toast de erro usando ToastService centralizado
+    this.toastService.error(errorMessage);
   }
 
   clearError() {

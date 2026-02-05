@@ -165,9 +165,7 @@ export class HeaderComponent implements OnInit {
   }
 
   logout() {
-    console.log('[HEADER] Iniciando logout');
     this.authService.logout().subscribe(() => {
-      console.log('[HEADER] Logout concluído, redirecionando');
       this.router.navigate(['/login']);
     });
   }

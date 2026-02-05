@@ -1,6 +1,5 @@
 import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -9,7 +8,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
 import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
 import { JogoStatus } from '../../../../core/models';
 import { FormFieldErrorComponent } from '../../../../shared';
@@ -26,7 +24,6 @@ import { Textarea } from 'primeng/textarea';
   selector: 'app-jogo-form',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     CardModule,
     ButtonModule,
@@ -34,11 +31,9 @@ import { Textarea } from 'primeng/textarea';
     Textarea,
     InputNumberModule,
     SelectModule,
-    ToastModule,
     FormFieldErrorComponent,
     LoadingSpinnerComponent
   ],
-  providers: [MessageService],
   template: `
     <div class="p-4">
       <div class="mb-4">
@@ -137,8 +132,6 @@ import { Textarea } from 'primeng/textarea';
         </p-card>
       }
     </div>
-
-    <p-toast></p-toast>
   `
 })
 export class JogoFormComponent implements OnInit {

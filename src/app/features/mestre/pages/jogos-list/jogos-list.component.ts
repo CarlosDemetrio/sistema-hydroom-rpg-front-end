@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { DatePipe, SlicePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -11,7 +11,8 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
+import { ToastService } from '../../../../services/toast.service';
 import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
 import { Jogo, JogoStatus } from '../../../../core/models';
 import { EmptyStateComponent, LoadingSpinnerComponent } from '../../../../shared';
@@ -26,7 +27,8 @@ import { EmptyStateComponent, LoadingSpinnerComponent } from '../../../../shared
   selector: 'app-jogos-list',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
+    SlicePipe,
     FormsModule,
     TableModule,
     CardModule,
@@ -39,7 +41,7 @@ import { EmptyStateComponent, LoadingSpinnerComponent } from '../../../../shared
     EmptyStateComponent,
     LoadingSpinnerComponent
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService],
   template: `
     <div class="p-4">
       <div class="flex justify-content-between align-items-center mb-4">
@@ -194,7 +196,7 @@ export class JogosListComponent {
   private jogoFacade = inject(JogoManagementFacadeService);
   private router = inject(Router);
   private confirmationService = inject(ConfirmationService);
-  private messageService = inject(MessageService);
+  private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   // Filters
@@ -279,18 +281,10 @@ export class JogosListComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Jogo excluído com sucesso'
-        });
+        this.toastService.success('Jogo excluído com sucesso');
       },
       error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao excluir jogo'
-        });
+        this.toastService.error('Erro ao excluir jogo');
       }
     });
   }
@@ -314,4 +308,3 @@ export class JogosListComponent {
     return severities[status];
   }
 }
-

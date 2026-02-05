@@ -9,6 +9,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { loadingInterceptor } from './interceptors/loading.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
+import {MessageService} from 'primeng/api';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -31,6 +32,7 @@ export const appConfig: ApplicationConfig = {
       },
       ripple: true, // Ativa animações de ripple para melhor UX
       inputStyle: 'outlined' // Estilo outlined para todos os inputs
-    })
+    }),
+    MessageService // MessageService global para toast notifications
   ]
 };
