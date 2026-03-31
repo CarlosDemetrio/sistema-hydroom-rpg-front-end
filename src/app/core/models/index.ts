@@ -22,7 +22,11 @@ export * from './atributo-config.model';
 export * from './aptidao-config.model';
 export * from './tipo-aptidao.model';
 export * from './vantagem-config.model';
+export * from './vantagem-efeito.model';
 export * from './config.models';
+
+// Anotações
+export * from './anotacao.model';
 
 // DTOs
 export * from './dtos/config-base.dto';

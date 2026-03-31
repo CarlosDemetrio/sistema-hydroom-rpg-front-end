@@ -5,6 +5,10 @@ import {
   Ficha,
   FichaResumo,
   DuplicarFichaResponse,
+  AtualizarAtributoDto,
+  AtualizarAptidaoDto,
+  FichaAtributoResponse,
+  FichaAptidaoResponse,
 } from '../../models/ficha.model';
 import {
   CreateFichaDto,
@@ -12,6 +16,7 @@ import {
   UpdateFichaDto,
   DuplicarFichaDto,
 } from '../../models/dtos/ficha.dto';
+import { Anotacao, CriarAnotacaoDto } from '../../models/anotacao.model';
 import { environment } from '../../../../environments/environment';
 
 export interface FichaFilters {
@@ -24,21 +29,26 @@ export interface FichaFilters {
 /**
  * API Service para Fichas de personagem.
  *
- * Endpoints corretos do backend:
- * - GET  /api/v1/jogos/{jogoId}/fichas          — listar fichas do jogo
- * - GET  /api/v1/jogos/{jogoId}/fichas/minhas   — minhas fichas no jogo
- * - POST /api/v1/jogos/{jogoId}/fichas          — criar ficha no jogo
- * - GET  /api/v1/jogos/{jogoId}/npcs            — listar NPCs do jogo
- * - POST /api/v1/jogos/{jogoId}/npcs            — criar NPC (via isNpc=true em fichas)
- * - GET  /api/v1/fichas/{id}                    — buscar ficha por ID
- * - GET  /api/v1/fichas/{id}/resumo             — resumo calculado da ficha
- * - PUT  /api/v1/fichas/{id}                    — atualizar ficha
- * - DELETE /api/v1/fichas/{id}                  — deletar ficha (Mestre)
- * - POST /api/v1/fichas/{id}/duplicar           — duplicar ficha
- * - POST /api/v1/fichas/{id}/preview            — preview de cálculos sem persistir
- * - GET  /api/v1/fichas/{id}/vantagens          — listar vantagens da ficha
- * - POST /api/v1/fichas/{id}/vantagens          — comprar vantagem
- * - PUT  /api/v1/fichas/{id}/vantagens/{vid}    — aumentar nível de vantagem
+ * Endpoints do backend:
+ * - GET    /api/v1/jogos/{jogoId}/fichas            — listar fichas do jogo
+ * - GET    /api/v1/jogos/{jogoId}/fichas/minhas     — minhas fichas no jogo
+ * - POST   /api/v1/jogos/{jogoId}/fichas            — criar ficha no jogo
+ * - GET    /api/v1/jogos/{jogoId}/npcs              — listar NPCs do jogo (MESTRE)
+ * - POST   /api/v1/jogos/{jogoId}/npcs              — criar NPC (MESTRE)
+ * - GET    /api/v1/fichas/{id}                      — buscar ficha por ID
+ * - GET    /api/v1/fichas/{id}/resumo               — resumo calculado da ficha
+ * - PUT    /api/v1/fichas/{id}                      — atualizar ficha
+ * - DELETE /api/v1/fichas/{id}                      — deletar ficha (MESTRE)
+ * - POST   /api/v1/fichas/{id}/duplicar             — duplicar ficha
+ * - POST   /api/v1/fichas/{id}/preview              — preview de cálculos sem persistir
+ * - GET    /api/v1/fichas/{id}/vantagens            — listar vantagens da ficha
+ * - POST   /api/v1/fichas/{id}/vantagens            — comprar vantagem
+ * - PUT    /api/v1/fichas/{id}/vantagens/{vid}      — aumentar nível de vantagem
+ * - PUT    /api/v1/fichas/{id}/atributos            — atualizar atributos em lote
+ * - PUT    /api/v1/fichas/{id}/aptidoes             — atualizar aptidões em lote
+ * - GET    /api/v1/fichas/{fichaId}/anotacoes       — listar anotações da ficha
+ * - POST   /api/v1/fichas/{fichaId}/anotacoes       — criar anotação na ficha
+ * - DELETE /api/v1/fichas/{fichaId}/anotacoes/{id}  — deletar anotação
  */
 @Injectable({ providedIn: 'root' })
 export class FichasApiService {
@@ -107,15 +117,6 @@ export class FichasApiService {
   }
 
   /**
-   * POST /api/v1/jogos/{jogoId}/fichas  (com isNpc=true)
-   * Cria um NPC no jogo.
-   */
-  createNpc(jogoId: number, dto: NpcCreateDto): Observable<Ficha> {
-    const body: CreateFichaDto = { ...dto, isNpc: true };
-    return this.http.post<Ficha>(`${this.baseUrl}/jogos/${jogoId}/fichas`, body);
-  }
-
-  /**
    * PUT /api/v1/fichas/{id}
    * Atualiza uma ficha. Mestre pode editar qualquer ficha; Jogador só as próprias.
    */
@@ -129,14 +130,6 @@ export class FichasApiService {
    */
   deleteFicha(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/fichas/${id}`);
-  }
-
-  /**
-   * POST /api/v1/fichas/{id}/duplicar
-   * Duplica uma ficha com novo nome.
-   */
-  duplicarFicha(id: number, dto: DuplicarFichaDto): Observable<DuplicarFichaResponse> {
-    return this.http.post<DuplicarFichaResponse>(`${this.baseUrl}/fichas/${id}/duplicar`, dto);
   }
 
   /**
@@ -169,5 +162,76 @@ export class FichasApiService {
    */
   aumentarNivelVantagem(id: number, vid: number): Observable<unknown> {
     return this.http.put<unknown>(`${this.baseUrl}/fichas/${id}/vantagens/${vid}`, {});
+  }
+
+  // ==================== ATRIBUTOS DIRETOS ====================
+
+  /**
+   * PUT /api/v1/fichas/{id}/atributos
+   * Atualiza atributos da ficha em lote.
+   * Mestre pode editar qualquer ficha; Jogador só as próprias.
+   * Valida que base não excede o limitador do nível.
+   */
+  atualizarAtributos(fichaId: number, dto: AtualizarAtributoDto[]): Observable<FichaAtributoResponse[]> {
+    return this.http.put<FichaAtributoResponse[]>(`${this.baseUrl}/fichas/${fichaId}/atributos`, dto);
+  }
+
+  // ==================== APTIDOES DIRETAS ====================
+
+  /**
+   * PUT /api/v1/fichas/{id}/aptidoes
+   * Atualiza aptidões da ficha em lote.
+   * Mestre pode editar qualquer ficha; Jogador só as próprias.
+   */
+  atualizarAptidoes(fichaId: number, dto: AtualizarAptidaoDto[]): Observable<FichaAptidaoResponse[]> {
+    return this.http.put<FichaAptidaoResponse[]>(`${this.baseUrl}/fichas/${fichaId}/aptidoes`, dto);
+  }
+
+  // ==================== NPC DEDICADO ====================
+
+  /**
+   * POST /api/v1/jogos/{jogoId}/npcs
+   * Cria um NPC no jogo (apenas MESTRE).
+   * Endpoint dedicado, distinto do POST /fichas com isNpc=true.
+   */
+  criarNpc(jogoId: number, dto: NpcCreateDto): Observable<Ficha> {
+    return this.http.post<Ficha>(`${this.baseUrl}/jogos/${jogoId}/npcs`, dto);
+  }
+
+  // ==================== DUPLICAR FICHA ====================
+
+  /**
+   * POST /api/v1/fichas/{id}/duplicar
+   * Duplica uma ficha com novo nome.
+   * Mestre pode duplicar qualquer ficha; Jogador só as próprias.
+   */
+  duplicarFicha(fichaId: number, dto: DuplicarFichaDto): Observable<DuplicarFichaResponse> {
+    return this.http.post<DuplicarFichaResponse>(`${this.baseUrl}/fichas/${fichaId}/duplicar`, dto);
+  }
+
+  // ==================== ANOTACOES ====================
+
+  /**
+   * GET /api/v1/fichas/{fichaId}/anotacoes
+   * Mestre vê todas as anotações. Jogador vê apenas as próprias e as do Mestre visíveis.
+   */
+  getAnotacoes(fichaId: number): Observable<Anotacao[]> {
+    return this.http.get<Anotacao[]>(`${this.baseUrl}/fichas/${fichaId}/anotacoes`);
+  }
+
+  /**
+   * POST /api/v1/fichas/{fichaId}/anotacoes
+   * Cria uma nova anotação. Jogadores só podem criar anotações do tipo JOGADOR.
+   */
+  criarAnotacao(fichaId: number, dto: CriarAnotacaoDto): Observable<Anotacao> {
+    return this.http.post<Anotacao>(`${this.baseUrl}/fichas/${fichaId}/anotacoes`, dto);
+  }
+
+  /**
+   * DELETE /api/v1/fichas/{fichaId}/anotacoes/{id}
+   * Mestre pode deletar qualquer anotação. Jogador só pode deletar as próprias.
+   */
+  deletarAnotacao(fichaId: number, anotacaoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/fichas/${fichaId}/anotacoes/${anotacaoId}`);
   }
 }

@@ -98,6 +98,8 @@ export interface NivelConfig {
   pontosAtributo: number;
   pontosAptidao: number;
   limitadorAtributo: number;
+  /** Indica se este nível permite que o personagem realize um Renascimento. */
+  permitirRenascimento: boolean;
   dataCriacao: string;
   dataUltimaAtualizacao: string;
 }

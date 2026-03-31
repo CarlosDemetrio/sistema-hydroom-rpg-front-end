@@ -1,3 +1,5 @@
+import { VantagemEfeito } from './vantagem-efeito.model';
+
 /**
  * Pré-requisito de uma vantagem.
  * Aligned with backend VantagemPreRequisitoResponse record.
@@ -26,6 +28,7 @@ export interface VantagemConfig {
   descricaoEfeito: string | null;
   ordemExibicao: number;
   preRequisitos: VantagemPreRequisito[];
+  efeitos: VantagemEfeito[];
   dataCriacao: string;
   dataUltimaAtualizacao: string;
 }

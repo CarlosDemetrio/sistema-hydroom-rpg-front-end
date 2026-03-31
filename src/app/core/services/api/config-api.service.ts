@@ -5,6 +5,7 @@ import { AtributoConfig, CreateAtributoDto, UpdateAtributoDto } from '../../mode
 import { AptidaoConfig, CreateAptidaoDto, UpdateAptidaoDto } from '../../models/aptidao-config.model';
 import { TipoAptidao } from '../../models/tipo-aptidao.model';
 import { VantagemConfig, CreateVantagemDto, UpdateVantagemDto } from '../../models/vantagem-config.model';
+import { VantagemEfeito, CriarVantagemEfeitoDto } from '../../models/vantagem-efeito.model';
 import {
   CategoriaVantagem,
   ClassePersonagem,
@@ -517,5 +518,39 @@ export class ConfigApiService {
 
   reordenarBonus(jogoId: number, request: ReordenarRequest): Observable<void> {
     return this.http.put<void>(`${this.configUrl}/bonus/reordenar?jogoId=${jogoId}`, request);
+  }
+
+  // ===== Efeitos de Vantagem =====
+  // Base: /api/v1/jogos/{jogoId}/configuracoes/vantagens/{vantagemId}/efeitos
+
+  /**
+   * GET /api/v1/jogos/{jogoId}/configuracoes/vantagens/{vantagemId}/efeitos
+   * Lista efeitos de uma vantagem. MESTRE e JOGADOR podem listar.
+   */
+  listVantagemEfeitos(jogoId: number, vantagemId: number): Observable<VantagemEfeito[]> {
+    return this.http.get<VantagemEfeito[]>(
+      `${environment.apiUrl}/jogos/${jogoId}/configuracoes/vantagens/${vantagemId}/efeitos`
+    );
+  }
+
+  /**
+   * POST /api/v1/jogos/{jogoId}/configuracoes/vantagens/{vantagemId}/efeitos
+   * Adiciona um efeito concreto a uma vantagem. Apenas MESTRE.
+   */
+  criarVantagemEfeito(jogoId: number, vantagemId: number, dto: CriarVantagemEfeitoDto): Observable<VantagemEfeito> {
+    return this.http.post<VantagemEfeito>(
+      `${environment.apiUrl}/jogos/${jogoId}/configuracoes/vantagens/${vantagemId}/efeitos`,
+      dto
+    );
+  }
+
+  /**
+   * DELETE /api/v1/jogos/{jogoId}/configuracoes/vantagens/{vantagemId}/efeitos/{efeitoId}
+   * Remove um efeito de uma vantagem. Apenas MESTRE.
+   */
+  deletarVantagemEfeito(jogoId: number, vantagemId: number, efeitoId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiUrl}/jogos/${jogoId}/configuracoes/vantagens/${vantagemId}/efeitos/${efeitoId}`
+    );
   }
 }

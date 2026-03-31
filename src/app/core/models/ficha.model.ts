@@ -50,3 +50,66 @@ export interface DuplicarFichaResponse {
   nome: string;
   isNpc: boolean;
 }
+
+// ==================== ATRIBUTOS DIRETOS ====================
+
+/**
+ * DTO para atualização em lote de atributos de uma ficha.
+ * Alinhado com backend AtualizarAtributoRequest record.
+ * Endpoint: PUT /api/v1/fichas/{id}/atributos
+ */
+export interface AtualizarAtributoDto {
+  atributoConfigId: number;
+  base: number;
+  nivel?: number;
+  outros?: number;
+}
+
+/**
+ * Resposta de atributo após atualização em lote.
+ * Alinhado com backend FichaAtributoResponse record.
+ * Nota: o backend retorna `atributoAbreviacao`, não `atributoSigla`.
+ */
+export interface FichaAtributoResponse {
+  id: number;
+  atributoConfigId: number;
+  atributoNome: string;
+  /** Abreviação do atributo (ex: "FOR", "AGI"). Campo backend: atributoAbreviacao. */
+  atributoAbreviacao: string;
+  base: number;
+  nivel: number;
+  outros: number;
+  /** Total calculado pelo backend: base + nivel + outros + bônus de raça */
+  total: number;
+  /** Valor de ímpeto calculado pelo backend via fórmula do atributo */
+  impeto: number;
+}
+
+// ==================== APTIDOES DIRETAS ====================
+
+/**
+ * DTO para atualização em lote de aptidões de uma ficha.
+ * Alinhado com backend AtualizarAptidaoRequest record.
+ * Endpoint: PUT /api/v1/fichas/{id}/aptidoes
+ */
+export interface AtualizarAptidaoDto {
+  aptidaoConfigId: number;
+  base: number;
+  sorte?: number;
+  classe?: number;
+}
+
+/**
+ * Resposta de aptidão após atualização em lote.
+ * Alinhado com backend FichaAptidaoResponse record.
+ */
+export interface FichaAptidaoResponse {
+  id: number;
+  aptidaoConfigId: number;
+  aptidaoNome: string;
+  base: number;
+  sorte: number;
+  classe: number;
+  /** Total calculado pelo backend: base + sorte + classe */
+  total: number;
+}
