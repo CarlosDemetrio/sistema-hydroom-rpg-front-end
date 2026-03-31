@@ -1,4 +1,4 @@
-import { Component, inject, effect } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -74,7 +74,7 @@ import { AuthService } from '../../../services/auth.service';
         </p-card>
       </div>
 
-      <!-- Quick Actions -->
+      <!-- Quick Actions - SEMPRE VISÍVEL -->
       <div class="col-12 mt-4">
         <h2 class="text-2xl font-bold mb-4 flex align-items-center gap-2">
           <i class="pi pi-bolt text-primary"></i>
@@ -119,7 +119,7 @@ import { AuthService } from '../../../services/auth.service';
         </div>
       </div>
 
-      <!-- Recent Games -->
+      <!-- Recent Games - APENAS SE HOUVER JOGOS -->
       @if (jogoFacade.jogosRecentes().length > 0) {
         <div class="col-12 mt-4">
           <h2 class="text-2xl font-bold mb-4 flex align-items-center gap-2">
@@ -154,11 +154,38 @@ import { AuthService } from '../../../services/auth.service';
             </div>
           </p-card>
         </div>
+      } @else {
+        <!-- Empty State quando não há jogos -->
+        <div class="col-12 mt-4">
+          <p-card>
+            <div class="flex flex-column align-items-center text-center gap-4 py-5">
+              <div class="flex align-items-center justify-content-center border-circle bg-primary-50 w-8rem h-8rem">
+                <i class="pi pi-book text-6xl text-primary"></i>
+              </div>
+              <h3 class="text-2xl font-bold m-0 text-primary">Nenhum Jogo Criado Ainda</h3>
+              <p class="text-xl text-color-secondary m-0 max-w-30rem">
+                Comece criando seu primeiro jogo! Após criar, você poderá configurar atributos, classes, raças e muito mais.
+              </p>
+              <div class="flex flex-column gap-2 align-items-center">
+                <p-button
+                  label="Criar Primeiro Jogo"
+                  icon="pi pi-plus"
+                  size="large"
+                  (onClick)="criarJogo()"
+                ></p-button>
+                <p class="text-sm text-color-secondary m-0">
+                  <i class="pi pi-info-circle mr-1"></i>
+                  Após criar um jogo, ele será automaticamente selecionado como o jogo atual
+                </p>
+              </div>
+            </div>
+          </p-card>
+        </div>
       }
     </div>
   `
 })
-export class MestreDashboardComponent {
+export class MestreDashboardComponent implements OnInit {
   authService = inject(AuthService);
   jogoFacade = inject(JogoManagementFacadeService);
   private fichasStore = inject(FichasStore);
@@ -166,14 +193,12 @@ export class MestreDashboardComponent {
 
   totalFichas = this.fichasStore.fichas;
 
-  // Load data on init
-  constructor() {
-    effect(() => {
-      this.jogoFacade.loadJogos().subscribe();
-    });
+  ngOnInit() {
+    // Carrega jogos ao inicializar
+    this.jogoFacade.loadJogos().subscribe();
   }
 
-  // ...existing navigation methods...
+  // Navigation methods
   criarJogo() {
     this.router.navigate(['/mestre/jogos/novo']);
   }
@@ -188,9 +213,5 @@ export class MestreDashboardComponent {
 
   verJogo(id: number) {
     this.router.navigate(['/mestre/jogos', id]);
-  }
-
-  voltarHome() {
-    this.router.navigate(['/']);
   }
 }

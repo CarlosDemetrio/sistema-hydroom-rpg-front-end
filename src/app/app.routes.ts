@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
+import { currentGameGuard } from './guards/current-game.guard';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ProfileComponent } from './pages/profile/profile.component';
@@ -66,6 +67,7 @@ export const routes: Routes = [
           {
             path: 'config',
             loadComponent: () => import('./features/mestre/pages/config/config-layout.component').then(m => m.ConfigLayoutComponent),
+            canActivate: [currentGameGuard],
             children: [
               {
                 path: '',

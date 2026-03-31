@@ -3,7 +3,8 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { JogosStore } from '../../stores/jogos.store';
 import { JogosApiService } from '../api/jogos-api.service';
-import { Jogo, JogoStatus } from '../../models';
+import { JogoResumo, Jogo, MeuJogo } from '../../models/jogo.model';
+import { CreateJogoDto, UpdateJogoDto } from '../../models/dtos/jogo.dto';
 
 /**
  * Jogo Business Service
@@ -33,32 +34,30 @@ export class JogoBusinessService {
   // LOAD
   // ============================================
 
-  loadJogos(filters?: { status?: JogoStatus; search?: string }): Observable<Jogo[]> {
-    return this.jogosApi.listJogos(filters).pipe(
+  loadJogos(): Observable<JogoResumo[]> {
+    return this.jogosApi.listJogos().pipe(
       tap(jogos => this.jogosStore.setJogos(jogos))
     );
   }
 
+  loadMeusJogos(): Observable<MeuJogo[]> {
+    return this.jogosApi.listMeusJogos();
+  }
+
   getJogo(id: number): Observable<Jogo> {
-    return this.jogosApi.getJogo(id).pipe(
-      tap(jogo => this.jogosStore.updateJogoInState(id, jogo))
-    );
+    return this.jogosApi.getJogo(id);
   }
 
   // ============================================
   // CRUD
   // ============================================
 
-  createJogo(data: { nome: string; descricao?: string; status?: JogoStatus }): Observable<Jogo> {
-    return this.jogosApi.createJogo(data).pipe(
-      tap(novoJogo => this.jogosStore.addJogo(novoJogo))
-    );
+  createJogo(dto: CreateJogoDto): Observable<Jogo> {
+    return this.jogosApi.createJogo(dto);
   }
 
-  updateJogo(id: number, data: Partial<Jogo>): Observable<Jogo> {
-    return this.jogosApi.updateJogo(id, data).pipe(
-      tap(jogoAtualizado => this.jogosStore.updateJogoInState(id, jogoAtualizado))
-    );
+  updateJogo(id: number, dto: UpdateJogoDto): Observable<Jogo> {
+    return this.jogosApi.updateJogo(id, dto);
   }
 
   deleteJogo(id: number): Observable<void> {
@@ -66,6 +65,4 @@ export class JogoBusinessService {
       tap(() => this.jogosStore.removeJogo(id))
     );
   }
-
-
 }

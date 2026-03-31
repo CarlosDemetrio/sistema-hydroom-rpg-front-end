@@ -1,6 +1,10 @@
 import { computed } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState } from '@ngrx/signals';
-import { Jogo, Participante } from '../models';
+import { JogoResumo } from '../models/jogo.model';
+import { Participante } from '../models/participante.model';
+
+// Alias for backwards compatibility within the store
+type Jogo = JogoResumo;
 
 /**
  * State interface for Jogos
@@ -42,7 +46,7 @@ export const JogosStore = signalStore(
      * Filter jogos by ATIVO status
      */
     jogosAtivos: computed(() =>
-      state.jogos().filter((j: Jogo) => j.status === 'ATIVO')
+      state.jogos().filter((j: Jogo) => j.ativo === true)
     )
   })),
 

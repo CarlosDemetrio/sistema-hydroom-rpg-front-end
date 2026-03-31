@@ -1,14 +1,30 @@
-import { NamedConfig } from './config-base.model';
-import { TipoAptidao } from './tipo-aptidao.model';
-
 /**
- * Skill/Aptitude Configuration
- * Defines a skill type in the game system (e.g., Espadas, Atletismo)
- * Configured by Mestre
+ * Configuração de Aptidão.
+ * Aligned with backend AptidaoResponse record.
  */
-export interface AptidaoConfig extends NamedConfig {
+export interface AptidaoConfig {
+  id: number;
+  jogoId: number;
   tipoAptidaoId: number;
+  tipoAptidaoNome: string;
+  nome: string;
+  descricao: string | null;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
+}
 
-  // Nested object (populated by backend)
-  tipoAptidao?: TipoAptidao;
+export interface CreateAptidaoDto {
+  jogoId: number;
+  nome: string;
+  tipoAptidaoId: number;
+  descricao?: string;
+  ordemExibicao?: number;
+}
+
+export interface UpdateAptidaoDto {
+  nome?: string;
+  tipoAptidaoId?: number;
+  descricao?: string;
+  ordemExibicao?: number;
 }

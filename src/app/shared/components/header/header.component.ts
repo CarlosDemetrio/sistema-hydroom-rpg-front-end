@@ -133,8 +133,16 @@ export class HeaderComponent {
     {
       label: 'Configurações',
       icon: 'pi pi-cog',
-      command: () => this.router.navigate(['/config']),
-      visible: this.authService.isMestre()
+      command: () => {
+        if (this.currentGameService.hasCurrentGame()) {
+          this.router.navigate(['/mestre/config']);
+        }
+      },
+      visible: this.authService.isMestre(),
+      disabled: !this.currentGameService.hasCurrentGame(),
+      title: !this.currentGameService.hasCurrentGame()
+        ? 'Selecione ou crie um jogo para acessar as configurações'
+        : undefined
     },
     { separator: true },
     {
@@ -146,6 +154,10 @@ export class HeaderComponent {
       })
     }
   ];
+
+  goHome() {
+    this.router.navigate(['/dashboard']);
+  }
 
   onGameChange(gameId: number | null) {
     if (gameId) {

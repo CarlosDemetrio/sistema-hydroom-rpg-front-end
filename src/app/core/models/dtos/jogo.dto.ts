@@ -1,5 +1,6 @@
 /**
- * DTO for creating a new game
+ * DTO para criar um novo jogo.
+ * Alinhado com backend CriarJogoRequest.
  */
 export interface CreateJogoDto {
   nome: string;
@@ -7,10 +8,18 @@ export interface CreateJogoDto {
 }
 
 /**
- * DTO for updating an existing game
+ * DTO para editar um jogo.
+ * Alinhado com backend EditarJogoRequest.
  */
 export interface UpdateJogoDto {
   nome?: string;
   descricao?: string;
-  status?: 'ATIVO' | 'PAUSADO' | 'FINALIZADO';
+}
+
+/**
+ * DTO para duplicar um jogo.
+ * Alinhado com backend DuplicarJogoRequest.
+ */
+export interface DuplicarJogoDto {
+  novoNome: string;
 }

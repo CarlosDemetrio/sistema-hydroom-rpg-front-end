@@ -116,6 +116,24 @@ export class ConfigSidebarComponent {
       description: 'Masculino, Feminino, etc.',
       icon: 'pi pi-user',
       route: '/mestre/config/generos'
+    },
+    {
+      label: 'Índoles',
+      description: 'Alinhamentos de personagem',
+      icon: 'pi pi-heart',
+      route: '/mestre/config/indoles'
+    },
+    {
+      label: 'Membros do Corpo',
+      description: 'Cabeça, Braços, Pernas, etc.',
+      icon: 'pi pi-android',
+      route: '/mestre/config/membros-corpo'
+    },
+    {
+      label: 'Bônus',
+      description: 'Modificadores de atributos',
+      icon: 'pi pi-plus-circle',
+      route: '/mestre/config/bonus'
     }
   ];
 }

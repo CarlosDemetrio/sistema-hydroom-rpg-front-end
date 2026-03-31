@@ -1,24 +1,6 @@
 /* PrimeNG 21 - Theme is configured in app.config.ts */
 /* NO CSS imports needed for PrimeNG components */
 
-/* ========================================
-   🎨 CONFIGURAÇÃO DE CORES
-   ========================================
-
-   TODAS as cores são configuráveis em:
-   src/app/theme/theme-colors.ts
-
-   Para mudar o tema (ex: de Sky para outro):
-   1. Abra src/app/theme/theme-colors.ts
-   2. Altere PRIMARY_COLORS (ex: sky → blue, purple, etc)
-   3. Salve - as cores serão aplicadas automaticamente!
-
-   Cores atuais:
-   - Primary: Sky #0ea5e9 (azul vibrante)
-   - Light Surface: Zinc (neutro)
-   - Dark Surface: Slate (azulado)
-   ======================================== */
-
 /* PrimeIcons */
 @import 'primeicons/primeicons.css';
 
@@ -37,84 +19,128 @@
 }
 
 /* ========================================
-   CSS VARIABLES - Generated from theme-colors.ts
+   CSS VARIABLES
+   Design System Klayrah RPG
+   Tema: Escuro com accent âmbar/dourado
+   Modo padrão: dark (.app-dark aplicado no body)
    ======================================== */
 :root {
-  /* Primary Colors - Light Mode */
-  --app-primary: #0ea5e9;
-  --app-primary-hover: #0284c7;
-  --app-primary-active: #0369a1;
+  /* ---- RPG Accent: Amber/Gold ---- */
+  --rpg-amber-50:  #fffbeb;
+  --rpg-amber-100: #fef3c7;
+  --rpg-amber-200: #fde68a;
+  --rpg-amber-300: #fcd34d;
+  --rpg-amber-400: #fbbf24;
+  --rpg-amber-500: #f59e0b;   /* tom principal */
+  --rpg-amber-600: #d97706;
+  --rpg-amber-700: #b45309;
+  --rpg-amber-800: #92400e;
+  --rpg-amber-900: #78350f;
+
+  /* ---- RPG Surface: Dark Slate/Zinc ---- */
+  --rpg-surface-ground:  #0a0e1a;   /* fundo mais profundo */
+  --rpg-surface-900:     #0f1625;
+  --rpg-surface-800:     #161d30;
+  --rpg-surface-700:     #1e2740;
+  --rpg-surface-600:     #253050;
+  --rpg-surface-500:     #2e3a60;
+  --rpg-surface-400:     #3d4e7a;
+  --rpg-surface-300:     #5a6e9e;
+  --rpg-surface-200:     #8494bc;
+  --rpg-surface-100:     #b0bdd6;
+  --rpg-surface-50:      #dde3f0;
+
+  /* ---- Primary (modo light default = Sky, sobrescrito no dark) ---- */
+  --app-primary:          #0ea5e9;
+  --app-primary-hover:    #0284c7;
+  --app-primary-active:   #0369a1;
   --app-primary-contrast: #ffffff;
 
-  /* Background */
+  /* ---- Background ---- */
   --app-bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
   --app-bg-solid: #ffffff;
 
-  /* Text */
-  --app-text-primary: #3f3f46;
+  /* ---- Text ---- */
+  --app-text-primary:   #3f3f46;
   --app-text-secondary: #71717a;
-  --app-text-muted: #a1a1aa;
+  --app-text-muted:     #a1a1aa;
 
-  /* Surface */
-  --app-surface-card: #ffffff;
-  --app-surface-100: #f4f4f5;
-  --app-surface-200: #e4e4e7;
+  /* ---- Surface ---- */
+  --app-surface-card:   #ffffff;
+  --app-surface-100:    #f4f4f5;
+  --app-surface-200:    #e4e4e7;
   --app-surface-border: #e4e4e7;
 
-  /* Shadows */
-  --app-shadow-card: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -2px rgba(14, 165, 233, 0.05);
-  --app-shadow-hover: 0 20px 25px -5px rgba(14, 165, 233, 0.15), 0 10px 10px -5px rgba(14, 165, 233, 0.08);
-  --app-shadow-button: 0 4px 6px -1px rgba(14, 165, 233, 0.3), 0 2px 4px -2px rgba(14, 165, 233, 0.2);
+  /* ---- Shadows ---- */
+  --app-shadow-card:         0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -2px rgba(14, 165, 233, 0.05);
+  --app-shadow-hover:        0 20px 25px -5px rgba(14, 165, 233, 0.15), 0 10px 10px -5px rgba(14, 165, 233, 0.08);
+  --app-shadow-button:       0 4px 6px -1px rgba(14, 165, 233, 0.3), 0 2px 4px -2px rgba(14, 165, 233, 0.2);
   --app-shadow-button-hover: 0 10px 15px -3px rgba(14, 165, 233, 0.4), 0 4px 6px -4px rgba(14, 165, 233, 0.3);
-  --app-shadow-focus: 0 0 0 4px rgba(14, 165, 233, 0.2);
+  --app-shadow-focus:        0 0 0 4px rgba(14, 165, 233, 0.2);
+  --rpg-shadow-amber:        0 0 12px rgba(245, 158, 11, 0.35);
+  --rpg-shadow-amber-strong: 0 0 24px rgba(245, 158, 11, 0.55);
 
-  /* Gradients */
+  /* ---- Gradients ---- */
   --app-gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
   --app-gradient-reverse: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  --rpg-gradient-amber:   linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --rpg-gradient-dark:    linear-gradient(160deg, #0f1625 0%, #161d30 40%, #1e2740 100%);
 
-  /* Scrollbar */
-  --app-scrollbar-track: #f4f4f5;
-  --app-scrollbar-thumb: #a1a1aa;
+  /* ---- Typography ---- */
+  --rpg-font-display: 'Cinzel', 'Georgia', 'Times New Roman', serif;
+  --rpg-font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --rpg-font-mono:    'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+
+  /* ---- Scrollbar ---- */
+  --app-scrollbar-track:       #f4f4f5;
+  --app-scrollbar-thumb:       #a1a1aa;
   --app-scrollbar-thumb-hover: #0ea5e9;
+
+  /* ---- Misc ---- */
+  --rpg-border-radius-card: 12px;
+  --rpg-border-radius-badge: 6px;
+  --rpg-transition-fast: 0.15s ease;
+  --rpg-transition-base: 0.25s ease;
 }
 
+/* ---- DARK MODE (padrão do app) ---- */
 .app-dark {
-  /* Primary Colors - Dark Mode */
-  --app-primary: #38bdf8;
-  --app-primary-hover: #7dd3fc;
-  --app-primary-active: #bae6fd;
-  --app-primary-contrast: #0f172a;
+  /* Primary: âmbar/dourado como accent no dark */
+  --app-primary:          #fbbf24;
+  --app-primary-hover:    #f59e0b;
+  --app-primary-active:   #d97706;
+  --app-primary-contrast: #0a0e1a;
 
-  /* Background */
-  --app-bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-  --app-bg-solid: #020617;
+  /* Background escuro */
+  --app-bg-gradient: var(--rpg-gradient-dark);
+  --app-bg-solid:    var(--rpg-surface-ground);
 
   /* Text */
-  --app-text-primary: #f8fafc;
-  --app-text-secondary: #94a3b8;
-  --app-text-muted: #64748b;
+  --app-text-primary:   #e8edf6;
+  --app-text-secondary: #8494bc;
+  --app-text-muted:     #5a6e9e;
 
   /* Surface */
-  --app-surface-card: #1e293b;
-  --app-surface-100: #334155;
-  --app-surface-200: #475569;
-  --app-surface-border: #475569;
+  --app-surface-card:   var(--rpg-surface-800);
+  --app-surface-100:    var(--rpg-surface-700);
+  --app-surface-200:    var(--rpg-surface-600);
+  --app-surface-border: var(--rpg-surface-600);
 
-  /* Shadows */
-  --app-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
-  --app-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  --app-shadow-button: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
-  --app-shadow-button-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
-  --app-shadow-focus: 0 0 0 4px rgba(56, 189, 248, 0.2);
+  /* Shadows no dark */
+  --app-shadow-card:         0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
+  --app-shadow-hover:        0 8px 32px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(251, 191, 36, 0.1);
+  --app-shadow-button:       0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --app-shadow-button-hover: 0 8px 16px rgba(245, 158, 11, 0.35), 0 4px 8px rgba(0, 0, 0, 0.3);
+  --app-shadow-focus:        0 0 0 3px rgba(251, 191, 36, 0.3);
 
   /* Gradients */
-  --app-gradient-primary: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%);
-  --app-gradient-reverse: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --app-gradient-primary: var(--rpg-gradient-amber);
+  --app-gradient-reverse: linear-gradient(135deg, var(--rpg-surface-800) 0%, var(--rpg-surface-700) 100%);
 
   /* Scrollbar */
-  --app-scrollbar-track: #334155;
-  --app-scrollbar-thumb: #64748b;
-  --app-scrollbar-thumb-hover: #38bdf8;
+  --app-scrollbar-track:       var(--rpg-surface-700);
+  --app-scrollbar-thumb:       var(--rpg-surface-400);
+  --app-scrollbar-thumb-hover: var(--rpg-amber-400);
 }
 
 /* ========================================
@@ -128,7 +154,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--rpg-font-body), 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background: var(--app-bg-gradient);
   color: var(--app-text-primary);
   overflow-x: hidden;
@@ -493,5 +519,187 @@ p {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+}
+
+/* ========================================
+   RPG AESTHETIC UTILITIES
+   Classes utilitárias para identidade visual Klayrah RPG
+   ======================================== */
+
+/* ---- .card-rpg -------------------------------------------------- */
+/* Card com borda âmbar sutil, fundo escuro e sombra temática */
+.card-rpg {
+  background: var(--app-surface-card);
+  border: 1px solid color-mix(in srgb, var(--rpg-amber-600) 25%, var(--app-surface-border));
+  border-radius: var(--rpg-border-radius-card);
+  box-shadow: var(--app-shadow-card), inset 0 1px 0 rgba(251, 191, 36, 0.05);
+  transition: box-shadow var(--rpg-transition-base), border-color var(--rpg-transition-base);
+}
+
+.card-rpg:hover {
+  border-color: color-mix(in srgb, var(--rpg-amber-500) 45%, transparent);
+  box-shadow: var(--app-shadow-hover), var(--rpg-shadow-amber);
+}
+
+/* Variante com header decorativo âmbar */
+.card-rpg--accented {
+  border-top: 3px solid var(--rpg-amber-500);
+}
+
+/* ---- .badge-atributo -------------------------------------------- */
+/* Badge compacto para siglas de atributos (FOR, AGI, INT…) */
+.badge-atributo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 1.8rem;
+  padding: 0 0.5rem;
+  background: color-mix(in srgb, var(--rpg-amber-500) 15%, transparent);
+  color: var(--rpg-amber-400);
+  border: 1px solid color-mix(in srgb, var(--rpg-amber-500) 40%, transparent);
+  border-radius: var(--rpg-border-radius-badge);
+  font-family: var(--rpg-font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background var(--rpg-transition-fast), box-shadow var(--rpg-transition-fast);
+}
+
+.badge-atributo:hover,
+.badge-atributo--active {
+  background: color-mix(in srgb, var(--rpg-amber-500) 25%, transparent);
+  box-shadow: var(--rpg-shadow-amber);
+}
+
+/* Variantes de severidade */
+.badge-atributo--success {
+  background: color-mix(in srgb, #22c55e 15%, transparent);
+  color: #4ade80;
+  border-color: color-mix(in srgb, #22c55e 40%, transparent);
+}
+
+.badge-atributo--danger {
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+  color: #f87171;
+  border-color: color-mix(in srgb, #ef4444 40%, transparent);
+}
+
+/* ---- .valor-numerico -------------------------------------------- */
+/* Número em destaque estilo grimório (usado em fichas, stats, etc) */
+.valor-numerico {
+  font-family: var(--rpg-font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--rpg-amber-400);
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* Variante pequena: inline em tabelas */
+.valor-numerico--sm {
+  font-size: 0.875rem;
+}
+
+/* Variante grande: destaque em painéis */
+.valor-numerico--lg {
+  font-size: 2rem;
+}
+
+/* Variante para valores negativos/perda */
+.valor-numerico--negative {
+  color: #f87171;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+}
+
+/* ---- .rpg-section-title ----------------------------------------- */
+/* Título de seção com underline decorativo âmbar */
+.rpg-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--app-text-primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--rpg-amber-500) 35%, transparent);
+  margin-bottom: 0.75rem;
+}
+
+/* ---- .rpg-table -------------------------------------------------- */
+/* Tabela com estilo temático: linhas com hover âmbar sutil */
+.rpg-table .p-datatable-tbody > tr {
+  transition: background var(--rpg-transition-fast);
+}
+
+.rpg-table .p-datatable-tbody > tr:hover {
+  background: color-mix(in srgb, var(--rpg-amber-500) 6%, transparent) !important;
+}
+
+/* ---- .rpg-drag-handle ------------------------------------------- */
+/* Handle de drag-and-drop em tabelas reordenáveis */
+.rpg-drag-handle {
+  cursor: grab;
+  color: var(--app-text-muted);
+  transition: color var(--rpg-transition-fast);
+}
+
+.rpg-drag-handle:hover {
+  color: var(--rpg-amber-400);
+}
+
+.rpg-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* ---- .rpg-empty-state ------------------------------------------- */
+/* Estado vazio temático */
+.rpg-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  color: var(--app-text-muted);
+}
+
+.rpg-empty-state__icon {
+  font-size: 3.5rem;
+  opacity: 0.4;
+}
+
+.rpg-empty-state__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--app-text-secondary);
+  margin: 0;
+}
+
+.rpg-empty-state__subtitle {
+  font-size: 0.875rem;
+  color: var(--app-text-muted);
+  margin: 0;
+  text-align: center;
+  max-width: 320px;
+}
+
+/* ---- .rpg-skeleton ---------------------------------------------- */
+/* Placeholder animado enquanto carrega */
+.rpg-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--app-surface-100) 25%,
+    var(--app-surface-200) 50%,
+    var(--app-surface-100) 75%
+  );
+  background-size: 200% 100%;
+  animation: rpg-shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes rpg-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 

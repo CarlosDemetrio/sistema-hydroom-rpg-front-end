@@ -1,50 +1,208 @@
-import { BaseConfig, JogoScopedConfig, NamedConfig } from './config-base.model';
-
-// Basic config models
-
-export interface CategoriaVantagem extends BaseConfig {
+/**
+ * Categoria de Vantagem.
+ * Aligned with backend CategoriaVantagemResponse record.
+ */
+export interface CategoriaVantagem {
+  id: number;
+  jogoId: number;
   nome: string;
+  descricao: string | null;
+  cor: string | null;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface NivelConfig extends JogoScopedConfig {
+/**
+ * Bônus de atributo da Classe.
+ */
+export interface ClasseBonusConfig {
+  id: number;
+  classeId: number;
+  bonusConfigId: number;
+  bonusNome: string;
+}
+
+/**
+ * Bônus de aptidão da Classe.
+ */
+export interface ClasseAptidaoBonus {
+  id: number;
+  classeId: number;
+  aptidaoConfigId: number;
+  aptidaoNome: string;
+}
+
+/**
+ * Classe de Personagem.
+ * Aligned with backend ClasseResponse record.
+ */
+export interface ClassePersonagem {
+  id: number;
+  jogoId: number;
+  nome: string;
+  descricao: string | null;
+  ordemExibicao: number;
+  bonusConfig: ClasseBonusConfig[];
+  aptidaoBonus: ClasseAptidaoBonus[];
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
+}
+
+/**
+ * Bônus de atributo por raça.
+ */
+export interface RacaBonusAtributo {
+  id: number;
+  racaId: number;
+  atributoConfigId: number;
+  atributoNome: string;
+  bonus: number;
+}
+
+/**
+ * Classe permitida para a raça.
+ */
+export interface RacaClassePermitida {
+  id: number;
+  racaId: number;
+  classeId: number;
+  classeNome: string;
+}
+
+/**
+ * Raça.
+ * Aligned with backend RacaResponse record.
+ */
+export interface Raca {
+  id: number;
+  jogoId: number;
+  nome: string;
+  descricao: string | null;
+  ordemExibicao: number;
+  bonusAtributos: RacaBonusAtributo[];
+  classesPermitidas: RacaClassePermitida[];
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
+}
+
+/**
+ * Configuração de Nível.
+ * Aligned with backend NivelResponse record.
+ */
+export interface NivelConfig {
+  id: number;
+  jogoId: number;
   nivel: number;
-  xpMinimo: number;
-  xpMaximo: number;
-  bonusAtributo: number;
+  xpNecessaria: number;
+  pontosAtributo: number;
+  pontosAptidao: number;
+  limitadorAtributo: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface LimitadorConfig extends NamedConfig {
-  penalidade: number;
+/**
+ * Configuração de Dado de Prospecção.
+ * Aligned with backend DadoProspeccaoResponse record.
+ */
+export interface DadoProspeccaoConfig {
+  id: number;
+  jogoId: number;
+  nome: string;
+  descricao: string | null;
+  numeroFaces: number;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface ClassePersonagem extends NamedConfig {
-  bonusAtributos: Record<string, number>; // e.g., { "FOR": 2, "VIG": 1 }
+/**
+ * Configuração de Presença.
+ * Aligned with backend PresencaResponse record.
+ */
+export interface PresencaConfig {
+  id: number;
+  jogoId: number;
+  nome: string;
+  descricao: string | null;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface Raca extends NamedConfig {
-  bonusAtributos: Record<string, number>;
+/**
+ * Configuração de Gênero.
+ * Aligned with backend GeneroResponse record.
+ */
+export interface GeneroConfig {
+  id: number;
+  jogoId: number;
+  nome: string;
+  descricao: string | null;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface PresencaConfig extends NamedConfig {
-  efeito: string;
+/**
+ * Configuração de Índole.
+ * Aligned with backend IndoleResponse record.
+ */
+export interface IndoleConfig {
+  id: number;
+  jogoId: number;
+  nome: string;
+  descricao: string | null;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface GeneroConfig extends NamedConfig {
+/**
+ * Configuração de Membro do Corpo.
+ * Aligned with backend MembroCorpoResponse record.
+ */
+export interface MembroCorpoConfig {
+  id: number;
+  jogoId: number;
+  nome: string;
+  porcentagemVida: number;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface IndoleConfig extends NamedConfig {
+/**
+ * Configuração de Bônus.
+ * Aligned with backend BonusResponse record.
+ */
+export interface BonusConfig {
+  id: number;
+  jogoId: number;
+  nome: string;
+  sigla: string | null;
+  descricao: string | null;
+  formulaBase: string | null;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
 
-export interface MembroCorpoConfig extends NamedConfig {
-  vidaMaxima: number;
+/**
+ * Item de reordenação (usado em todos os endpoints /reordenar)
+ */
+export interface ReordenarItem {
+  id: number;
+  ordemExibicao: number;
 }
 
-export interface BonusConfig extends NamedConfig {
-  valor: number;
-  tipo: string; // 'ATRIBUTO' | 'APTIDAO' | 'VIDA' | etc
+/**
+ * Request de reordenação batch
+ */
+export interface ReordenarRequest {
+  itens: ReordenarItem[];
 }
 
-export interface ProspeccaoConfig extends JogoScopedConfig {
-  tipoDado: string; // e.g., "D6", "D10"
-  regras: string;
-}
+// Kept for backwards compatibility — previously in this file
+export type LimitadorConfig = never;

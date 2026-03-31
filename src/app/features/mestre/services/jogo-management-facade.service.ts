@@ -3,75 +3,54 @@ import { Observable, forkJoin } from 'rxjs';
 import { JogoBusinessService } from '../../../core/services/business/jogo-business.service';
 import { ParticipanteBusinessService } from '../../../core/services/business/participante-business.service';
 import { FichaBusinessService } from '../../../core/services/business/ficha-business.service';
-import { Jogo, JogoStatus, Participante } from '../../../core/models';
+import { JogoResumo, Jogo } from '../../../core/models/jogo.model';
+import { Participante } from '../../../core/models/participante.model';
+import { CreateJogoDto, UpdateJogoDto } from '../../../core/models/dtos/jogo.dto';
+import { Ficha } from '../../../core/models/ficha.model';
 
 /**
  * Jogo Management Facade Service
  *
- * ✅ RESPONSABILIDADE ÚNICA: COORDENAÇÃO
- *
- * - Delega para Business Services
- * - Coordena múltiplos services quando necessário
- * - Expõe API simplificada para Components
- *
- * NÃO tem:
- * - Lógica de negócio (está nos Business Services)
- * - Chamadas HTTP diretas (está nos API Services via Business Services)
- * - Manipulação de Store (está nos Business Services)
+ * Responsabilidade: COORDENAÇÃO entre Business Services.
+ * Expõe API simplificada para Components.
  */
 @Injectable({
   providedIn: 'root'
 })
 export class JogoManagementFacadeService {
-  // Inject Business Services
   private jogoService = inject(JogoBusinessService);
   private participanteService = inject(ParticipanteBusinessService);
   private fichaService = inject(FichaBusinessService);
 
-  // Exposed state (delegação)
+  // Exposed state
   jogos = this.jogoService.jogos;
   loading = this.jogoService.loading;
   error = this.jogoService.error;
 
-  // Computed stats (pode combinar múltiplos services)
   totalJogos = computed(() => this.jogoService.jogos().length);
 
-  totalJogadores = computed(() => {
-    const jogos = this.jogoService.jogos();
-    const uniqueJogadores = new Set<number>();
-    jogos.forEach(jogo => {
-      jogo.participantes?.forEach(p => {
-        if (p.jogadorId) uniqueJogadores.add(p.jogadorId);
-      });
-    });
-    return uniqueJogadores.size;
-  });
-
-  jogosRecentes = computed(() => {
-    return this.jogoService.jogos()
-      .slice()
-      .sort((a, b) => new Date(b.dataCriacao || 0).getTime() - new Date(a.dataCriacao || 0).getTime())
-      .slice(0, 5);
-  });
+  jogosAtivos = computed(() =>
+    this.jogoService.jogos().filter((j: JogoResumo) => j.ativo === true)
+  );
 
   // ============================================
-  // DELEGAÇÃO SIMPLES (1:1 com Business Service)
+  // DELEGAÇÃO
   // ============================================
 
-  loadJogos(filters?: { status?: JogoStatus; search?: string }): Observable<Jogo[]> {
-    return this.jogoService.loadJogos(filters);
+  loadJogos(): Observable<JogoResumo[]> {
+    return this.jogoService.loadJogos();
   }
 
   getJogo(id: number): Observable<Jogo> {
     return this.jogoService.getJogo(id);
   }
 
-  createJogo(data: { nome: string; descricao?: string; status?: JogoStatus }): Observable<Jogo> {
-    return this.jogoService.createJogo(data);
+  createJogo(dto: CreateJogoDto): Observable<Jogo> {
+    return this.jogoService.createJogo(dto);
   }
 
-  updateJogo(id: number, data: Partial<Jogo>): Observable<Jogo> {
-    return this.jogoService.updateJogo(id, data);
+  updateJogo(id: number, dto: UpdateJogoDto): Observable<Jogo> {
+    return this.jogoService.updateJogo(id, dto);
   }
 
   deleteJogo(id: number): Observable<void> {
@@ -91,42 +70,32 @@ export class JogoManagementFacadeService {
     return this.participanteService.rejeitarParticipante(jogoId, participanteId);
   }
 
-  removerParticipante(jogoId: number, participanteId: number): Observable<void> {
-    return this.participanteService.removerParticipante(jogoId, participanteId);
+  banirParticipante(jogoId: number, participanteId: number): Observable<Participante> {
+    return this.participanteService.banirParticipante(jogoId, participanteId);
   }
 
   // ============================================
-  // COORDENAÇÃO (combina múltiplos services)
+  // COORDENAÇÃO
   // ============================================
 
-  /**
-   * Carrega jogo com participantes e fichas em paralelo
-   * Exemplo de COORDENAÇÃO entre múltiplos services
-   */
   loadJogoComplete(jogoId: number): Observable<{
     jogo: Jogo;
     participantes: Participante[];
-    fichas: any[];
+    fichas: Ficha[];
   }> {
     return forkJoin({
       jogo: this.jogoService.getJogo(jogoId),
       participantes: this.participanteService.loadParticipantes(jogoId),
-      fichas: this.fichaService.loadFichas({ jogoId })
+      fichas: this.fichaService.loadFichas(jogoId)
     });
   }
 
-  /**
-   * Computed de participantes aprovados
-   */
   getParticipantesAprovados(jogoId: number) {
     return computed(() =>
       this.participanteService.getParticipantesByStatus(jogoId, 'APROVADO')
     );
   }
 
-  /**
-   * Computed de participantes pendentes
-   */
   getParticipantesPendentes(jogoId: number) {
     return computed(() =>
       this.participanteService.getParticipantesByStatus(jogoId, 'PENDENTE')

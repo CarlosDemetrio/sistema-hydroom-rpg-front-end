@@ -1,317 +1,173 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Ficha, CreateFichaDto, UpdateFichaDto } from '../../models';
+import {
+  Ficha,
+  FichaResumo,
+  DuplicarFichaResponse,
+} from '../../models/ficha.model';
+import {
+  CreateFichaDto,
+  NpcCreateDto,
+  UpdateFichaDto,
+  DuplicarFichaDto,
+} from '../../models/dtos/ficha.dto';
 import { environment } from '../../../../environments/environment';
 
-/**
- * Filter options for listing character sheets
- */
 export interface FichaFilters {
-  jogoId?: number;
-  jogadorId?: number;
+  nome?: string;
+  classeId?: number;
+  racaId?: number;
+  nivel?: number;
 }
 
 /**
- * Response for calculated values endpoint
+ * API Service para Fichas de personagem.
  *
- * @example
- * {
- *   "fichaId": 123,
- *   "BBA": 8,
- *   "BBM": 5,
- *   "impeto": 12,
- *   "vidaTotal": 85,
- *   "manaTotal": 60
- * }
+ * Endpoints corretos do backend:
+ * - GET  /api/v1/jogos/{jogoId}/fichas          — listar fichas do jogo
+ * - GET  /api/v1/jogos/{jogoId}/fichas/minhas   — minhas fichas no jogo
+ * - POST /api/v1/jogos/{jogoId}/fichas          — criar ficha no jogo
+ * - GET  /api/v1/jogos/{jogoId}/npcs            — listar NPCs do jogo
+ * - POST /api/v1/jogos/{jogoId}/npcs            — criar NPC (via isNpc=true em fichas)
+ * - GET  /api/v1/fichas/{id}                    — buscar ficha por ID
+ * - GET  /api/v1/fichas/{id}/resumo             — resumo calculado da ficha
+ * - PUT  /api/v1/fichas/{id}                    — atualizar ficha
+ * - DELETE /api/v1/fichas/{id}                  — deletar ficha (Mestre)
+ * - POST /api/v1/fichas/{id}/duplicar           — duplicar ficha
+ * - POST /api/v1/fichas/{id}/preview            — preview de cálculos sem persistir
+ * - GET  /api/v1/fichas/{id}/vantagens          — listar vantagens da ficha
+ * - POST /api/v1/fichas/{id}/vantagens          — comprar vantagem
+ * - PUT  /api/v1/fichas/{id}/vantagens/{vid}    — aumentar nível de vantagem
  */
-export interface FichaCalculados {
-  fichaId: number;
-  BBA: number;
-  BBM: number;
-  impeto: number;
-  vidaTotal: number;
-  manaTotal?: number;
-  [key: string]: number | undefined;
-}
-
-/**
- * Request body for dar experiência (Mestre only)
- *
- * @example
- * {
- *   "experiencia": 1000,
- *   "motivo": "Derrotar o dragão"
- * }
- */
-export interface DarExperienciaDto {
-  experiencia: number;
-  motivo?: string;
-}
-
-/**
- * Response after granting XP (includes level up info)
- *
- * @example
- * {
- *   "fichaId": 123,
- *   "experienciaAnterior": 5000,
- *   "experienciaNova": 6000,
- *   "nivelAnterior": 5,
- *   "nivelNovo": 6,
- *   "subiu": true,
- *   "mensagem": "Parabéns! Você subiu para o nível 6!"
- * }
- */
-export interface DarExperienciaResponse {
-  fichaId: number;
-  experienciaAnterior: number;
-  experienciaNova: number;
-  nivelAnterior: number;
-  nivelNovo: number;
-  subiu: boolean;
-  mensagem: string;
-}
-
-/**
- * API Service for Character Sheets (Fichas) endpoints
- *
- * ⚠️ IMPORTANT: Backend recalculates all derived stats on POST/PUT
- *
- * 📋 ENDPOINTS DOCUMENTATION:
- *
- * All endpoints assume base URL: /api/fichas
- *
- * Authentication: Required (Bearer token via HttpOnly cookie)
- * Authorization: Role-based (MESTRE vs JOGADOR)
- */
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class FichasApiService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/fichas`;
+  private baseUrl = environment.apiUrl;
 
   /**
-   * 📌 GET /api/fichas
-   *
-   * List character sheets (filtered by role on backend)
-   * - Mestre: sees ALL fichas (optionally filter by jogoId)
-   * - Jogador: sees ONLY own fichas
-   *
-   * @param filters - Optional filters (jogoId, jogadorId)
-   *
-   * @returns Observable<Ficha[]>
-   *
-   * @example Request
-   * GET /api/fichas?jogoId=1
-   *
-   * @example Response
-   * [
-   *   {
-   *     "id": 1,
-   *     "nome": "Aragorn",
-   *     "jogoId": 1,
-   *     "jogadorId": 5,
-   *     "identificacao": { ... },
-   *     "progressao": { "nivel": 5, "experiencia": 5000, ... },
-   *     "atributos": [ ... ],
-   *     "vida": { "vidaTotal": 85, ... },
-   *     "pericias": [ ... ],
-   *     "equipamentos": [ ... ],
-   *     "vantagens": [ ... ],
-   *     "titulosRunas": [ ... ]
-   *   }
-   * ]
+   * GET /api/v1/jogos/{jogoId}/fichas
+   * Mestre vê todas; Jogador vê apenas as suas. Suporta filtros opcionais.
    */
-  listFichas(filters?: FichaFilters): Observable<Ficha[]> {
+  listFichas(jogoId: number, filtros?: FichaFilters): Observable<Ficha[]> {
     let params = new HttpParams();
-    if (filters?.jogoId) {
-      params = params.set('jogoId', filters.jogoId.toString());
+    if (filtros?.nome) {
+      params = params.set('nome', filtros.nome);
     }
-    if (filters?.jogadorId) {
-      params = params.set('jogadorId', filters.jogadorId.toString());
+    if (filtros?.classeId != null) {
+      params = params.set('classeId', filtros.classeId.toString());
     }
-    return this.http.get<Ficha[]>(this.baseUrl, { params });
+    if (filtros?.racaId != null) {
+      params = params.set('racaId', filtros.racaId.toString());
+    }
+    if (filtros?.nivel != null) {
+      params = params.set('nivel', filtros.nivel.toString());
+    }
+    return this.http.get<Ficha[]>(`${this.baseUrl}/jogos/${jogoId}/fichas`, { params });
   }
 
   /**
-   * 📌 GET /api/fichas/{id}
-   *
-   * Get character sheet details by ID
-   * Response includes ALL calculated values from backend
-   *
-   * @param id - Ficha ID
-   *
-   * @returns Observable<Ficha>
-   *
-   * @example Request
-   * GET /api/fichas/123
-   *
-   * @example Response
-   * {
-   *   "id": 123,
-   *   "nome": "Aragorn",
-   *   "jogoId": 1,
-   *   "jogadorId": 5,
-   *   "identificacao": {
-   *     "origem": "Númenor",
-   *     "indole": "Leal",
-   *     "linhagem": "Humano"
-   *   },
-   *   "progressao": {
-   *     "nivel": 5,
-   *     "experiencia": 5000,
-   *     "renascimento": 0,
-   *     "insolitus": 2,
-   *     "nvs": 1
-   *   },
-   *   "atributos": [
-   *     {
-   *       "nome": "FOR",
-   *       "valorBase": 16,
-   *       "valorNivel": 2,
-   *       "valorOutros": 0,
-   *       "valorTotal": 18,
-   *       "modificador": 4
-   *     }
-   *   ],
-   *   "vida": {
-   *     "vidaVigor": 20,
-   *     "vidaOutros": 5,
-   *     "vidaNivel": 60,
-   *     "vidaTotal": 85,
-   *     "sanguePercentual": 100
-   *   },
-   *   "pericias": [...],
-   *   "equipamentos": [...],
-   *   "vantagens": [...],
-   *   "titulosRunas": [...]
-   * }
+   * GET /api/v1/jogos/{jogoId}/fichas/minhas
+   * Retorna apenas as fichas do usuário atual no jogo.
+   */
+  listMinhasFichas(jogoId: number): Observable<Ficha[]> {
+    return this.http.get<Ficha[]>(`${this.baseUrl}/jogos/${jogoId}/fichas/minhas`);
+  }
+
+  /**
+   * GET /api/v1/jogos/{jogoId}/npcs
+   * Lista NPCs do jogo (apenas MESTRE).
+   */
+  listNpcs(jogoId: number): Observable<Ficha[]> {
+    return this.http.get<Ficha[]>(`${this.baseUrl}/jogos/${jogoId}/npcs`);
+  }
+
+  /**
+   * GET /api/v1/fichas/{id}
+   * Busca ficha por ID.
    */
   getFicha(id: number): Observable<Ficha> {
-    return this.http.get<Ficha>(`${this.baseUrl}/${id}`);
+    return this.http.get<Ficha>(`${this.baseUrl}/fichas/${id}`);
   }
 
   /**
-   * 📌 POST /api/fichas
-   *
-   * Create new character sheet
-   * Backend RECALCULATES all derived stats before returning
-   *
-   * @param ficha - Ficha data (without calculated fields)
-   *
-   * @returns Observable<Ficha> - Complete ficha with calculated values
-   *
-   * @example Request
-   * POST /api/fichas
-   * {
-   *   "nome": "Aragorn",
-   *   "jogoId": 1,
-   *   "identificacao": { "origem": "Númenor", ... },
-   *   "progressao": { "renascimento": 0, "insolitus": 2, "nvs": 1 },
-   *   "atributos": [ { "nome": "FOR", "valorBase": 16 } ],
-   *   "vida": { "vidaVigor": 20, "vidaOutros": 5, ... },
-   *   "pericias": [ { "nome": "Furtividade", "pontosInvestidos": 5, "atributoBase": "DES" } ],
-   *   "equipamentos": [ ... ],
-   *   "vantagens": [ ... ],
-   *   "titulosRunas": [ ... ]
-   * }
-   *
-   * @example Response (includes calculated fields)
-   * {
-   *   "id": 123,
-   *   "nome": "Aragorn",
-   *   ...,
-   *   "progressao": { "nivel": 1, "experiencia": 0, ... },  // ← Calculado!
-   *   "atributos": [
-   *     {
-   *       "nome": "FOR",
-   *       "valorBase": 16,
-   *       "valorTotal": 18,  // ← Calculado!
-   *       "modificador": 4   // ← Calculado!
-   *     }
-   *   ],
-   *   "vida": { "vidaTotal": 90 }  // ← Recalculado pelo backend!
-   * }
-   *
-   * ⚠️ BACKEND DEVE:
-   * - Calcular nivel baseado em XP (inicialmente nível 1)
-   * - Calcular valorTotal e modificador de TODOS os atributos
-   * - Calcular vidaTotal com base na fórmula
-   * - Calcular modificadorTotal de TODAS as perícias
-   * - Aplicar bônus de equipamentos equipados
+   * GET /api/v1/fichas/{id}/resumo
+   * Resumo calculado da ficha: atributos, bônus, vida, essência, ameaça.
    */
-  createFicha(ficha: CreateFichaDto | Partial<Ficha>): Observable<Ficha> {
-    return this.http.post<Ficha>(this.baseUrl, ficha);
+  getFichaResumo(id: number): Observable<FichaResumo> {
+    return this.http.get<FichaResumo>(`${this.baseUrl}/fichas/${id}/resumo`);
   }
 
   /**
-   * 📌 PUT /api/fichas/{id}
-   *
-   * Update existing character sheet
-   * Backend RECALCULATES all derived stats after update
-   * Supports PARTIAL updates for auto-save
-   *
-   * @param id - Ficha ID
-   * @param ficha - Partial ficha data to update
-   *
-   * @returns Observable<Ficha> - Complete updated ficha
-   *
-   * @example Request (partial update)
-   * PUT /api/fichas/123
-   * {
-   *   "atributos": [
-   *     { "nome": "FOR", "valorBase": 18 }
-   *   ]
-   * }
-   *
-   * @example Response
-   * {
-   *   "id": 123,
-   *   "atributos": [
-   *     {
-   *       "nome": "FOR",
-   *       "valorBase": 18,
-   *       "valorTotal": 20,     // ← Recalculado!
-   *       "modificador": 5      // ← Recalculado!
-   *     }
-   *   ]
-   * }
-   *
-   * ⚠️ BACKEND DEVE:
-   * - Recalcular TODOS os valores derivados após update
-   * - Verificar se nível mudou (caso XP alterado por Mestre)
-   * - Recalcular bônus de equipamentos
+   * POST /api/v1/jogos/{jogoId}/fichas
+   * Cria uma nova ficha no jogo.
    */
-  updateFicha(id: number, ficha: UpdateFichaDto): Observable<Ficha> {
-    return this.http.put<Ficha>(`${this.baseUrl}/${id}`, ficha);
+  createFicha(jogoId: number, dto: CreateFichaDto): Observable<Ficha> {
+    return this.http.post<Ficha>(`${this.baseUrl}/jogos/${jogoId}/fichas`, dto);
   }
 
   /**
-   * 📌 DELETE /api/fichas/{id}
-   *
-   * Delete character sheet
-   *
-   * @param id - Ficha ID
-   *
-   * @returns Observable<void>
-   *
-   * @example Request
-   * DELETE /api/fichas/123
-   *
-   * @example Response
-   * 204 No Content
-   *
-   * ⚠️ BACKEND DEVE:
-   * - Remover ficha de participantes do jogo (se associada)
-   * - Cascade delete de todos os relacionamentos
-   *
-   * Authorization:
-   * - MESTRE: pode deletar qualquer ficha
-   * - JOGADOR: pode deletar apenas suas próprias fichas
+   * POST /api/v1/jogos/{jogoId}/fichas  (com isNpc=true)
+   * Cria um NPC no jogo.
+   */
+  createNpc(jogoId: number, dto: NpcCreateDto): Observable<Ficha> {
+    const body: CreateFichaDto = { ...dto, isNpc: true };
+    return this.http.post<Ficha>(`${this.baseUrl}/jogos/${jogoId}/fichas`, body);
+  }
+
+  /**
+   * PUT /api/v1/fichas/{id}
+   * Atualiza uma ficha. Mestre pode editar qualquer ficha; Jogador só as próprias.
+   */
+  updateFicha(id: number, dto: UpdateFichaDto): Observable<Ficha> {
+    return this.http.put<Ficha>(`${this.baseUrl}/fichas/${id}`, dto);
+  }
+
+  /**
+   * DELETE /api/v1/fichas/{id}
+   * Soft delete da ficha (apenas MESTRE).
    */
   deleteFicha(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/fichas/${id}`);
+  }
+
+  /**
+   * POST /api/v1/fichas/{id}/duplicar
+   * Duplica uma ficha com novo nome.
+   */
+  duplicarFicha(id: number, dto: DuplicarFichaDto): Observable<DuplicarFichaResponse> {
+    return this.http.post<DuplicarFichaResponse>(`${this.baseUrl}/fichas/${id}/duplicar`, dto);
+  }
+
+  /**
+   * POST /api/v1/fichas/{id}/preview
+   * Simula mudanças de atributos/XP e retorna valores recalculados sem salvar.
+   */
+  previewFicha(id: number, dto: Record<string, unknown>): Observable<unknown> {
+    return this.http.post<unknown>(`${this.baseUrl}/fichas/${id}/preview`, dto);
+  }
+
+  /**
+   * GET /api/v1/fichas/{id}/vantagens
+   * Lista vantagens da ficha.
+   */
+  listVantagens(id: number): Observable<unknown[]> {
+    return this.http.get<unknown[]>(`${this.baseUrl}/fichas/${id}/vantagens`);
+  }
+
+  /**
+   * POST /api/v1/fichas/{id}/vantagens
+   * Compra uma vantagem para a ficha.
+   */
+  comprarVantagem(id: number, vantagemConfigId: number): Observable<unknown> {
+    return this.http.post<unknown>(`${this.baseUrl}/fichas/${id}/vantagens`, { vantagemConfigId });
+  }
+
+  /**
+   * PUT /api/v1/fichas/{id}/vantagens/{vid}
+   * Aumenta o nível de uma vantagem da ficha.
+   */
+  aumentarNivelVantagem(id: number, vid: number): Observable<unknown> {
+    return this.http.put<unknown>(`${this.baseUrl}/fichas/${id}/vantagens/${vid}`, {});
   }
 }

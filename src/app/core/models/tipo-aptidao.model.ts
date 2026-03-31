@@ -1,13 +1,13 @@
 /**
- * Skill Type enum (FISICO or MENTAL)
- */
-export type TipoAptidaoNome = 'FISICO' | 'MENTAL';
-
-/**
- * Skill Type model
- * Categorizes skills as physical or mental
+ * Tipo de Aptidão.
+ * Aligned with backend TipoAptidaoResponse record.
  */
 export interface TipoAptidao {
   id: number;
-  nome: TipoAptidaoNome;
+  jogoId: number;
+  nome: string;
+  descricao: string | null;
+  ordemExibicao: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }

@@ -37,8 +37,7 @@ export class ThemeService {
   /**
    * Inicializa o tema baseado em:
    * 1. Preferência salva no localStorage
-   * 2. Preferência do sistema (prefers-color-scheme)
-   * 3. Light mode como padrão
+   * 2. Dark mode como padrão do app (identidade Klayrah RPG)
    */
   private initializeTheme(): void {
     const savedTheme = localStorage.getItem(this.THEME_KEY);
@@ -47,18 +46,12 @@ export class ThemeService {
       // Usa preferência salva
       this.isDarkMode.set(savedTheme === 'dark');
     } else {
-      // Usa preferência do sistema
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      this.isDarkMode.set(prefersDark);
+      // Dark mode é o padrão do app (sem preferência salva)
+      this.isDarkMode.set(true);
     }
 
-    // Escuta mudanças na preferência do sistema
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      // Só atualiza se não tiver preferência salva
-      if (localStorage.getItem(this.THEME_KEY) === null) {
-        this.isDarkMode.set(e.matches);
-      }
-    });
+    // Escuta mudanças na preferência do sistema (respeitado apenas quando há preferência salva como 'system')
+    // O padrão do app é dark; usuário pode alternar manualmente via ThemeToggle.
   }
 
   /**
@@ -92,11 +85,10 @@ export class ThemeService {
   }
 
   /**
-   * Reseta para a preferência do sistema
+   * Reseta para o padrão do app (dark mode)
    */
-  resetToSystemPreference(): void {
+  resetToDefault(): void {
     localStorage.removeItem(this.THEME_KEY);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    this.isDarkMode.set(prefersDark);
+    this.isDarkMode.set(true);
   }
 }

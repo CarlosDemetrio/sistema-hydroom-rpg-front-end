@@ -22,7 +22,6 @@ export * from './atributo-config.model';
 export * from './aptidao-config.model';
 export * from './tipo-aptidao.model';
 export * from './vantagem-config.model';
-export * from './categoria-vantagem.model';
 export * from './config.models';
 
 // DTOs

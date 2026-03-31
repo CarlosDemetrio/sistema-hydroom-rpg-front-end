@@ -21,7 +21,7 @@ export class OAuthCallbackComponent implements OnInit {
 
   ngOnInit() {
     // Pegar URL de redirect salva antes do OAuth2
-    const redirectUrl = sessionStorage.getItem('REDIRECT_URL') || '/home';
+    const redirectUrl = sessionStorage.getItem('REDIRECT_URL') || '/dashboard';
     sessionStorage.removeItem('REDIRECT_URL');
 
     // Após o OAuth2, verificamos se o usuário está autenticado

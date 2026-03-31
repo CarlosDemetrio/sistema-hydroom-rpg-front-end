@@ -9,7 +9,13 @@ import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { loadingInterceptor } from './interceptors/loading.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
-import {MessageService} from 'primeng/api';
+import { MessageService } from 'primeng/api';
+
+// Aplica dark mode por padrão ao inicializar o app (antes da hidratação Angular).
+// O ThemeService pode remover/adicionar 'app-dark' dinamicamente depois.
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.add('app-dark');
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -21,18 +27,19 @@ export const appConfig: ApplicationConfig = {
         authInterceptor      // Auth (já existente)
       ])
     ),
-    provideAnimations(), // Animações para PrimeNG e Angular
+    provideAnimations(),
     providePrimeNG({
       theme: {
-        preset: CustomPreset, // Preset customizado com paleta Sky
+        preset: CustomPreset,
         options: {
-          darkModeSelector: '.app-dark', // Habilita dark mode com classe
-          cssLayer: false // Sem CSS Layer para maior especificidade
+          // Selector usado para ativar dark mode — deve coincidir com o que o ThemeService usa
+          darkModeSelector: '.app-dark',
+          cssLayer: false
         }
       },
-      ripple: true, // Ativa animações de ripple para melhor UX
-      inputStyle: 'outlined' // Estilo outlined para todos os inputs
+      ripple: true,
+      inputStyle: 'outlined'
     }),
-    MessageService // MessageService global para toast notifications
+    MessageService
   ]
 };

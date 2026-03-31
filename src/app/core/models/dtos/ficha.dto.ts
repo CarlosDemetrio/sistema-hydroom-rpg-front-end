@@ -1,18 +1,53 @@
-import { Ficha } from '../ficha.model';
-
 /**
- * DTO for creating a new character sheet
- * Can omit most fields initially, only nome required
+ * DTO para criar uma ficha de jogador.
+ * Alinhado com backend CreateFichaRequest.
  */
 export interface CreateFichaDto {
+  jogoId: number;
   nome: string;
-  jogoId?: number;
-  // All other fields from Ficha are optional in creation
-  // Backend will set defaults
+  jogadorId?: number | null;
+  racaId?: number | null;
+  classeId?: number | null;
+  generoId?: number | null;
+  indoleId?: number | null;
+  presencaId?: number | null;
+  isNpc?: boolean;
 }
 
 /**
- * DTO for updating an existing character sheet
- * All fields are optional (partial update)
+ * DTO para criar um NPC.
+ * Alinhado com backend NpcCreateRequest.
  */
-export type UpdateFichaDto = Partial<Ficha>;
+export interface NpcCreateDto {
+  jogoId: number;
+  nome: string;
+  racaId?: number | null;
+  classeId?: number | null;
+  generoId?: number | null;
+  indoleId?: number | null;
+  presencaId?: number | null;
+}
+
+/**
+ * DTO para atualizar uma ficha.
+ * Alinhado com backend UpdateFichaRequest.
+ */
+export interface UpdateFichaDto {
+  nome?: string;
+  racaId?: number | null;
+  classeId?: number | null;
+  generoId?: number | null;
+  indoleId?: number | null;
+  presencaId?: number | null;
+  xp?: number;
+  renascimentos?: number;
+}
+
+/**
+ * DTO para duplicar uma ficha.
+ * Alinhado com backend DuplicarFichaRequest.
+ */
+export interface DuplicarFichaDto {
+  novoNome: string;
+  manterJogador: boolean;
+}

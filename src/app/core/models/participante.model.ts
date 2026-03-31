@@ -1,24 +1,18 @@
-import { User } from './user.model';
-import { Ficha } from './ficha.model';
+import { RoleJogo } from './jogo.model';
+
+export type StatusParticipante = 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'BANIDO';
 
 /**
- * Participant status enum
- */
-export type ParticipanteStatus = 'PENDENTE' | 'APROVADO' | 'REJEITADO';
-
-/**
- * Participant (Participante) model
- * Represents a player joining a game with a specific character sheet
+ * Participante de um jogo.
+ * Aligned with backend ParticipanteResponse record.
  */
 export interface Participante {
   id: number;
   jogoId: number;
-  jogadorId: number;
-  fichaId?: number;
-  status: ParticipanteStatus;
-  dataParticipacao: Date;
-
-  // Nested objects (populated by backend)
-  jogador?: User;
-  ficha?: Ficha;
+  usuarioId: number;
+  nomeUsuario: string;
+  role: RoleJogo;
+  status: StatusParticipante;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
 }
