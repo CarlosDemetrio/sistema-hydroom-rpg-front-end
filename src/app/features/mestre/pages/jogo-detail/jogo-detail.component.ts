@@ -315,7 +315,7 @@ export class JogoDetailComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       ).subscribe();
 
-      this.fichaService.loadFichas().pipe(
+      this.fichaService.loadFichas(Number(id)).pipe(
         takeUntilDestroyed(this.destroyRef)
       ).subscribe();
     }
@@ -405,7 +405,7 @@ export class JogoDetailComponent implements OnInit {
       header: 'Confirmar Remoção',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.participanteService.removerParticipante(this.jogoId()!, participanteId).pipe(
+        this.participanteService.banirParticipante(this.jogoId()!, participanteId).pipe(
           takeUntilDestroyed(this.destroyRef)
         ).subscribe({
           next: () => {
@@ -453,17 +453,19 @@ export class JogoDetailComponent implements OnInit {
     const labels: Record<ParticipanteStatus, string> = {
       PENDENTE: 'Pendente',
       APROVADO: 'Aprovado',
-      REJEITADO: 'Rejeitado'
+      REJEITADO: 'Rejeitado',
+      BANIDO: 'Banido'
     };
-    return labels[status];
+    return labels[status] ?? status;
   }
 
-  getParticipanteStatusSeverity(status: ParticipanteStatus): 'success' | 'warn' | 'danger' {
-    const severities: Record<ParticipanteStatus, 'success' | 'warn' | 'danger'> = {
+  getParticipanteStatusSeverity(status: ParticipanteStatus): 'success' | 'warn' | 'danger' | 'secondary' {
+    const severities: Record<ParticipanteStatus, 'success' | 'warn' | 'danger' | 'secondary'> = {
       PENDENTE: 'warn',
       APROVADO: 'success',
-      REJEITADO: 'danger'
+      REJEITADO: 'danger',
+      BANIDO: 'secondary'
     };
-    return severities[status];
+    return severities[status] ?? 'secondary';
   }
 }

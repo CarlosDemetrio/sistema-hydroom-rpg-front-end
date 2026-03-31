@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { LimitadorConfig } from '../../../models';
+import { Observable, of } from 'rxjs';
+import { LimitadorConfig } from '../../../models/config.models';
 import { BaseConfigService } from './base-config.service';
 
 /**
- * Business Service para Limitadores
- * Gerencia configurações de limitadores (penalidades)
+ * LimitadorConfig does not have a backend endpoint.
+ * This service is a stub kept for backward compatibility with existing components.
  */
 @Injectable({ providedIn: 'root' })
 export class LimitadorConfigService extends BaseConfigService<LimitadorConfig> {
@@ -15,18 +15,18 @@ export class LimitadorConfigService extends BaseConfigService<LimitadorConfig> {
   }
 
   protected getApiListMethod(): (jogoId: number) => Observable<LimitadorConfig[]> {
-    return this.configApi.listLimitadores.bind(this.configApi);
+    return (_jogoId: number) => of([]);
   }
 
   protected getApiCreateMethod(): (data: any) => Observable<LimitadorConfig> {
-    return this.configApi.createLimitador.bind(this.configApi);
+    return (_data: any) => of({} as LimitadorConfig);
   }
 
   protected getApiUpdateMethod(): (id: number, data: any) => Observable<LimitadorConfig> {
-    return this.configApi.updateLimitador.bind(this.configApi);
+    return (_id: number, _data: any) => of({} as LimitadorConfig);
   }
 
   protected getApiDeleteMethod(): (id: number) => Observable<void> {
-    return this.configApi.deleteLimitador.bind(this.configApi);
+    return (_id: number) => of(undefined as void);
   }
 }

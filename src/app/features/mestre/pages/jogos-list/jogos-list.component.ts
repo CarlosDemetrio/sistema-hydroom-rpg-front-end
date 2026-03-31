@@ -14,7 +14,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { ToastService } from '../../../../services/toast.service';
 import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
-import { Jogo, JogoStatus } from '../../../../core/models';
+import { JogoResumo } from '../../../../core/models/jogo.model';
+type Jogo = JogoResumo;
 import { EmptyStateComponent, LoadingSpinnerComponent } from '../../../../shared';
 
 /**
@@ -138,15 +139,15 @@ import { EmptyStateComponent, LoadingSpinnerComponent } from '../../../../shared
                   }
                 </td>
                 <td>
-                  <span class="font-semibold">{{ jogo.participantes?.length || 0 }}</span> jogadores
+                  <span class="font-semibold">{{ jogo.totalParticipantes || 0 }}</span> jogadores
                 </td>
                 <td>
                   <p-tag
-                    [value]="getStatusLabel(jogo.status)"
-                    [severity]="getStatusSeverity(jogo.status)"
+                    [value]="jogo.ativo ? 'Ativo' : 'Inativo'"
+                    [severity]="jogo.ativo ? 'success' : 'secondary'"
                   ></p-tag>
                 </td>
-                <td>{{ jogo.dataCriacao | date:'dd/MM/yyyy' }}</td>
+                <td>—</td>
                 <td class="text-center">
                   <div class="flex gap-2 justify-content-center">
                     <p-button
@@ -201,13 +202,12 @@ export class JogosListComponent {
 
   // Filters
   searchTerm = signal('');
-  statusFilter = signal<JogoStatus | ''>('');
+  statusFilter = signal<string>('');
 
   statusOptions = [
     { label: 'Todos', value: '' },
-    { label: 'Ativo', value: 'ATIVO' as JogoStatus },
-    { label: 'Pausado', value: 'PAUSADO' as JogoStatus },
-    { label: 'Finalizado', value: 'FINALIZADO' as JogoStatus }
+    { label: 'Ativo', value: 'ATIVO' },
+    { label: 'Inativo', value: 'INATIVO' }
   ];
 
   // State
@@ -229,8 +229,10 @@ export class JogosListComponent {
 
     // Filter by status
     const status = this.statusFilter();
-    if (status) {
-      jogos = jogos.filter(j => j.status === status);
+    if (status === 'ATIVO') {
+      jogos = jogos.filter(j => j.ativo === true);
+    } else if (status === 'INATIVO') {
+      jogos = jogos.filter(j => j.ativo === false);
     }
 
     return jogos;
@@ -289,22 +291,4 @@ export class JogosListComponent {
     });
   }
 
-  // Status helpers
-  getStatusLabel(status: JogoStatus): string {
-    const labels: Record<JogoStatus, string> = {
-      ATIVO: 'Ativo',
-      PAUSADO: 'Pausado',
-      FINALIZADO: 'Finalizado'
-    };
-    return labels[status];
-  }
-
-  getStatusSeverity(status: JogoStatus): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' {
-    const severities: Record<JogoStatus, 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast'> = {
-      ATIVO: 'success',
-      PAUSADO: 'warn',
-      FINALIZADO: 'info'
-    };
-    return severities[status];
-  }
 }

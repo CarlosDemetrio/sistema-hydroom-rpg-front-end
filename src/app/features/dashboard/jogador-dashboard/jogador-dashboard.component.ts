@@ -220,16 +220,19 @@ export class JogadorDashboardComponent {
   fichasRecentes = computed(() => {
     return this.fichasDoJogoAtual()
       .slice()
-      .sort((a, b) => new Date(b.dataAtualizacao || 0).getTime() - new Date(a.dataAtualizacao || 0).getTime())
+      .sort((a, b) => new Date(b.dataUltimaAtualizacao || 0).getTime() - new Date(a.dataUltimaAtualizacao || 0).getTime())
       .slice(0, 5);
   });
 
   // Load data on init
   constructor() {
     effect(() => {
-      this.fichaService.loadFichas().pipe(
-        takeUntilDestroyed(this.destroyRef)
-      ).subscribe();
+      const gameId = this.currentGameService.currentGameId();
+      if (gameId) {
+        this.fichaService.loadFichas(gameId).pipe(
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe();
+      }
     });
   }
 

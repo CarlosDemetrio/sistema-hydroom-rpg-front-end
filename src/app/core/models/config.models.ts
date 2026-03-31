@@ -204,5 +204,17 @@ export interface ReordenarRequest {
   itens: ReordenarItem[];
 }
 
-// Kept for backwards compatibility — previously in this file
-export type LimitadorConfig = never;
+/**
+ * ProspeccaoConfig: alias for DadoProspeccaoConfig kept for backward compatibility.
+ */
+export type ProspeccaoConfig = DadoProspeccaoConfig;
+
+/**
+ * LimitadorConfig: removed from backend — kept as empty interface for backward compat.
+ * Components that reference this will compile but have no usable endpoint.
+ */
+export interface LimitadorConfig {
+  id?: number;
+  jogoId?: number;
+  nome?: string;
+}

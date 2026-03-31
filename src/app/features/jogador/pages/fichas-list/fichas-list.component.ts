@@ -234,9 +234,12 @@ export class FichasListComponent {
 
   constructor() {
     effect(() => {
-      this.fichaService.loadFichas().pipe(
-        takeUntilDestroyed(this.destroyRef)
-      ).subscribe();
+      const gameId = this.currentGameService.currentGameId();
+      if (gameId) {
+        this.fichaService.loadFichas(gameId).pipe(
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe();
+      }
     });
   }
 
