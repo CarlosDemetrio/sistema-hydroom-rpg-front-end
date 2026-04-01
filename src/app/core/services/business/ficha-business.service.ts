@@ -1,10 +1,17 @@
 import { Injectable, inject, computed } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { FichasStore } from '../../stores/fichas.store';
 import { FichasApiService, FichaFilters } from '../api/fichas-api.service';
-import { Ficha } from '../../models/ficha.model';
-import { CreateFichaDto, UpdateFichaDto } from '../../models/dtos/ficha.dto';
+import {
+  Ficha,
+  FichaVantagemResponse,
+  FichaCompletaData,
+  ComprarVantagemDto,
+  DuplicarFichaResponse,
+} from '../../models/ficha.model';
+import { CreateFichaDto, UpdateFichaDto, DuplicarFichaDto, NpcCreateDto } from '../../models/dtos/ficha.dto';
+import { Anotacao, CriarAnotacaoDto } from '../../models/anotacao.model';
 import { AuthService } from '../../../services/auth.service';
 
 /**
@@ -115,6 +122,78 @@ export class FichaBusinessService {
         }
       })
     );
+  }
+
+  // ============================================
+  // FICHA COMPLETA (ficha + resumo em paralelo)
+  // ============================================
+
+  /**
+   * Carrega ficha e resumo calculado em paralelo.
+   * Usar na FichaDetailPage para ter todos os dados de uma vez.
+   */
+  loadFichaCompleta(fichaId: number): Observable<FichaCompletaData> {
+    return forkJoin({
+      ficha: this.fichasApi.getFicha(fichaId),
+      resumo: this.fichasApi.getFichaResumo(fichaId),
+    }).pipe(
+      tap(({ ficha }) => {
+        this.fichasStore.updateFichaInState(fichaId, ficha);
+        this.fichasStore.setCurrentFicha(ficha);
+      })
+    );
+  }
+
+  // ============================================
+  // VANTAGENS
+  // ============================================
+
+  loadVantagens(fichaId: number): Observable<FichaVantagemResponse[]> {
+    return this.fichasApi.listVantagens(fichaId);
+  }
+
+  comprarVantagem(fichaId: number, dto: ComprarVantagemDto): Observable<FichaVantagemResponse> {
+    return this.fichasApi.comprarVantagem(fichaId, dto);
+  }
+
+  aumentarNivelVantagem(fichaId: number, vantagemId: number): Observable<FichaVantagemResponse> {
+    return this.fichasApi.aumentarNivelVantagem(fichaId, vantagemId);
+  }
+
+  // ============================================
+  // ANOTAÇÕES
+  // ============================================
+
+  loadAnotacoes(fichaId: number): Observable<Anotacao[]> {
+    return this.fichasApi.getAnotacoes(fichaId);
+  }
+
+  criarAnotacao(fichaId: number, dto: CriarAnotacaoDto): Observable<Anotacao> {
+    return this.fichasApi.criarAnotacao(fichaId, dto);
+  }
+
+  atualizarAnotacao(fichaId: number, anotacaoId: number, dto: CriarAnotacaoDto): Observable<Anotacao> {
+    return this.fichasApi.atualizarAnotacao(fichaId, anotacaoId, dto);
+  }
+
+  deletarAnotacao(fichaId: number, anotacaoId: number): Observable<void> {
+    return this.fichasApi.deletarAnotacao(fichaId, anotacaoId);
+  }
+
+  // ============================================
+  // DUPLICAR / NPC
+  // ============================================
+
+  duplicarFicha(fichaId: number, dto: DuplicarFichaDto): Observable<DuplicarFichaResponse> {
+    return this.fichasApi.duplicarFicha(fichaId, dto);
+  }
+
+  criarNpc(jogoId: number, dto: NpcCreateDto): Observable<Ficha> {
+    return this.fichasApi.criarNpc(jogoId, dto);
+  }
+
+  loadNpcs(jogoId: number): Observable<Ficha[]> {
+    return this.fichasApi.listNpcs(jogoId);
   }
 
   // ============================================

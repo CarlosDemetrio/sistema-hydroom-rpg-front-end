@@ -14,5 +14,8 @@ export * from './indole-config.service';
 export * from './membro-corpo-config.service';
 export * from './bonus-config.service';
 
+// Tipo Aptidao Service
+export * from './tipo-aptidao-config.service';
+
 // Facade Service
 export * from './config-facade.service';

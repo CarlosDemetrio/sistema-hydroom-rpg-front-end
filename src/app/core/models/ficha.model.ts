@@ -85,6 +85,36 @@ export interface FichaAtributoResponse {
   impeto: number;
 }
 
+// ==================== VANTAGENS ====================
+
+/**
+ * Vantagem comprada de uma ficha.
+ * Alinhado com backend FichaVantagemResponse record.
+ */
+export interface FichaVantagemResponse {
+  id: number;
+  vantagemConfigId: number;
+  nomeVantagem: string;
+  nivelAtual: number;
+  nivelMaximo: number;
+  custoPago: number;
+}
+
+/**
+ * DTO para comprar uma vantagem.
+ */
+export interface ComprarVantagemDto {
+  vantagemConfigId: number;
+}
+
+/**
+ * Dados completos carregados para a FichaDetailPage.
+ */
+export interface FichaCompletaData {
+  ficha: Ficha;
+  resumo: FichaResumo;
+}
+
 // ==================== APTIDOES DIRETAS ====================
 
 /**

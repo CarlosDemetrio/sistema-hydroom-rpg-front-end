@@ -9,6 +9,8 @@ import {
   AtualizarAptidaoDto,
   FichaAtributoResponse,
   FichaAptidaoResponse,
+  FichaVantagemResponse,
+  ComprarVantagemDto,
 } from '../../models/ficha.model';
 import {
   CreateFichaDto,
@@ -144,24 +146,24 @@ export class FichasApiService {
    * GET /api/v1/fichas/{id}/vantagens
    * Lista vantagens da ficha.
    */
-  listVantagens(id: number): Observable<unknown[]> {
-    return this.http.get<unknown[]>(`${this.baseUrl}/fichas/${id}/vantagens`);
+  listVantagens(id: number): Observable<FichaVantagemResponse[]> {
+    return this.http.get<FichaVantagemResponse[]>(`${this.baseUrl}/fichas/${id}/vantagens`);
   }
 
   /**
    * POST /api/v1/fichas/{id}/vantagens
    * Compra uma vantagem para a ficha.
    */
-  comprarVantagem(id: number, vantagemConfigId: number): Observable<unknown> {
-    return this.http.post<unknown>(`${this.baseUrl}/fichas/${id}/vantagens`, { vantagemConfigId });
+  comprarVantagem(id: number, dto: ComprarVantagemDto): Observable<FichaVantagemResponse> {
+    return this.http.post<FichaVantagemResponse>(`${this.baseUrl}/fichas/${id}/vantagens`, dto);
   }
 
   /**
    * PUT /api/v1/fichas/{id}/vantagens/{vid}
    * Aumenta o nível de uma vantagem da ficha.
    */
-  aumentarNivelVantagem(id: number, vid: number): Observable<unknown> {
-    return this.http.put<unknown>(`${this.baseUrl}/fichas/${id}/vantagens/${vid}`, {});
+  aumentarNivelVantagem(id: number, vid: number): Observable<FichaVantagemResponse> {
+    return this.http.put<FichaVantagemResponse>(`${this.baseUrl}/fichas/${id}/vantagens/${vid}`, {});
   }
 
   // ==================== ATRIBUTOS DIRETOS ====================
@@ -185,6 +187,24 @@ export class FichasApiService {
    */
   atualizarAptidoes(fichaId: number, dto: AtualizarAptidaoDto[]): Observable<FichaAptidaoResponse[]> {
     return this.http.put<FichaAptidaoResponse[]>(`${this.baseUrl}/fichas/${fichaId}/aptidoes`, dto);
+  }
+
+  // ==================== VIDA E PROSPECÇÃO ====================
+
+  /**
+   * PUT /api/v1/fichas/{id}/vida
+   * Atualiza estado de combate: vidaAtual, essenciaAtual, dano por membro.
+   */
+  atualizarVida(fichaId: number, dto: { vidaAtual: number; essenciaAtual: number; membros?: { membroCorpoConfigId: number; danoRecebido: number }[] }): Observable<FichaResumo> {
+    return this.http.put<FichaResumo>(`${this.baseUrl}/fichas/${fichaId}/vida`, dto);
+  }
+
+  /**
+   * PUT /api/v1/fichas/{id}/prospeccao
+   * Atualiza prospecção da ficha.
+   */
+  atualizarProspeccao(fichaId: number, dto: { dadoProspeccaoConfigId: number; quantidade: number }): Observable<FichaResumo> {
+    return this.http.put<FichaResumo>(`${this.baseUrl}/fichas/${fichaId}/prospeccao`, dto);
   }
 
   // ==================== NPC DEDICADO ====================
@@ -225,6 +245,14 @@ export class FichasApiService {
    */
   criarAnotacao(fichaId: number, dto: CriarAnotacaoDto): Observable<Anotacao> {
     return this.http.post<Anotacao>(`${this.baseUrl}/fichas/${fichaId}/anotacoes`, dto);
+  }
+
+  /**
+   * PUT /api/v1/fichas/{fichaId}/anotacoes/{id}
+   * Atualiza uma anotação. Mestre pode editar qualquer; Jogador só as próprias.
+   */
+  atualizarAnotacao(fichaId: number, anotacaoId: number, dto: CriarAnotacaoDto): Observable<Anotacao> {
+    return this.http.put<Anotacao>(`${this.baseUrl}/fichas/${fichaId}/anotacoes/${anotacaoId}`, dto);
   }
 
   /**

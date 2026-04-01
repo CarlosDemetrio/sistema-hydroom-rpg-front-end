@@ -76,10 +76,10 @@ export class ConfigSidebarComponent {
       route: '/mestre/config/niveis'
     },
     {
-      label: 'Limitadores',
-      description: 'Restrições e penalidades',
-      icon: 'pi pi-lock',
-      route: '/mestre/config/limitadores'
+      label: 'Tipos de Aptidão',
+      description: 'Física, Mental, etc.',
+      icon: 'pi pi-tags',
+      route: '/mestre/config/tipos-aptidao'
     },
     {
       label: 'Classes',
