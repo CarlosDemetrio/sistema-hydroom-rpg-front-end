@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DadoProspeccaoConfig } from '../../../models/config.models';
+import { DadoProspeccaoConfig } from '@core/models/config.models';
 import { BaseConfigService } from './base-config.service';
 
 /**

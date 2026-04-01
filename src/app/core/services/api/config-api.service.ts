@@ -1,11 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AtributoConfig, CreateAtributoDto, UpdateAtributoDto } from '../../models/atributo-config.model';
-import { AptidaoConfig, CreateAptidaoDto, UpdateAptidaoDto } from '../../models/aptidao-config.model';
-import { TipoAptidao } from '../../models/tipo-aptidao.model';
-import { VantagemConfig, CreateVantagemDto, UpdateVantagemDto } from '../../models/vantagem-config.model';
-import { VantagemEfeito, CriarVantagemEfeitoDto } from '../../models/vantagem-efeito.model';
+import { AtributoConfig, CreateAtributoDto, UpdateAtributoDto } from '@core/models/atributo-config.model';
+import { AptidaoConfig, CreateAptidaoDto, UpdateAptidaoDto } from '@core/models/aptidao-config.model';
+import { TipoAptidao } from '@core/models/tipo-aptidao.model';
+import { VantagemConfig, CreateVantagemDto, UpdateVantagemDto } from '@core/models/vantagem-config.model';
+import { VantagemEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
 import {
   CategoriaVantagem,
   ClassePersonagem,
@@ -18,8 +18,8 @@ import {
   MembroCorpoConfig,
   BonusConfig,
   ReordenarRequest,
-} from '../../models/config.models';
-import { environment } from '../../../../environments/environment';
+} from '@core/models/config.models';
+import { environment } from '@env/environment';
 
 /**
  * API Service para endpoints de configuração do jogo.

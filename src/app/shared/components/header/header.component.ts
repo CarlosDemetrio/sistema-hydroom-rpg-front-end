@@ -4,8 +4,8 @@ import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
-import { AuthService } from '../../../services/auth.service';
-import {CurrentGameService} from '../../../core/services';
+import { AuthService } from '@services/auth.service';
+import {CurrentGameService} from '@core/services';
 import {Select} from 'primeng/select';
 import {FormsModule} from '@angular/forms';
 

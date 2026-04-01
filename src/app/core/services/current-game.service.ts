@@ -39,7 +39,7 @@ export class CurrentGameService {
 
   // Jogos disponíveis para seleção (apenas ATIVO)
   availableGames = computed(() =>
-    this.jogoService.jogos().filter(j => j.status === 'ATIVO')
+    this.jogoService.jogos().filter(j => j.ativo)
   );
 
   // Verifica se há jogo selecionado

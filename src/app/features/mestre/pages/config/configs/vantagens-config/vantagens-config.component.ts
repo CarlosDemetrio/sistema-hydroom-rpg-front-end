@@ -16,18 +16,15 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   BaseConfigTableComponent,
   ConfigTableColumn,
-} from '../../../../../../shared/components/base-config/base-config-table.component';
-import { VantagemConfig, CategoriaVantagem } from '../../../../../../core/models';
-import { VantagemConfigService } from '../../../../../../core/services/business/config';
-import { ConfigApiService } from '../../../../../../core/services/api/config-api.service';
-import {
-  uniqueNameValidator,
-  uppercaseValidator,
-} from '../../../../../../shared/validators/config-validators';
+} from '@shared/components/base-config/base-config-table.component';
+import { VantagemConfig, CategoriaVantagem } from '@core/models';
+import { VantagemConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
+import { uniqueNameValidator } from '@shared/validators/config-validators';
 
 @Component({
   selector: 'app-vantagens-config',
@@ -51,7 +48,7 @@ import {
   ],
   providers: [ConfirmationService],
   template: `
-    <p-card styleClass="card-rpg card-rpg--accented">
+    <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {
         <div class="flex align-items-center gap-2 mb-3 p-2 border-round surface-100">
@@ -98,7 +95,7 @@ import {
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Vantagem' : 'Nova Vantagem'"
       position="right"
-      styleClass="w-full md:w-35rem"
+      class="w-full md:w-35rem"
     >
       <p-tabs [value]="activeTab()">
         <p-tablist>

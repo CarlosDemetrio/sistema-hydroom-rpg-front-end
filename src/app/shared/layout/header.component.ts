@@ -5,8 +5,8 @@ import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
-import { AuthService } from '../../services/auth.service';
-import { ThemeToggleComponent } from '../components/theme-toggle/theme-toggle.component';
+import { AuthService } from '@services/auth.service';
+import { ThemeToggleComponent } from '@shared/components/theme-toggle/theme-toggle.component';
 
 /**
  * Header Component (SMART)

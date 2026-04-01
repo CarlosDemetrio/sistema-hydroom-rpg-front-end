@@ -15,15 +15,15 @@ import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   BaseConfigTableComponent,
   ConfigTableColumn,
-} from '../../../../../../shared/components/base-config/base-config-table.component';
-import { ClassePersonagem, BonusConfig, AptidaoConfig } from '../../../../../../core/models';
-import { ClasseConfigService } from '../../../../../../core/services/business/config';
-import { ConfigApiService } from '../../../../../../core/services/api/config-api.service';
-import { uniqueNameValidator } from '../../../../../../shared/validators/config-validators';
+} from '@shared/components/base-config/base-config-table.component';
+import { ClassePersonagem, BonusConfig, AptidaoConfig } from '@core/models';
+import { ClasseConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
+import { uniqueNameValidator } from '@shared/validators/config-validators';
 
 @Component({
   selector: 'app-classes-config',

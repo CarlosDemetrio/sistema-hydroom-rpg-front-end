@@ -19,7 +19,19 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@core/*":        ["src/app/core/*"],
+      "@models/*":      ["src/app/core/models/*"],
+      "@services/*":    ["src/app/services/*"],
+      "@shared/*":      ["src/app/shared/*"],
+      "@features/*":    ["src/app/features/*"],
+      "@pages/*":       ["src/app/pages/*"],
+      "@guards/*":      ["src/app/guards/*"],
+      "@interceptors/*":["src/app/interceptors/*"],
+      "@env/*":         ["src/environments/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

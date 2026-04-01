@@ -11,10 +11,10 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
-import { LimitadorConfig } from '../../../../../../core/models';
-import { LimitadorConfigService } from '../../../../../../core/services/business/config';
-import { uniqueNameValidator } from '../../../../../../shared/validators/config-validators';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
+import { LimitadorConfig } from '@core/models';
+import { LimitadorConfigService } from '@core/services/business/config';
+import { uniqueNameValidator } from '@shared/validators/config-validators';
 
 @Component({
   selector: 'app-limitadores-config',

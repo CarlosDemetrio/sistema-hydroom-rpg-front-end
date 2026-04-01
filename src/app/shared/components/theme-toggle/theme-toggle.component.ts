@@ -1,7 +1,7 @@
 import { Component, inject, computed } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
-import { ThemeService } from '../../../services/theme.service';
+import { ThemeService } from '@services/theme.service';
 
 /**
  * Componente de toggle para alternar entre light e dark mode

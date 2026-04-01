@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { LimitadorConfig } from '../../../models/config.models';
+import { LimitadorConfig } from '@core/models/config.models';
 import { BaseConfigService } from './base-config.service';
 
 /**

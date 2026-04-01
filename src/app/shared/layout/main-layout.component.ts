@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { HeaderComponent } from '../../shared';
+import { HeaderComponent } from '@shared/layout/header.component';
 
 /**
  * Main Layout Component

@@ -1,11 +1,11 @@
 import { Injectable, inject, computed } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { FichasStore } from '../../../core/stores/fichas.store';
-import { FichasApiService, FichaFilters } from '../../../core/services/api/fichas-api.service';
-import { Ficha } from '../../../core/models/ficha.model';
-import { CreateFichaDto, UpdateFichaDto } from '../../../core/models/dtos/ficha.dto';
-import { AuthService } from '../../../services/auth.service';
+import { FichasStore } from '@core/stores/fichas.store';
+import { FichasApiService, FichaFilters } from '@core/services/api/fichas-api.service';
+import { Ficha } from '@core/models/ficha.model';
+import { CreateFichaDto, UpdateFichaDto } from '@core/models/dtos/ficha.dto';
+import { AuthService } from '@services/auth.service';
 
 /**
  * Ficha Management Facade Service

@@ -15,15 +15,15 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   BaseConfigTableComponent,
   ConfigTableColumn,
-} from '../../../../../../shared/components/base-config/base-config-table.component';
-import { Raca, AtributoConfig, ClassePersonagem } from '../../../../../../core/models';
-import { RacaConfigService } from '../../../../../../core/services/business/config';
-import { ConfigApiService } from '../../../../../../core/services/api/config-api.service';
-import { uniqueNameValidator } from '../../../../../../shared/validators/config-validators';
+} from '@shared/components/base-config/base-config-table.component';
+import { Raca, AtributoConfig, ClassePersonagem } from '@core/models';
+import { RacaConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
+import { uniqueNameValidator } from '@shared/validators/config-validators';
 
 @Component({
   selector: 'app-racas-config',

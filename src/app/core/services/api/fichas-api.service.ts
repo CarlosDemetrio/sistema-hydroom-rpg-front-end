@@ -11,15 +11,15 @@ import {
   FichaAptidaoResponse,
   FichaVantagemResponse,
   ComprarVantagemDto,
-} from '../../models/ficha.model';
+} from '@core/models/ficha.model';
 import {
   CreateFichaDto,
   NpcCreateDto,
   UpdateFichaDto,
   DuplicarFichaDto,
-} from '../../models/dtos/ficha.dto';
-import { Anotacao, CriarAnotacaoDto } from '../../models/anotacao.model';
-import { environment } from '../../../../environments/environment';
+} from '@core/models/dtos/ficha.dto';
+import { Anotacao, CriarAnotacaoDto } from '@core/models/anotacao.model';
+import { environment } from '@env/environment';
 
 export interface FichaFilters {
   nome?: string;

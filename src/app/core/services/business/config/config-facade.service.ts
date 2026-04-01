@@ -1,5 +1,5 @@
 import { Injectable, inject, computed } from '@angular/core';
-import { CurrentGameService } from '../../current-game.service';
+import { CurrentGameService } from '@core/services/current-game.service';
 import {
   AtributoConfigService,
   AptidaoConfigService,

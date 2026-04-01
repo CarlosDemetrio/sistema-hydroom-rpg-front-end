@@ -1,5 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { BaseConfig, NamedConfig } from '../../core/models/config-base.model';
+import { BaseConfig, NamedConfig } from '@core/models/config-base.model';
 
 /**
  * Validador que garante que a ordem de exibição é única

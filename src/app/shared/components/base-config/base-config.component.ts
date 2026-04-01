@@ -1,11 +1,11 @@
 import { Directive, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { JogoScopedConfig } from '../../../core/models/config-base.model';
-import { BaseConfigService } from '../../../core/services/business/config/base-config.service';
-import { IConfigComponent } from '../../interfaces/config-component.interface';
-import { ToastService } from '../../../services/toast.service';
-import { markFormGroupTouched } from '../../utils/form-helpers';
+import { JogoScopedConfig } from '@core/models/config-base.model';
+import { BaseConfigService } from '@core/services/business/config/base-config.service';
+import { IConfigComponent } from '@shared/interfaces/config-component.interface';
+import { ToastService } from '@services/toast.service';
+import { markFormGroupTouched } from '@shared/utils/form-helpers';
 
 /**
  * Classe abstrata base para componentes de configuração

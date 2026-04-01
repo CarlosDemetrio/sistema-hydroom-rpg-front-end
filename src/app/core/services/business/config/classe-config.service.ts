@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ClassePersonagem } from '../../../models';
+import { ClassePersonagem } from '@core/models';
 import { BaseConfigService } from './base-config.service';
 
 /**

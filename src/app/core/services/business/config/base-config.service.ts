@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CurrentGameService } from '../../current-game.service';
-import { ConfigApiService } from '../../api/config-api.service';
+import { CurrentGameService } from '@core/services/current-game.service';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 
 /**
  * Classe abstrata base para todos os Business Services de configuração.

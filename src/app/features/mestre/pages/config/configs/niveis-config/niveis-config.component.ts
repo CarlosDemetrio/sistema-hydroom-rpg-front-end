@@ -12,13 +12,13 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   BaseConfigTableComponent,
   ConfigTableColumn,
-} from '../../../../../../shared/components/base-config/base-config-table.component';
-import { NivelConfig } from '../../../../../../core/models';
-import { NivelConfigService } from '../../../../../../core/services/business/config';
+} from '@shared/components/base-config/base-config-table.component';
+import { NivelConfig } from '@core/models';
+import { NivelConfigService } from '@core/services/business/config';
 
 @Component({
   selector: 'app-niveis-config',

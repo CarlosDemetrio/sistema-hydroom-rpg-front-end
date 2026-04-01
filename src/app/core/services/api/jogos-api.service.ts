@@ -7,10 +7,10 @@ import {
   MeuJogo,
   DuplicarJogoResponse,
   DashboardMestre,
-} from '../../models/jogo.model';
-import { Participante } from '../../models/participante.model';
-import { CreateJogoDto, UpdateJogoDto, DuplicarJogoDto } from '../../models/dtos/jogo.dto';
-import { environment } from '../../../../environments/environment';
+} from '@core/models/jogo.model';
+import { Participante } from '@core/models/participante.model';
+import { CreateJogoDto, UpdateJogoDto, DuplicarJogoDto } from '@core/models/dtos/jogo.dto';
+import { environment } from '@env/environment';
 
 /**
  * API Service para Jogos/Campanhas.

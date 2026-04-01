@@ -1,8 +1,8 @@
 import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
-import { AtributoConfig } from '../models/atributo-config.model';
-import { AptidaoConfig } from '../models/aptidao-config.model';
-import { TipoAptidao } from '../models/tipo-aptidao.model';
-import { VantagemConfig } from '../models/vantagem-config.model';
+import { AtributoConfig } from '@core/models/atributo-config.model';
+import { AptidaoConfig } from '@core/models/aptidao-config.model';
+import { TipoAptidao } from '@core/models/tipo-aptidao.model';
+import { VantagemConfig } from '@core/models/vantagem-config.model';
 import {
   CategoriaVantagem,
   ClassePersonagem,
@@ -14,7 +14,7 @@ import {
   IndoleConfig,
   MembroCorpoConfig,
   BonusConfig,
-} from '../models/config.models';
+} from '@core/models/config.models';
 
 /**
  * State interface for all configuration entities

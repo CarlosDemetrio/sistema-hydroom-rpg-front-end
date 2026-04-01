@@ -2,9 +2,9 @@ import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import { JogoManagementFacadeService } from '../../mestre/services/jogo-management-facade.service';
-import { FichasStore } from '../../../core/stores/fichas.store';
-import { AuthService } from '../../../services/auth.service';
+import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
+import { FichasStore } from '@core/stores/fichas.store';
+import { AuthService } from '@services/auth.service';
 
 /**
  * Mestre Dashboard Component

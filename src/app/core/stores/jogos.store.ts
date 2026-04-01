@@ -1,7 +1,7 @@
 import { computed } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState } from '@ngrx/signals';
-import { JogoResumo } from '../models/jogo.model';
-import { Participante } from '../models/participante.model';
+import { JogoResumo } from '@core/models/jogo.model';
+import { Participante } from '@core/models/participante.model';
 
 // Alias for backwards compatibility within the store
 type Jogo = JogoResumo;

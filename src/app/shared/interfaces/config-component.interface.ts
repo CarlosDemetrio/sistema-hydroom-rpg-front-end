@@ -1,6 +1,6 @@
 import { Signal, WritableSignal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { JogoScopedConfig } from '../../core/models/config-base.model';
+import { JogoScopedConfig } from '@core/models/config-base.model';
 
 /**
  * Interface que define o contrato para componentes de configuração

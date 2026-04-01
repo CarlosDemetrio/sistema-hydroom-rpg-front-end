@@ -11,14 +11,14 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   BaseConfigTableComponent,
   ConfigTableColumn,
-} from '../../../../../../shared/components/base-config/base-config-table.component';
-import { MembroCorpoConfig } from '../../../../../../core/models';
-import { MembroCorpoConfigService } from '../../../../../../core/services/business/config';
-import { uniqueNameValidator } from '../../../../../../shared/validators/config-validators';
+} from '@shared/components/base-config/base-config-table.component';
+import { MembroCorpoConfig } from '@core/models';
+import { MembroCorpoConfigService } from '@core/services/business/config';
+import { uniqueNameValidator } from '@shared/validators/config-validators';
 
 /** Formata porcentagem como "75%" */
 function formatPorcentagem(v: number | null): string {

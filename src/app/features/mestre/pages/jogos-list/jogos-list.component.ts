@@ -12,11 +12,12 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
-import { ToastService } from '../../../../services/toast.service';
-import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
-import { JogoResumo } from '../../../../core/models/jogo.model';
+import { ToastService } from '@services/toast.service';
+import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
+import { JogoResumo } from '@core/models/jogo.model';
 type Jogo = JogoResumo;
-import { EmptyStateComponent, LoadingSpinnerComponent } from '../../../../shared';
+import { EmptyStateComponent } from '@shared/components/empty-state.component';
+import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
 
 /**
  * Jogos List Component (Mestre)

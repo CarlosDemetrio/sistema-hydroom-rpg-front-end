@@ -5,9 +5,9 @@ import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { DividerModule } from 'primeng/divider';
 import { TagModule } from 'primeng/tag';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '@services/auth.service';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { environment } from '@env/environment';
 
 interface UsuarioDetalhado {
   id: number;

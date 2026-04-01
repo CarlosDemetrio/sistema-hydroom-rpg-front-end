@@ -3,9 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import { AuthService } from '../../../services/auth.service';
-import { FichaBusinessService } from '../../../core/services/business/ficha-business.service';
-import { CurrentGameService } from '../../../core/services/current-game.service';
+import { AuthService } from '@services/auth.service';
+import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { CurrentGameService } from '@core/services/current-game.service';
 
 /**
  * Jogador Dashboard Component

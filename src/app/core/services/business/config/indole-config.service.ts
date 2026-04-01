@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { IndoleConfig } from '../../../models';
+import { IndoleConfig } from '@core/models';
 import { BaseConfigService } from './base-config.service';
 
 /**

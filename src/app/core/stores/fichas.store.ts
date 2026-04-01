@@ -1,5 +1,5 @@
 import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
-import { Ficha } from '../models';
+import { Ficha } from '@core/models';
 
 /**
  * State interface for Fichas

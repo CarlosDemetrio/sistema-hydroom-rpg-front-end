@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { PresencaConfig } from '../../../models';
+import { PresencaConfig } from '@core/models';
 import { BaseConfigService } from './base-config.service';
 
 /**

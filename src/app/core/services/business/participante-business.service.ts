@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { JogosStore } from '../../stores/jogos.store';
-import { JogosApiService } from '../api/jogos-api.service';
-import { Participante, StatusParticipante } from '../../models/participante.model';
+import { JogosStore } from '@core/stores/jogos.store';
+import { JogosApiService } from '@core/services/api/jogos-api.service';
+import { Participante, StatusParticipante } from '@core/models/participante.model';
 
 /**
  * Participante Business Service

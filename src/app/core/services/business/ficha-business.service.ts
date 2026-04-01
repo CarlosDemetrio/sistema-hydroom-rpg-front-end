@@ -1,18 +1,18 @@
 import { Injectable, inject, computed } from '@angular/core';
 import { Observable, forkJoin } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { FichasStore } from '../../stores/fichas.store';
-import { FichasApiService, FichaFilters } from '../api/fichas-api.service';
+import { FichasStore } from '@core/stores/fichas.store';
+import { FichasApiService, FichaFilters } from '@core/services/api/fichas-api.service';
 import {
   Ficha,
   FichaVantagemResponse,
   FichaCompletaData,
   ComprarVantagemDto,
   DuplicarFichaResponse,
-} from '../../models/ficha.model';
-import { CreateFichaDto, UpdateFichaDto, DuplicarFichaDto, NpcCreateDto } from '../../models/dtos/ficha.dto';
-import { Anotacao, CriarAnotacaoDto } from '../../models/anotacao.model';
-import { AuthService } from '../../../services/auth.service';
+} from '@core/models/ficha.model';
+import { CreateFichaDto, UpdateFichaDto, DuplicarFichaDto, NpcCreateDto } from '@core/models/dtos/ficha.dto';
+import { Anotacao, CriarAnotacaoDto } from '@core/models/anotacao.model';
+import { AuthService } from '@services/auth.service';
 
 /**
  * Ficha Business Service

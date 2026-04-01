@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { TipoAptidao } from '../../../models/tipo-aptidao.model';
+import { TipoAptidao } from '@core/models/tipo-aptidao.model';
 import { BaseConfigService } from './base-config.service';
 
 /**

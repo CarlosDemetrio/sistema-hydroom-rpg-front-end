@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '@services/auth.service';
 
 /**
  * Sidebar Component (SMART)

@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { JogosStore } from '../../stores/jogos.store';
-import { JogosApiService } from '../api/jogos-api.service';
-import { JogoResumo, Jogo, MeuJogo } from '../../models/jogo.model';
-import { CreateJogoDto, UpdateJogoDto } from '../../models/dtos/jogo.dto';
+import { JogosStore } from '@core/stores/jogos.store';
+import { JogosApiService } from '@core/services/api/jogos-api.service';
+import { JogoResumo, Jogo, MeuJogo } from '@core/models/jogo.model';
+import { CreateJogoDto, UpdateJogoDto } from '@core/models/dtos/jogo.dto';
 
 /**
  * Jogo Business Service

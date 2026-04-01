@@ -1,7 +1,7 @@
 import { Component, inject, computed } from '@angular/core';
-import { AuthService } from '../../services/auth.service';
-import { MestreDashboardComponent } from '../../features/dashboard/mestre-dashboard/mestre-dashboard.component';
-import { JogadorDashboardComponent } from '../../features/dashboard/jogador-dashboard/jogador-dashboard.component';
+import { AuthService } from '@services/auth.service';
+import { MestreDashboardComponent } from '@features/dashboard/mestre-dashboard/mestre-dashboard.component';
+import { JogadorDashboardComponent } from '@features/dashboard/jogador-dashboard/jogador-dashboard.component';
 
 /**
  * Dashboard Component - Main Router

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { FichaAtributo } from '../../models/ficha-atributo.model';
-import { AtributoConfig } from '../../models/atributo-config.model';
-import { ConfigStore } from '../../stores/config.store';
+import { FichaAtributo } from '@core/models/ficha-atributo.model';
+import { AtributoConfig } from '@core/models/atributo-config.model';
+import { ConfigStore } from '@core/stores/config.store';
 
 /**
  * Business Service for Character Sheet Calculations (client-side preview only).

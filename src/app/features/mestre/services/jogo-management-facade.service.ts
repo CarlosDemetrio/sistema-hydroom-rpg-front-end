@@ -1,12 +1,12 @@
 import { Injectable, inject, computed } from '@angular/core';
 import { Observable, forkJoin } from 'rxjs';
-import { JogoBusinessService } from '../../../core/services/business/jogo-business.service';
-import { ParticipanteBusinessService } from '../../../core/services/business/participante-business.service';
-import { FichaBusinessService } from '../../../core/services/business/ficha-business.service';
-import { JogoResumo, Jogo } from '../../../core/models/jogo.model';
-import { Participante } from '../../../core/models/participante.model';
-import { CreateJogoDto, UpdateJogoDto } from '../../../core/models/dtos/jogo.dto';
-import { Ficha } from '../../../core/models/ficha.model';
+import { JogoBusinessService } from '@core/services/business/jogo-business.service';
+import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
+import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { JogoResumo, Jogo } from '@core/models/jogo.model';
+import { Participante } from '@core/models/participante.model';
+import { CreateJogoDto, UpdateJogoDto } from '@core/models/dtos/jogo.dto';
+import { Ficha } from '@core/models/ficha.model';
 
 /**
  * Jogo Management Facade Service

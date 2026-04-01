@@ -13,18 +13,15 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   BaseConfigTableComponent,
   ConfigTableColumn,
-} from '../../../../../../shared/components/base-config/base-config-table.component';
-import { AptidaoConfig, TipoAptidao } from '../../../../../../core/models';
-import { AptidaoConfigService } from '../../../../../../core/services/business/config';
-import { ConfigApiService } from '../../../../../../core/services/api/config-api.service';
-import {
-  uniqueNameValidator,
-  uppercaseValidator,
-} from '../../../../../../shared/validators/config-validators';
+} from '@shared/components/base-config/base-config-table.component';
+import { AptidaoConfig, TipoAptidao } from '@core/models';
+import { AptidaoConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
+import { uniqueNameValidator } from '@shared/validators/config-validators';
 
 @Component({
   selector: 'app-aptidoes-config',
@@ -45,7 +42,7 @@ import {
   ],
   providers: [ConfirmationService],
   template: `
-    <p-card styleClass="card-rpg card-rpg--accented">
+    <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {
         <div class="flex align-items-center gap-2 mb-3 p-2 border-round surface-100">
@@ -92,7 +89,7 @@ import {
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Aptidão' : 'Nova Aptidão'"
       position="right"
-      styleClass="w-full md:w-30rem"
+      class="w-full md:w-30rem"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">

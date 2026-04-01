@@ -11,12 +11,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
-import { FichaBusinessService } from '../../../../core/services/business/ficha-business.service';
-import { ParticipanteBusinessService } from '../../../../core/services/business/participante-business.service';
-import { ParticipanteStatus } from '../../../../core/models';
-import { EmptyStateComponent } from '../../../../shared';
-import { LoadingSpinnerComponent } from '../../../../shared';
+import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
+import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
+import { ParticipanteStatus } from '@core/models';
+import { EmptyStateComponent } from '@shared';
+import { LoadingSpinnerComponent } from '@shared';
 
 /**
  * Jogo Detail Component

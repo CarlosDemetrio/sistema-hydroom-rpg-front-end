@@ -12,17 +12,17 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { BaseConfigComponent } from '../../../../../../shared/components/base-config/base-config.component';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   BaseConfigTableComponent,
   ConfigTableColumn,
-} from '../../../../../../shared/components/base-config/base-config-table.component';
-import { BonusConfig } from '../../../../../../core/models';
-import { BonusConfigService } from '../../../../../../core/services/business/config';
+} from '@shared/components/base-config/base-config-table.component';
+import { BonusConfig } from '@core/models';
+import { BonusConfigService } from '@core/services/business/config';
 import {
   uniqueNameValidator,
   uppercaseValidator,
-} from '../../../../../../shared/validators/config-validators';
+} from '@shared/validators/config-validators';
 
 @Component({
   selector: 'app-bonus-config',

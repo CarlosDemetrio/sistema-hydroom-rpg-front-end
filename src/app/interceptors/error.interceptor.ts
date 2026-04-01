@@ -2,7 +2,7 @@ import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResp
 import { inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { ErrorHandlerService } from '../services/error-handler.service';
+import { ErrorHandlerService } from '@services/error-handler.service';
 import { Router } from '@angular/router';
 
 /**

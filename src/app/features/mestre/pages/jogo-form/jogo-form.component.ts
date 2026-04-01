@@ -8,10 +8,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
-import { JogoManagementFacadeService } from '../../services/jogo-management-facade.service';
-import { JogoStatus } from '../../../../core/models/jogo.model';
-import { FormFieldErrorComponent } from '../../../../shared';
-import { LoadingSpinnerComponent } from '../../../../shared';
+import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
+import { JogoStatus } from '@core/models/jogo.model';
+import { FormFieldErrorComponent } from '@shared';
+import { LoadingSpinnerComponent } from '@shared';
 import { Textarea } from 'primeng/textarea';
 
 /**

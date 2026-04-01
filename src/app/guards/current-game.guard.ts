@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
-import { CurrentGameService } from '../core/services';
+import { CurrentGameService } from '@core/services';
 
 /**
  * Current Game Guard
