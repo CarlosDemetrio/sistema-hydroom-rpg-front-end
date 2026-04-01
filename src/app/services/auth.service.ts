@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -28,7 +28,7 @@ export class AuthService {
   public isMestre = computed(() => this.currentUser()?.role === 'MESTRE');
   public isJogador = computed(() => this.currentUser()?.role === 'JOGADOR');
 
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   setCurrentUser(user: UserInfo | null) {
     this.currentUserSignal.set(user);

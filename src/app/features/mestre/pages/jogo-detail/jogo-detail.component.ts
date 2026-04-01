@@ -16,8 +16,8 @@ import { FichaBusinessService } from '@core/services/business/ficha-business.ser
 import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
 import { ParticipanteStatus, Participante } from '@core/models';
 import { JogosStore } from '@core/stores/jogos.store';
-import { EmptyStateComponent } from '@shared';
-import { LoadingSpinnerComponent } from '@shared';
+import { EmptyStateComponent } from '@shared/components/empty-state.component';
+import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
 
 /**
  * Jogo Detail Component
@@ -139,8 +139,8 @@ import { LoadingSpinnerComponent } from '@shared';
                       </div>
 
                       <div>
-                        <span class="font-semibold">Data de Criação:</span>
-                        <p class="m-0 mt-1">{{ jogo()!.dataCriacao | date:'dd/MM/yyyy HH:mm' }}</p>
+                        <span class="font-semibold">Participantes:</span>
+                        <p class="m-0 mt-1">{{ jogo()!.totalParticipantes }}</p>
                       </div>
                     </div>
                   </div>
@@ -241,9 +241,7 @@ import { LoadingSpinnerComponent } from '@shared';
                         <p-card>
                           <div class="flex flex-column gap-2">
                             <h4 class="font-bold text-lg m-0">{{ ficha.nome }}</h4>
-                            @if (ficha.progressao) {
-                              <span class="text-sm text-color-secondary">Nível {{ ficha.progressao.nivel }}</span>
-                            }
+                            <span class="text-sm text-color-secondary">Nível {{ ficha.nivel }}</span>
                             <p-button
                               label="Ver Ficha"
                               icon="pi pi-eye"
