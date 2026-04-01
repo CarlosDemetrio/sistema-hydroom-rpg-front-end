@@ -161,9 +161,9 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
             <p-tabpanel [value]="1">
               @if (loadingAtributos()) {
                 <div class="p-3">
-                  <p-skeleton height="2rem" styleClass="mb-3" />
+                  <p-skeleton height="2rem" class="mb-3" />
                   @for (_ of [1, 2, 3, 4]; track $index) {
-                    <p-skeleton height="2.5rem" styleClass="mb-1" />
+                    <p-skeleton height="2.5rem" class="mb-1" />
                   }
                 </div>
               } @else {
@@ -176,7 +176,7 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
               @if (loadingAptidoes()) {
                 <div class="p-3">
                   @for (_ of [1, 2, 3, 4]; track $index) {
-                    <p-skeleton height="2.5rem" styleClass="mb-1" />
+                    <p-skeleton height="2.5rem" class="mb-1" />
                   }
                 </div>
               } @else {
@@ -406,7 +406,7 @@ export class FichaDetailComponent implements OnInit {
     }
   }
 
-  private carregarAtributos(fichaId: number): void {
+  private carregarAtributos(_fichaId: number): void {
     this.loadingAtributos.set(true);
     // Atributos are embedded in FichaResumo.atributosTotais (Record<string, number>)
     // Full FichaAtributoResponse list requires the ficha object — use resumo totais for now
@@ -431,7 +431,7 @@ export class FichaDetailComponent implements OnInit {
     this.loadingAtributos.set(false);
   }
 
-  private carregarAptidoes(fichaId: number): void {
+  private carregarAptidoes(_fichaId: number): void {
     this.loadingAptidoes.set(true);
     // TODO: When backend exposes GET /api/v1/fichas/{id}/aptidoes, call it here
     // For Phase 1, aptidoes tab shows empty state until endpoint is available

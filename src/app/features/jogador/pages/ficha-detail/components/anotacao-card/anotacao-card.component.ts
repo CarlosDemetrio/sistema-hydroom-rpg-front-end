@@ -9,7 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { TagModule } from 'primeng/tag';
-import { Anotacao } from '../../../../../../core/models/anotacao.model';
+import { Anotacao } from '@models/anotacao.model';
 
 @Component({
   selector: 'app-anotacao-card',
@@ -18,7 +18,7 @@ import { Anotacao } from '../../../../../../core/models/anotacao.model';
   imports: [DatePipe, ButtonModule, CardModule, DividerModule, TagModule],
   template: `
     <p-card
-      [styleClass]="cardClass()"
+      [class]="cardClass()"
       [attr.aria-label]="'Anotacao: ' + anotacao().titulo"
     >
       <!-- Header -->

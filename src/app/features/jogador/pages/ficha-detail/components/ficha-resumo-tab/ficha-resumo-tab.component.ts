@@ -5,7 +5,7 @@ import {
   input,
 } from '@angular/core';
 import { CardModule } from 'primeng/card';
-import { FichaAtributoResponse, FichaResumo } from '../../../../../../core/models/ficha.model';
+import { FichaAtributoResponse, FichaResumo } from '@models/ficha.model';
 
 interface BonusEntry {
   nome: string;
@@ -32,7 +32,7 @@ interface BonusEntry {
         } @else {
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             @for (atrib of atributos(); track atrib.atributoConfigId) {
-              <p-card styleClass="atributo-card text-center">
+              <p-card class="atributo-card text-center">
                 <div class="flex flex-col items-center gap-1">
                   <span class="atrib-abrev">{{ atrib.atributoAbreviacao }}</span>
                   <span class="atrib-total">{{ atrib.total }}</span>
@@ -53,7 +53,7 @@ interface BonusEntry {
         } @else {
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             @for (entry of bonusEntries(); track entry.nome) {
-              <p-card styleClass="bonus-card text-center">
+              <p-card class="bonus-card text-center">
                 <div class="flex flex-col items-center gap-1">
                   <span class="bonus-nome">{{ entry.nome }}</span>
                   <span class="bonus-valor">

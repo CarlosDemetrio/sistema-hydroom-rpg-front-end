@@ -7,7 +7,7 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TableModule } from 'primeng/table';
-import { FichaAtributoResponse } from '../../../../../../core/models/ficha.model';
+import { FichaAtributoResponse } from '@models/ficha.model';
 
 @Component({
   selector: 'app-ficha-atributos-tab',
@@ -44,7 +44,7 @@ import { FichaAtributoResponse } from '../../../../../../core/models/ficha.model
         <p-table
           [value]="atributos()"
           [tableStyle]="{'min-width': '500px'}"
-          styleClass="p-datatable-sm p-datatable-striped"
+          class="p-datatable-sm p-datatable-striped"
           responsiveLayout="scroll"
         >
           <ng-template #header>

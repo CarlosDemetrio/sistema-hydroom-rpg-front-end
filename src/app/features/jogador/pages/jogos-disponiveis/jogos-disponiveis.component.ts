@@ -72,7 +72,7 @@ import { ToastService } from '@services/toast.service';
 
       <!-- Error state -->
       @if (!loading() && erro()) {
-        <p-message severity="error" [text]="erro()!" styleClass="w-full mb-4" />
+        <p-message severity="error" [text]="erro()!" class="w-full mb-4" />
         <div class="text-center">
           <p-button label="Tentar novamente" icon="pi pi-refresh" outlined (onClick)="carregar()" />
         </div>

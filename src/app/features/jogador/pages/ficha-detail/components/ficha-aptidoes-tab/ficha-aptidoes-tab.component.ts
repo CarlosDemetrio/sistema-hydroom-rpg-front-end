@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { FieldsetModule } from 'primeng/fieldset';
 import { TableModule } from 'primeng/table';
-import { FichaAptidaoResponse } from '../../../../../../core/models/ficha.model';
+import { FichaAptidaoResponse } from '@models/ficha.model';
 
 interface GrupoAptidao {
   tipo: string;
@@ -30,7 +30,7 @@ interface GrupoAptidao {
           <p-fieldset [legend]="grupo.tipo" [toggleable]="true">
             <p-table
               [value]="grupo.aptidoes"
-              styleClass="p-datatable-sm"
+              class="p-datatable-sm"
               responsiveLayout="scroll"
             >
               <ng-template #header>

@@ -13,10 +13,10 @@ import { ToastModule } from 'primeng/toast';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { FichaBusinessService } from '../../../../core/services/business/ficha-business.service';
-import { CurrentGameService } from '../../../../core/services/current-game.service';
-import { AuthService } from '../../../../services/auth.service';
-import { Ficha } from '../../../../core/models';
+import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { CurrentGameService } from '@core/services/current-game.service';
+import { AuthService } from '@services/auth.service';
+import { Ficha } from '@core/models';
 
 @Component({
   selector: 'app-fichas-list',

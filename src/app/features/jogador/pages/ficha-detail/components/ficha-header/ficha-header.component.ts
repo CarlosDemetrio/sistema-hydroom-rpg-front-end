@@ -10,7 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { Ficha, FichaResumo } from '../../../../../../core/models/ficha.model';
+import { Ficha, FichaResumo } from '@models/ficha.model';
 
 @Component({
   selector: 'app-ficha-header',
@@ -33,7 +33,7 @@ import { Ficha, FichaResumo } from '../../../../../../core/models/ficha.model';
           [label]="ficha().nome.charAt(0).toUpperCase()"
           size="xlarge"
           shape="circle"
-          styleClass="ficha-avatar flex-shrink-0"
+          class="ficha-avatar flex-shrink-0"
           [attr.aria-label]="'Avatar de ' + ficha().nome"
         />
 
@@ -79,7 +79,7 @@ import { Ficha, FichaResumo } from '../../../../../../core/models/ficha.model';
           </div>
           <p-progressBar
             [value]="100"
-            styleClass="vida-bar"
+            class="vida-bar"
             [showValue]="false"
             [attr.aria-label]="'Vida total: ' + resumo().vidaTotal"
           />
@@ -93,7 +93,7 @@ import { Ficha, FichaResumo } from '../../../../../../core/models/ficha.model';
           </div>
           <p-progressBar
             [value]="100"
-            styleClass="essencia-bar"
+            class="essencia-bar"
             [showValue]="false"
             [attr.aria-label]="'Essencia total: ' + resumo().essenciaTotal"
           />

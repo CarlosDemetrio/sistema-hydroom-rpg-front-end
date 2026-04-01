@@ -10,7 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
-import { FichaVantagemResponse } from '../../../../../../core/models/ficha.model';
+import { FichaVantagemResponse } from '@models/ficha.model';
 
 interface GrupoVantagem {
   categoria: string;
@@ -40,10 +40,10 @@ interface GrupoVantagem {
       } @else {
         @for (grupo of vantagensAgrupadas(); track grupo.categoria) {
           <section>
-            <p-tag [value]="grupo.categoria" styleClass="mb-3" />
+            <p-tag [value]="grupo.categoria" class="mb-3" />
 
             @for (vantagem of grupo.vantagens; track vantagem.id) {
-              <p-card styleClass="vantagem-card mb-3">
+              <p-card class="vantagem-card mb-3">
                 <!-- Header: nome, nivel, progressbar -->
                 <div class="flex items-start justify-between gap-3 flex-wrap">
                   <div class="flex flex-col gap-1 flex-1 min-w-0">
@@ -53,7 +53,7 @@ interface GrupoVantagem {
                     <p-progressBar
                       [value]="nivelPercent(vantagem)"
                       [showValue]="false"
-                      styleClass="vantagem-nivel-bar"
+                      class="vantagem-nivel-bar"
                       [attr.aria-label]="'Nivel ' + vantagem.nivelAtual + ' de ' + vantagem.nivelMaximo"
                     />
                     <span class="text-sm text-color-secondary">

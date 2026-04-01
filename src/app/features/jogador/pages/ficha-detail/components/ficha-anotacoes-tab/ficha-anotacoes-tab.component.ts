@@ -15,10 +15,10 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TextareaModule } from 'primeng/textarea';
 import { ToggleButtonModule } from 'primeng/togglebutton';
-import { Anotacao, CriarAnotacaoDto, TipoAnotacao } from '../../../../../../core/models/anotacao.model';
-import { FichaBusinessService } from '../../../../../../core/services/business/ficha-business.service';
-import { ToastService } from '../../../../../../services/toast.service';
-import { AnotacaoCardComponent } from '../anotacao-card/anotacao-card.component';
+import { Anotacao, CriarAnotacaoDto, TipoAnotacao } from '@models/anotacao.model';
+import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { ToastService } from '@services/toast.service';
+import { AnotacaoCardComponent } from '@features/jogador/pages/ficha-detail/components/anotacao-card/anotacao-card.component';
 
 @Component({
   selector: 'app-ficha-anotacoes-tab',
@@ -52,7 +52,7 @@ import { AnotacaoCardComponent } from '../anotacao-card/anotacao-card.component'
 
       <!-- Formulario nova anotacao -->
       @if (showForm()) {
-        <p-card styleClass="nova-anotacao-card">
+        <p-card class="nova-anotacao-card">
           <div class="flex flex-col gap-3">
             <div class="flex flex-col gap-1">
               <label for="tituloAnotacao" class="font-medium text-sm">Titulo</label>

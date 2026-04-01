@@ -6,10 +6,10 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { FichaBusinessService } from '../../../../core/services/business/ficha-business.service';
-import { CurrentGameService } from '../../../../core/services';
-import { AuthService } from '../../../../services/auth.service';
-import { LoadingSpinnerComponent } from '../../../../shared';
+import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { CurrentGameService } from '@core/services';
+import { AuthService } from '@services/auth.service';
+import { LoadingSpinnerComponent } from '@shared';
 import {
   IdentificacaoSectionComponent,
   ProgressaoSectionComponent,
