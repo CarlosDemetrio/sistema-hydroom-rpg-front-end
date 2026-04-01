@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { TabsModule } from 'primeng/tabs';
 import { CardModule } from 'primeng/card';
@@ -14,7 +14,8 @@ import { ToastModule } from 'primeng/toast';
 import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
 import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
-import { ParticipanteStatus } from '@core/models';
+import { ParticipanteStatus, Participante } from '@core/models';
+import { JogosStore } from '@core/stores/jogos.store';
 import { EmptyStateComponent } from '@shared';
 import { LoadingSpinnerComponent } from '@shared';
 
@@ -28,7 +29,7 @@ import { LoadingSpinnerComponent } from '@shared';
   selector: 'app-jogo-detail',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
     TabsModule,
     CardModule,
     ButtonModule,
@@ -58,8 +59,8 @@ import { LoadingSpinnerComponent } from '@shared';
             <h1 class="text-3xl font-bold m-0 mb-2">{{ jogo()!.nome }}</h1>
             <div class="flex align-items-center gap-3">
               <p-tag
-                [value]="getStatusLabel(jogo()!.status)"
-                [severity]="getStatusSeverity(jogo()!.status)"
+                [value]="getStatusLabel(jogo()!.ativo)"
+                [severity]="getStatusSeverity(jogo()!.ativo)"
               ></p-tag>
               <span class="text-color-secondary">
                 {{ participantes().length }} participantes
@@ -114,7 +115,7 @@ import { LoadingSpinnerComponent } from '@shared';
 
                       <div>
                         <span class="font-semibold">Status:</span>
-                        <p class="m-0 mt-1">{{ getStatusLabel(jogo()!.status) }}</p>
+                        <p class="m-0 mt-1">{{ getStatusLabel(jogo()!.ativo) }}</p>
                       </div>
                     </div>
                   </div>
@@ -271,6 +272,7 @@ export class JogoDetailComponent implements OnInit {
   jogoFacade = inject(JogoManagementFacadeService); // público para template
   private participanteService = inject(ParticipanteBusinessService);
   private fichaService = inject(FichaBusinessService);
+  private jogosStore = inject(JogosStore);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private confirmationService = inject(ConfirmationService);
@@ -286,10 +288,10 @@ export class JogoDetailComponent implements OnInit {
     return this.jogoFacade.jogos().find(j => j.id === id) || null;
   });
 
-  participantes = computed(() => {
+  participantes = computed<Participante[]>(() => {
     const id = this.jogoId();
     if (!id) return [];
-    return this.jogoFacade.jogos().find(j => j.id === id)?.participantes || [];
+    return this.jogosStore.getParticipantes(id);
   });
 
   participantesAprovados = computed(() =>
@@ -312,6 +314,10 @@ export class JogoDetailComponent implements OnInit {
       this.jogoId.set(Number(id));
 
       this.jogoFacade.loadJogos().pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+
+      this.participanteService.loadParticipantes(Number(id)).pipe(
         takeUntilDestroyed(this.destroyRef)
       ).subscribe();
 
@@ -431,22 +437,12 @@ export class JogoDetailComponent implements OnInit {
     this.router.navigate(['/jogador/fichas', fichaId]);
   }
 
-  getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      ATIVO: 'Ativo',
-      PAUSADO: 'Pausado',
-      FINALIZADO: 'Finalizado'
-    };
-    return labels[status] || status;
+  getStatusLabel(ativo: boolean): string {
+    return ativo ? 'Ativo' : 'Inativo';
   }
 
-  getStatusSeverity(status: string): 'success' | 'info' | 'warn' {
-    const severities: Record<string, 'success' | 'info' | 'warn'> = {
-      ATIVO: 'success',
-      PAUSADO: 'warn',
-      FINALIZADO: 'info'
-    };
-    return severities[status] || 'info';
+  getStatusSeverity(ativo: boolean): 'success' | 'secondary' {
+    return ativo ? 'success' : 'secondary';
   }
 
   getParticipanteStatusLabel(status: ParticipanteStatus): string {

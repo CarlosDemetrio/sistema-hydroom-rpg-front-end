@@ -5,12 +5,9 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
-import { JogoStatus } from '@core/models/jogo.model';
-import { FormFieldErrorComponent } from '@shared';
+simport { FormFieldErrorComponent } from '@shared';
 import { LoadingSpinnerComponent } from '@shared';
 import { Textarea } from 'primeng/textarea';
 
@@ -30,7 +27,6 @@ import { Textarea } from 'primeng/textarea';
     InputTextModule,
     Textarea,
     InputNumberModule,
-    SelectModule,
     FormFieldErrorComponent,
     LoadingSpinnerComponent
   ],
@@ -88,26 +84,6 @@ import { Textarea } from 'primeng/textarea';
                 ></app-form-field-error>
               </div>
 
-              <!-- Status -->
-              <div class="col-12">
-                <label for="status" class="block font-semibold mb-2">
-                  Status <span class="text-red-500">*</span>
-                </label>
-                <p-select
-                  id="status"
-                  formControlName="status"
-                  [options]="statusOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  placeholder="Selecione o status"
-                  class="w-full"
-                ></p-select>
-                <app-form-field-error
-                  [errors]="jogoForm.get('status')?.errors || null"
-                  [touched]="jogoForm.get('status')?.touched || false"
-                ></app-form-field-error>
-              </div>
-
               <!-- Buttons -->
               <div class="col-12">
                 <div class="flex gap-3 justify-content-end">
@@ -147,16 +123,9 @@ export class JogoFormComponent implements OnInit {
   isSaving = signal(false);
   loading = this.jogoFacade.loading;
 
-  statusOptions = [
-    { label: 'Ativo', value: 'ATIVO' as JogoStatus },
-    { label: 'Pausado', value: 'PAUSADO' as JogoStatus },
-    { label: 'Finalizado', value: 'FINALIZADO' as JogoStatus }
-  ];
-
   jogoForm: FormGroup = this.fb.group({
     nome: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-    descricao: ['', [Validators.maxLength(500)]],
-    status: ['ATIVO', [Validators.required]]
+    descricao: ['', [Validators.maxLength(500)]]
   });
 
   ngOnInit() {
@@ -176,8 +145,7 @@ export class JogoFormComponent implements OnInit {
       next: (jogo) => {
         this.jogoForm.patchValue({
           nome: jogo.nome,
-          descricao: jogo.descricao || '',
-          status: jogo.status
+          descricao: jogo.descricao || ''
         });
       }
     });
@@ -199,8 +167,7 @@ export class JogoFormComponent implements OnInit {
       // Update existing jogo
       this.jogoFacade.updateJogo(this.jogoId()!, {
         nome: formValue.nome,
-        descricao: formValue.descricao,
-        status: formValue.status
+        descricao: formValue.descricao
       }).pipe(
         takeUntilDestroyed(this.destroyRef)
       ).subscribe({
@@ -225,8 +192,7 @@ export class JogoFormComponent implements OnInit {
       // Create new jogo
       this.jogoFacade.createJogo({
         nome: formValue.nome,
-        descricao: formValue.descricao,
-        status: formValue.status
+        descricao: formValue.descricao
       }).pipe(
         takeUntilDestroyed(this.destroyRef)
       ).subscribe({
