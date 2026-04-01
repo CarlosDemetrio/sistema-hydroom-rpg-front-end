@@ -46,7 +46,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
   ],
   providers: [ConfirmationService],
   template: `
-    <p-card styleClass="card-rpg card-rpg--accented">
+    <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {
         <div class="flex align-items-center gap-2 mb-3 p-2 border-round surface-100">
@@ -93,7 +93,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Classe' : 'Nova Classe'"
       position="right"
-      styleClass="w-full md:w-35rem"
+      class="w-full md:w-35rem"
     >
       <p-tabs [value]="activeTab()">
         <p-tablist>

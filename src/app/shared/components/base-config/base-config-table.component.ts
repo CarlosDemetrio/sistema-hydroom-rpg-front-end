@@ -152,7 +152,7 @@ export interface ConfigTableColumn {
         [reorderableColumns]="false"
         [rowReorder]="canReorder()"
         (onRowReorder)="handleRowReorder($event)"
-        styleClass="rpg-table"
+        class="rpg-table"
         responsiveLayout="scroll"
       >
         <!-- ---- CABEÇALHO ---- -->

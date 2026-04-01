@@ -100,7 +100,7 @@ import { Ficha } from '@core/models';
         <div class="grid">
           @for (sk of skeletonItems; track sk) {
             <div class="col-12 md:col-6 lg:col-4">
-              <p-card styleClass="card-rpg">
+              <p-card class="card-rpg">
                 <div class="flex flex-column gap-3">
                   <div class="flex justify-content-between align-items-start">
                     <p-skeleton height="1.5rem" width="70%" />
