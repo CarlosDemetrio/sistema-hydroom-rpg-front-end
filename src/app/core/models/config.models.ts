@@ -218,5 +218,6 @@ export type ProspeccaoConfig = DadoProspeccaoConfig;
 export interface LimitadorConfig {
   id?: number;
   jogoId?: number;
-  nome?: string;
+  nome: string;
+  descricao?: string | null;
 }

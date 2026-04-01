@@ -16,7 +16,7 @@ export interface JogoScopedConfig extends BaseConfig {
 
 export interface NamedConfig extends JogoScopedConfig {
   nome: string;
-  descricao?: string;
+  descricao?: string | null;
 }
 
 // Re-exports so existing imports from 'config-base.model' continue to work
