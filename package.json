@@ -8,7 +8,8 @@
     "start:local": "ng serve --proxy-config proxy.conf.local.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:coverage": "ng test --coverage --watch=false"
   },
   "prettier": {
     "printWidth": 100,
@@ -36,6 +37,7 @@
     "@ngrx/signals": "^21.0.1",
     "@primeng/themes": "^21.0.4",
     "@testing-library/angular": "^19.0.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.1",
