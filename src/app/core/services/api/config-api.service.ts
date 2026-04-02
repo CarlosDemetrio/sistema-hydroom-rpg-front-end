@@ -26,7 +26,7 @@ import { environment } from '@env/environment';
  *
  * Padrão de URLs do backend:
  * - A maioria dos endpoints usa: /api/v1/configuracoes/{tipo}?jogoId={jogoId}
- * - CategoriaVantagem usa:       /api/jogos/{jogoId}/config/categorias-vantagem  (sem /v1/)
+ * - CategoriaVantagem usa: /api/jogos/{jogoId}/config/categorias-vantagem  (sem /v1/)
  *
  * Operações CRUD completas por tipo + reordenação batch (/reordenar).
  * Apenas MESTRE pode criar/editar/deletar. MESTRE e JOGADOR podem listar.

@@ -19,6 +19,7 @@ import {
 } from '@shared/components/base-config/base-config-table.component';
 import { BonusConfig } from '@core/models';
 import { BonusConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import {
   uniqueNameValidator,
   uppercaseValidator,
@@ -208,6 +209,7 @@ export class BonusConfigComponent extends BaseConfigComponent<
 > {
   protected service = inject(BonusConfigService);
   private confirmationService = inject(ConfirmationService);
+  private configApi = inject(ConfigApiService);
 
   protected drawerVisible = signal(false);
   protected loading = signal(false);
@@ -309,6 +311,13 @@ export class BonusConfigComponent extends BaseConfigComponent<
   }
 
   protected handleReorder(payload: { itemId: number; novaOrdem: number }[]): void {
-    this.toastService.success(`Ordem atualizada (${payload.length} itens).`, 'Reordenação');
+    const jogoId = this.currentGameId();
+    if (!jogoId || payload.length === 0) return;
+    this.configApi.reordenarBonus(jogoId, { itens: payload.map((p) => ({ id: p.itemId, ordemExibicao: p.novaOrdem })) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.success('Ordem salva com sucesso.', 'Reordenação'),
+        error: () => this.toastService.error('Erro ao salvar a ordem.', 'Reordenação'),
+      });
   }
 }

@@ -5,3 +5,4 @@ export * from './empty-state.component';
 export * from './form-field-error.component';
 export * from './header/header.component';
 export * from './base-config/base-config-table.component';
+export * from './formula-editor/formula-editor.component';

@@ -4,6 +4,7 @@ import {
   computed,
   input,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { FichaAtributoResponse, FichaResumo } from '@models/ficha.model';
 
@@ -16,7 +17,7 @@ interface BonusEntry {
   selector: 'app-ficha-resumo-tab',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardModule],
+  imports: [CardModule, DecimalPipe],
   template: `
     <div class="p-3 flex flex-col gap-4">
 

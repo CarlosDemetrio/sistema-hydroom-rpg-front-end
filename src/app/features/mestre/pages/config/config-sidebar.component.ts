@@ -1,23 +1,27 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { BadgeModule } from 'primeng/badge';
+import { ConfigStore } from '@core/stores/config.store';
 
 /**
- * Config Sidebar Component (DUMB)
+ * Config Sidebar Component
  *
- * Menu lateral com 10 itens de configuração
+ * Menu lateral com itens de configuração e badges de contagem.
  *
  * Features:
  * - Navegação via routerLink
  * - Ícones para cada tipo de config
  * - Highlight no item ativo (routerLinkActive)
- * - Responsive (collapse em mobile)
+ * - Badges de contagem vindos do ConfigStore
+ * - Ordem lógica de dependência entre configs
  */
 @Component({
   selector: 'app-config-sidebar',
   standalone: true,
   imports: [
     RouterLink,
-    RouterLinkActive
+    RouterLinkActive,
+    BadgeModule,
   ],
   template: `
     <div class="surface-card h-full">
@@ -26,7 +30,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       </div>
 
       <nav class="p-2">
-        @for (item of menuItems; track item.route) {
+        @for (item of menuItems(); track item.route) {
           <a
             [routerLink]="item.route"
             routerLinkActive="active-menu-item"
@@ -34,7 +38,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           >
             <i [class]="item.icon + ' text-xl'"></i>
             <div class="flex-1">
-              <div class="font-semibold">{{ item.label }}</div>
+              <span class="flex align-items-center justify-content-between w-full">
+                <span class="font-semibold">{{ item.label }}</span>
+                @if (item.count > 0) {
+                  <p-badge [value]="item.count.toString()" severity="secondary" />
+                }
+              </span>
               <div class="text-sm text-color-secondary">{{ item.description }}</div>
             </div>
             <i class="pi pi-chevron-right text-color-secondary"></i>
@@ -56,84 +65,99 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   `]
 })
 export class ConfigSidebarComponent {
-  menuItems = [
+  private readonly configStore = inject(ConfigStore);
+
+  protected readonly menuItems = computed(() => [
+    {
+      label: 'Tipos de Aptidão',
+      description: 'Física, Mental, etc.',
+      icon: 'pi pi-tags',
+      route: '/mestre/config/tipos-aptidao',
+      count: this.configStore.tiposAptidao().length,
+    },
     {
       label: 'Atributos',
       description: 'FOR, DES, CON, INT, SAB, CAR',
       icon: 'pi pi-chart-bar',
-      route: '/mestre/config/atributos'
+      route: '/mestre/config/atributos',
+      count: this.configStore.atributos().length,
     },
     {
       label: 'Aptidões',
       description: 'Perícias e habilidades',
       icon: 'pi pi-star',
-      route: '/mestre/config/aptidoes'
-    },
-    {
-      label: 'Níveis',
-      description: 'Progressão de XP',
-      icon: 'pi pi-arrow-up',
-      route: '/mestre/config/niveis'
-    },
-    {
-      label: 'Tipos de Aptidão',
-      description: 'Física, Mental, etc.',
-      icon: 'pi pi-tags',
-      route: '/mestre/config/tipos-aptidao'
-    },
-    {
-      label: 'Classes',
-      description: 'Guerreiro, Mago, etc.',
-      icon: 'pi pi-shield',
-      route: '/mestre/config/classes'
-    },
-    {
-      label: 'Vantagens',
-      description: 'Vantagens e desvantagens',
-      icon: 'pi pi-plus-circle',
-      route: '/mestre/config/vantagens'
-    },
-    {
-      label: 'Raças',
-      description: 'Humano, Elfo, etc.',
-      icon: 'pi pi-users',
-      route: '/mestre/config/racas'
-    },
-    {
-      label: 'Prospecção',
-      description: 'Sistema de dados',
-      icon: 'pi pi-box',
-      route: '/mestre/config/prospeccao'
-    },
-    {
-      label: 'Presenças',
-      description: 'Habilidades especiais',
-      icon: 'pi pi-sparkles',
-      route: '/mestre/config/presencas'
-    },
-    {
-      label: 'Gêneros',
-      description: 'Masculino, Feminino, etc.',
-      icon: 'pi pi-user',
-      route: '/mestre/config/generos'
-    },
-    {
-      label: 'Índoles',
-      description: 'Alinhamentos de personagem',
-      icon: 'pi pi-heart',
-      route: '/mestre/config/indoles'
-    },
-    {
-      label: 'Membros do Corpo',
-      description: 'Cabeça, Braços, Pernas, etc.',
-      icon: 'pi pi-android',
-      route: '/mestre/config/membros-corpo'
+      route: '/mestre/config/aptidoes',
+      count: this.configStore.aptidoes().length,
     },
     {
       label: 'Bônus',
       description: 'Modificadores de atributos',
       icon: 'pi pi-plus-circle',
-      route: '/mestre/config/bonus'
-    }
-  ];
+      route: '/mestre/config/bonus',
+      count: this.configStore.bonus().length,
+    },
+    {
+      label: 'Classes',
+      description: 'Guerreiro, Mago, etc.',
+      icon: 'pi pi-shield',
+      route: '/mestre/config/classes',
+      count: this.configStore.classes().length,
+    },
+    {
+      label: 'Raças',
+      description: 'Humano, Elfo, etc.',
+      icon: 'pi pi-users',
+      route: '/mestre/config/racas',
+      count: this.configStore.racas().length,
+    },
+    {
+      label: 'Vantagens',
+      description: 'Vantagens e desvantagens',
+      icon: 'pi pi-star-fill',
+      route: '/mestre/config/vantagens',
+      count: this.configStore.vantagens().length,
+    },
+    {
+      label: 'Níveis',
+      description: 'Progressão de XP',
+      icon: 'pi pi-arrow-up',
+      route: '/mestre/config/niveis',
+      count: this.configStore.niveis().length,
+    },
+    {
+      label: 'Gêneros',
+      description: 'Masculino, Feminino, etc.',
+      icon: 'pi pi-user',
+      route: '/mestre/config/generos',
+      count: this.configStore.generos().length,
+    },
+    {
+      label: 'Índoles',
+      description: 'Alinhamentos de personagem',
+      icon: 'pi pi-heart',
+      route: '/mestre/config/indoles',
+      count: this.configStore.indoles().length,
+    },
+    {
+      label: 'Presenças',
+      description: 'Habilidades especiais',
+      icon: 'pi pi-sparkles',
+      route: '/mestre/config/presencas',
+      count: this.configStore.presencas().length,
+    },
+    {
+      label: 'Prospecção',
+      description: 'Sistema de dados',
+      icon: 'pi pi-box',
+      route: '/mestre/config/prospeccao',
+      count: this.configStore.dadosProspeccao().length,
+    },
+    {
+      label: 'Membros do Corpo',
+      description: 'Cabeça, Braços, Pernas, etc.',
+      icon: 'pi pi-android',
+      route: '/mestre/config/membros-corpo',
+      count: this.configStore.membrosCorpo().length,
+    },
+  ]);
 }

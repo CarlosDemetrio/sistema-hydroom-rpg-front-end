@@ -117,18 +117,18 @@ import { CurrentGameService } from '@core/services/current-game.service';
                           </div>
                           <h3 class="font-bold text-xl m-0 text-primary">{{ ficha.nome }}</h3>
                         </div>
-                        @if (ficha.progressao) {
+                        @if (ficha.nivel != null) {
                           <span class="text-sm bg-primary text-white border-round-lg px-3 py-1 font-semibold">
-                            Nível {{ ficha.progressao.nivel }}
+                            Nível {{ ficha.nivel }}
                           </span>
                         }
                       </div>
 
-                      @if (ficha.identificacao) {
+                      @if (ficha.racaNome || ficha.classeNome) {
                         <div class="flex flex-column gap-2">
                           <p class="text-color-secondary m-0 flex align-items-center gap-2">
                             <i class="pi pi-map-marker text-primary"></i>
-                            <span>{{ ficha.identificacao.origem || 'Origem não definida' }}</span>
+                            <span>{{ fichaSubtitle(ficha) }}</span>
                           </p>
                         </div>
                       }
@@ -259,5 +259,10 @@ export class JogadorDashboardComponent {
 
   editarFicha(id: number) {
     this.router.navigate(['/jogador/fichas', id, 'edit']);
+  }
+
+  /** Builds a subtitle like "Elfo · Guerreiro" from optional race/class names */
+  fichaSubtitle(ficha: { racaNome?: string | null; classeNome?: string | null }): string {
+    return [ficha.racaNome, ficha.classeNome].filter((v): v is string => !!v).join(' · ');
   }
 }

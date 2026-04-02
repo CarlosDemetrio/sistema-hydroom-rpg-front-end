@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -9,6 +10,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DrawerModule } from 'primeng/drawer';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
@@ -28,6 +30,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     ButtonModule,
     CardModule,
     CheckboxModule,
@@ -35,6 +38,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
     DrawerModule,
     InputNumberModule,
     InputTextModule,
+    MessageModule,
     SelectModule,
     TextareaModule,
     TooltipModule,
@@ -63,6 +67,18 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
             </p>
           </div>
         </div>
+      }
+
+      @if (tiposAptidao().length === 0) {
+        <p-message severity="warn" styleClass="mb-3 w-full">
+          <span>
+            Para criar aptidões, configure ao menos um
+            <a routerLink="/mestre/config/tipos-aptidao" class="text-primary font-semibold">
+              Tipo de Aptidão
+            </a>
+            primeiro.
+          </span>
+        </p-message>
       }
 
       <app-base-config-table
@@ -193,6 +209,9 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
             [label]="editMode() ? 'Salvar Alterações' : 'Criar Aptidão'"
             icon="pi pi-check"
             type="submit"
+            [disabled]="tiposAptidao().length === 0"
+            [pTooltip]="tiposAptidao().length === 0 ? 'Configure ao menos um Tipo de Aptidão primeiro' : ''"
+            tooltipPosition="top"
           />
         </div>
       </form>
@@ -317,12 +336,19 @@ export class AptidoesConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }
 
   protected handleReorder(payload: { itemId: number; novaOrdem: number }[]): void {
-    this.toastService.success(`Ordem atualizada (${payload.length} itens).`, 'Reordenação');
+    const jogoId = this.currentGameId();
+    if (!jogoId || payload.length === 0) return;
+    this.configApi.reordenarAptidoes(jogoId, { itens: payload.map((p) => ({ id: p.itemId, ordemExibicao: p.novaOrdem })) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.success('Ordem salva com sucesso.', 'Reordenação'),
+        error: () => this.toastService.error('Erro ao salvar a ordem.', 'Reordenação'),
+      });
   }
 }

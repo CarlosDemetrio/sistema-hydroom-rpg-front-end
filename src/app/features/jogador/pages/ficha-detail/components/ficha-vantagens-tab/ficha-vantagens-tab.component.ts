@@ -8,6 +8,7 @@ import {
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { DividerModule } from 'primeng/divider';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
 import { FichaVantagemResponse } from '@models/ficha.model';
@@ -21,7 +22,7 @@ interface GrupoVantagem {
   selector: 'app-ficha-vantagens-tab',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BadgeModule, ButtonModule, CardModule, ProgressBarModule, TagModule],
+  imports: [BadgeModule, ButtonModule, CardModule, DividerModule, ProgressBarModule, TagModule],
   template: `
     <div class="p-3 flex flex-col gap-4">
 

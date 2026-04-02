@@ -2,7 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
-import {FormFieldErrorComponent} from '@shared';
+import { FormFieldErrorComponent } from '@shared/components/form-field-error.component';
 
 /**
  * Identificacao Section Component (DUMB)

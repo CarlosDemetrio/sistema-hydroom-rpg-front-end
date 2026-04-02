@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe, SlicePipe } from '@angular/common';
+import { SlicePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -29,7 +29,6 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
   selector: 'app-jogos-list',
   standalone: true,
   imports: [
-    DatePipe,
     SlicePipe,
     FormsModule,
     TableModule,

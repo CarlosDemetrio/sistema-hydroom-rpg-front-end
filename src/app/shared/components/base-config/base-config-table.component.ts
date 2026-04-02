@@ -95,7 +95,7 @@ export interface ConfigTableColumn {
       <div class="flex align-items-center gap-2 flex-wrap">
         <!-- Campo de busca -->
         <p-icon-field iconPosition="left">
-          <p-input-icon class="pi pi-search" />
+          <p-inputicon class="pi pi-search" />
           <input
             pInputText
             type="text"
@@ -150,7 +150,6 @@ export interface ConfigTableColumn {
         [rows]="rowsPerPage()"
         [rowsPerPageOptions]="[5, 10, 25, 50]"
         [reorderableColumns]="false"
-        [rowReorder]="canReorder()"
         (onRowReorder)="handleRowReorder($event)"
         class="rpg-table"
         responsiveLayout="scroll"
@@ -184,7 +183,7 @@ export interface ConfigTableColumn {
               <td>
                 <span
                   class="pi pi-bars rpg-drag-handle"
-                  [pReorderableRowHandle]="index"
+                  pReorderableRowHandle
                   pTooltip="Arrastar para reordenar"
                 ></span>
               </td>
@@ -331,7 +330,8 @@ export class BaseConfigTableComponent {
   }
 
   /** Converte o evento nativo do p-table rowReorder para o formato do output */
-  protected handleRowReorder(event: { dragIndex: number; dropIndex: number }): void {
+  protected handleRowReorder(event: { dragIndex?: number; dropIndex?: number }): void {
+    if (event.dragIndex == null || event.dropIndex == null) return;
     const reordered = [...this.items()];
     const moved = reordered.splice(event.dragIndex, 1)[0];
     reordered.splice(event.dropIndex, 0, moved);

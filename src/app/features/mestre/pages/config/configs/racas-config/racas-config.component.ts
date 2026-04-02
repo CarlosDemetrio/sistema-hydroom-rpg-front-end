@@ -99,13 +99,23 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       <p-tabs [value]="activeTab()">
         <p-tablist>
           <p-tab value="dados">Dados Gerais</p-tab>
-          <p-tab value="bonus-atributos" [disabled]="!editMode()">
+          <p-tab
+            value="bonus-atributos"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
             Bônus em Atributos
             @if (selectedRaca()?.bonusAtributos?.length) {
               <span class="ml-1 badge-atributo">{{ selectedRaca()!.bonusAtributos.length }}</span>
             }
           </p-tab>
-          <p-tab value="classes-permitidas" [disabled]="!editMode()">
+          <p-tab
+            value="classes-permitidas"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
             Classes Permitidas
             @if (selectedRaca()?.classesPermitidas?.length) {
               <span class="ml-1 badge-atributo">{{ selectedRaca()!.classesPermitidas.length }}</span>
@@ -511,6 +521,13 @@ export class RacasConfigComponent extends BaseConfigComponent<
   }
 
   protected handleReorder(payload: { itemId: number; novaOrdem: number }[]): void {
-    this.toastService.success(`Ordem atualizada (${payload.length} itens).`, 'Reordenação');
+    const jogoId = this.currentGameId();
+    if (!jogoId || payload.length === 0) return;
+    this.configApi.reordenarRacas(jogoId, { itens: payload.map((p) => ({ id: p.itemId, ordemExibicao: p.novaOrdem })) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.success('Ordem salva com sucesso.', 'Reordenação'),
+        error: () => this.toastService.error('Erro ao salvar a ordem.', 'Reordenação'),
+      });
   }
 }

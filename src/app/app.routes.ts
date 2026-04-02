@@ -87,10 +87,6 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/mestre/pages/config/configs/niveis-config/niveis-config.component').then(m => m.NiveisConfigComponent)
               },
               {
-                path: 'limitadores',
-                loadComponent: () => import('./features/mestre/pages/config/configs/limitadores-config/limitadores-config.component').then(m => m.LimitadoresConfigComponent)
-              },
-              {
                 path: 'tipos-aptidao',
                 loadComponent: () => import('./features/mestre/pages/config/configs/tipos-aptidao-config/tipos-aptidao-config.component').then(m => m.TiposAptidaoConfigComponent)
               },

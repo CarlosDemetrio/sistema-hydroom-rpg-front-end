@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -29,6 +29,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
   selector: 'app-classes-config',
   standalone: true,
   imports: [
+    FormsModule,
     ReactiveFormsModule,
     ButtonModule,
     CardModule,
@@ -98,13 +99,23 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       <p-tabs [value]="activeTab()">
         <p-tablist>
           <p-tab value="dados">Dados Gerais</p-tab>
-          <p-tab value="bonus" [disabled]="!editMode()">
+          <p-tab
+            value="bonus"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
             Bônus
             @if (selectedClasse()?.bonusConfig?.length) {
               <span class="ml-1 badge-atributo">{{ selectedClasse()!.bonusConfig.length }}</span>
             }
           </p-tab>
-          <p-tab value="aptidoes" [disabled]="!editMode()">
+          <p-tab
+            value="aptidoes"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
             Aptidões c/ Bônus
             @if (selectedClasse()?.aptidaoBonus?.length) {
               <span class="ml-1 badge-atributo">{{ selectedClasse()!.aptidaoBonus.length }}</span>
@@ -199,7 +210,12 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
                 <div class="flex flex-column gap-2">
                   @for (bonus of selectedClasse()!.bonusConfig; track bonus.id) {
                     <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
-                      <span class="font-semibold">{{ bonus.bonusNome }}</span>
+                      <div class="flex flex-column gap-1">
+                        <span class="font-semibold">{{ bonus.bonusNome }}</span>
+                        @if (getBonusFormula(bonus.bonusConfigId); as formula) {
+                          <code class="text-xs text-color-secondary font-mono">{{ formula }}</code>
+                        }
+                      </div>
                       <p-button
                         icon="pi pi-trash"
                         [rounded]="true"
@@ -340,6 +356,11 @@ export class ClassesConfigComponent extends BaseConfigComponent<
 
   protected getEntityName(): string { return 'Classe'; }
   protected getEntityNamePlural(): string { return 'Classes'; }
+
+  /** Retorna a formulaBase do BonusConfig correspondente ao bonusConfigId, ou null se não tiver. */
+  protected getBonusFormula(bonusConfigId: number): string | null {
+    return this.todosBonus().find((b) => b.id === bonusConfigId)?.formulaBase ?? null;
+  }
 
   protected buildForm(): FormGroup {
     return this.fb.group({
@@ -499,6 +520,13 @@ export class ClassesConfigComponent extends BaseConfigComponent<
   }
 
   protected handleReorder(payload: { itemId: number; novaOrdem: number }[]): void {
-    this.toastService.success(`Ordem atualizada (${payload.length} itens).`, 'Reordenação');
+    const jogoId = this.currentGameId();
+    if (!jogoId || payload.length === 0) return;
+    this.configApi.reordenarClasses(jogoId, { itens: payload.map((p) => ({ id: p.itemId, ordemExibicao: p.novaOrdem })) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.success('Ordem salva com sucesso.', 'Reordenação'),
+        error: () => this.toastService.error('Erro ao salvar a ordem.', 'Reordenação'),
+      });
   }
 }

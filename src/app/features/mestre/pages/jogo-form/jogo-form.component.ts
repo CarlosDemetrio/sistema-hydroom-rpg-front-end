@@ -7,9 +7,9 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
-simport { FormFieldErrorComponent } from '@shared';
-import { LoadingSpinnerComponent } from '@shared';
 import { Textarea } from 'primeng/textarea';
+import {InputNumberModule} from 'primeng/inputnumber';
+import {FormFieldErrorComponent, LoadingSpinnerComponent} from '@shared/components';
 
 /**
  * Jogo Form Component (Create/Edit)

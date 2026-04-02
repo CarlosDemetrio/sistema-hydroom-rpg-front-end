@@ -31,7 +31,6 @@ import { FichaBusinessService } from '@core/services/business/ficha-business.ser
 import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { DuplicarFichaDto } from '@models/dtos/ficha.dto';
-import { AnotacaoCardComponent } from './components/anotacao-card/anotacao-card.component';
 import { FichaAnotacoesTabComponent } from './components/ficha-anotacoes-tab/ficha-anotacoes-tab.component';
 import { FichaAptidoesTabComponent } from './components/ficha-aptidoes-tab/ficha-aptidoes-tab.component';
 import { FichaAtributosTabComponent } from './components/ficha-atributos-tab/ficha-atributos-tab.component';
@@ -58,7 +57,6 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
     TabsModule,
     ToastModule,
     // Sub-components
-    AnotacaoCardComponent,
     FichaAnotacoesTabComponent,
     FichaAptidoesTabComponent,
     FichaAtributosTabComponent,
@@ -129,7 +127,7 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
 
       <!-- Abas -->
       <div class="p-3">
-        <p-tabs [value]="abaAtiva()" scrollable (valueChange)="onTabChange($event)">
+        <p-tabs [value]="abaAtiva()" scrollable (valueChange)="onTabChange($event ?? 0)">
           <p-tablist>
             <p-tab [value]="0">
               <i class="pi pi-chart-bar mr-2"></i>Resumo

@@ -100,7 +100,12 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       <p-tabs [value]="activeTab()">
         <p-tablist>
           <p-tab value="dados">Dados Gerais</p-tab>
-          <p-tab value="prerequisitos" [disabled]="!editMode()">
+          <p-tab
+            value="prerequisitos"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
             Pré-requisitos
             @if (selectedVantagem()?.preRequisitos?.length) {
               <span class="ml-1 badge-atributo">{{ selectedVantagem()!.preRequisitos.length }}</span>
@@ -479,12 +484,19 @@ export class VantagensConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }
 
   protected handleReorder(payload: { itemId: number; novaOrdem: number }[]): void {
-    this.toastService.success(`Ordem atualizada (${payload.length} itens).`, 'Reordenação');
+    const jogoId = this.currentGameId();
+    if (!jogoId || payload.length === 0) return;
+    this.configApi.reordenarVantagens(jogoId, { itens: payload.map((p) => ({ id: p.itemId, ordemExibicao: p.novaOrdem })) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.success('Ordem salva com sucesso.', 'Reordenação'),
+        error: () => this.toastService.error('Erro ao salvar a ordem.', 'Reordenação'),
+      });
   }
 }

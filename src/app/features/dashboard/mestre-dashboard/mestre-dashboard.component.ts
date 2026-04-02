@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -53,7 +53,7 @@ import { AuthService } from '@services/auth.service';
               <i class="pi pi-users text-2xl text-white"></i>
             </div>
             <div>
-              <div class="text-3xl font-bold text-green-600">{{ jogoFacade.totalJogadores() }}</div>
+              <div class="text-3xl font-bold text-green-600">{{ jogoFacade.totalJogos() }}</div>
               <div class="text-sm text-color-secondary font-semibold">Jogadores Ativos</div>
             </div>
           </div>
@@ -120,7 +120,7 @@ import { AuthService } from '@services/auth.service';
       </div>
 
       <!-- Recent Games - APENAS SE HOUVER JOGOS -->
-      @if (jogoFacade.jogosRecentes().length > 0) {
+      @if (jogoFacade.jogos().length > 0) {
         <div class="col-12 mt-4">
           <h2 class="text-2xl font-bold mb-4 flex align-items-center gap-2">
             <i class="pi pi-clock text-primary"></i>
@@ -128,7 +128,7 @@ import { AuthService } from '@services/auth.service';
           </h2>
           <p-card>
             <div class="flex flex-column gap-3">
-              @for (jogo of jogoFacade.jogosRecentes(); track jogo.id) {
+              @for (jogo of jogoFacade.jogos(); track jogo.id) {
                 <div class="flex justify-content-between align-items-center p-4 surface-100 border-round-lg hover-lift smooth-transition">
                   <div class="flex align-items-center gap-3">
                     <div class="flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem">
@@ -138,7 +138,7 @@ import { AuthService } from '@services/auth.service';
                       <div class="font-bold text-xl text-primary">{{ jogo.nome }}</div>
                       <div class="text-sm text-color-secondary flex align-items-center gap-2">
                         <i class="pi pi-users"></i>
-                        {{ jogo.participantes?.length || 0 }} jogadores
+                        {{ jogo.totalParticipantes || 0 }} jogadores
                       </div>
                     </div>
                   </div>
@@ -191,7 +191,7 @@ export class MestreDashboardComponent implements OnInit {
   private fichasStore = inject(FichasStore);
   private router = inject(Router);
 
-  totalFichas = this.fichasStore.fichas;
+  totalFichas = computed(() => this.fichasStore.fichas().length);
 
   ngOnInit() {
     // Carrega jogos ao inicializar

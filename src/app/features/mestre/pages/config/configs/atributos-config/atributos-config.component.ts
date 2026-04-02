@@ -17,8 +17,10 @@ import {
   BaseConfigTableComponent,
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
+import { FormulaEditorComponent } from '@shared/components/formula-editor/formula-editor.component';
 import { AtributoConfig } from '@core/models';
 import { AtributoConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import {
   uppercaseValidator,
   uniqueNameValidator,
@@ -52,6 +54,7 @@ import {
     TextareaModule,
     TooltipModule,
     BaseConfigTableComponent,
+    FormulaEditorComponent,
   ],
   providers: [ConfirmationService],
   template: `
@@ -174,19 +177,14 @@ import {
           <div class="rpg-section-title">Fórmulas e Limites</div>
 
           <!-- Fórmula Ímpeto -->
-          <div class="flex flex-column gap-2">
-            <label for="formulaImpeto" class="font-semibold">Fórmula Ímpeto</label>
-            <input
-              pInputText
-              id="formulaImpeto"
-              formControlName="formulaImpeto"
-              placeholder="Ex: (FOR + DES) / 2"
-              style="font-family: var(--rpg-font-mono);"
-            />
-            <small class="text-color-secondary">
-              Variáveis disponíveis: abreviações dos atributos, nivel, total.
-            </small>
-          </div>
+          <app-formula-editor
+            [formula]="form.get('formulaImpeto')!.value ?? ''"
+            (formulaChange)="form.get('formulaImpeto')!.setValue($event)"
+            [variaveisFixas]="['total']"
+            placeholder="Ex: total / 10"
+            label="Fórmula de Ímpeto"
+            (validationChange)="formulaImpetoValida.set($event)"
+          />
 
           <!-- Descrição Ímpeto -->
           <div class="flex flex-column gap-2">
@@ -273,11 +271,13 @@ export class AtributosConfigComponent extends BaseConfigComponent<
 > {
   protected service = inject(AtributoConfigService);
   private confirmationService = inject(ConfirmationService);
+  private configApi = inject(ConfigApiService);
 
   // ---- Estado ----
   protected drawerVisible = signal(false);
   protected loading = signal(false);
   protected searchQuery = signal('');
+  protected formulaImpetoValida = signal(true);
 
   // ---- Colunas da tabela ----
   readonly columns: ConfigTableColumn[] = [
@@ -414,9 +414,13 @@ export class AtributosConfigComponent extends BaseConfigComponent<
   // quando o ConfigApiService expor o método. Por ora, exibe toast informativo.
 
   protected handleReorder(payload: { itemId: number; novaOrdem: number }[]): void {
-    this.toastService.success(
-      `Ordem atualizada (${payload.length} itens). Salve no servidor quando o endpoint estiver disponível.`,
-      'Reordenação',
-    );
+    const jogoId = this.currentGameId();
+    if (!jogoId || payload.length === 0) return;
+    this.configApi.reordenarAtributos(jogoId, { itens: payload.map((p) => ({ id: p.itemId, ordemExibicao: p.novaOrdem })) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.success('Ordem salva com sucesso.', 'Reordenação'),
+        error: () => this.toastService.error('Erro ao salvar a ordem.', 'Reordenação'),
+      });
   }
 }

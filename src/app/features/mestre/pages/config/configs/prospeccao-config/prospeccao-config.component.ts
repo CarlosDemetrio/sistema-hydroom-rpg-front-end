@@ -20,6 +20,7 @@ import {
 } from '@shared/components/base-config/base-config-table.component';
 import { DadoProspeccaoConfig } from '@core/models';
 import { ProspeccaoConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import { uniqueNameValidator } from '@shared/validators/config-validators';
 
 const FACES_OPTIONS = [
@@ -168,6 +169,7 @@ const FACES_OPTIONS = [
 export class ProspeccaoConfigComponent extends BaseConfigComponent<DadoProspeccaoConfig, ProspeccaoConfigService> {
   protected service = inject(ProspeccaoConfigService);
   private confirmationService = inject(ConfirmationService);
+  private configApi = inject(ConfigApiService);
 
   protected drawerVisible = signal(false);
   protected loading = signal(false);
@@ -256,6 +258,13 @@ export class ProspeccaoConfigComponent extends BaseConfigComponent<DadoProspecca
   }
 
   protected handleReorder(payload: { itemId: number; novaOrdem: number }[]): void {
-    this.toastService.success(`Ordem atualizada (${payload.length} itens).`, 'Reordenação');
+    const jogoId = this.currentGameId();
+    if (!jogoId || payload.length === 0) return;
+    this.configApi.reordenarDadosProspeccao(jogoId, { itens: payload.map((p) => ({ id: p.itemId, ordemExibicao: p.novaOrdem })) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.success('Ordem salva com sucesso.', 'Reordenação'),
+        error: () => this.toastService.error('Erro ao salvar a ordem.', 'Reordenação'),
+      });
   }
 }

@@ -9,7 +9,7 @@ import { ToastModule } from 'primeng/toast';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
 import { CurrentGameService } from '@core/services';
 import { AuthService } from '@services/auth.service';
-import { LoadingSpinnerComponent } from '@shared';
+import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
 import {
   IdentificacaoSectionComponent,
   ProgressaoSectionComponent,
@@ -224,25 +224,21 @@ export class FichaFormComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: (ficha) => {
-        // Preenche formulário
-        if (ficha.identificacao) {
-          this.identificacaoForm.patchValue({
-            nome: ficha.nome,
-            origem: ficha.identificacao.origem || '',
-            indole: ficha.identificacao.indole || '',
-            linhagem: ficha.identificacao.linhagem || ''
-          });
-        }
+        // Preenche formulário com campos flat do modelo Ficha
+        this.identificacaoForm.patchValue({
+          nome: ficha.nome,
+          origem: '',
+          indole: ficha.indoleNome || '',
+          linhagem: ''
+        });
 
-        if (ficha.progressao) {
-          this.progressaoForm.patchValue({
-            nivel: ficha.progressao.nivel,
-            experiencia: ficha.progressao.experiencia || 0,
-            renascimento: ficha.progressao.renascimento || 0,
-            insolitus: ficha.progressao.insolitus || 0,
-            nvs: ficha.progressao.nvs || 0
-          });
-        }
+        this.progressaoForm.patchValue({
+          nivel: ficha.nivel,
+          experiencia: ficha.xp || 0,
+          renascimento: ficha.renascimentos || 0,
+          insolitus: 0,
+          nvs: 0
+        });
 
         this.loading.set(false);
       },
@@ -285,50 +281,16 @@ export class FichaFormComponent implements OnInit {
     const gameId = this.currentGameService.currentGameId();
     const userId = this.authService.currentUser()?.id;
 
+    // CreateFichaDto — campos flat alinhados com o backend
     const fichaData = {
-      nome: formValue.identificacao.nome,
       jogoId: gameId!,
-      jogadorId: Number(userId),
-      identificacao: {
-        origem: formValue.identificacao.origem,
-        indole: formValue.identificacao.indole,
-        linhagem: formValue.identificacao.linhagem
-      },
-      progressao: {
-        nivel: 1, // Sempre começa em 1, backend calculará baseado em XP
-        experiencia: 0, // Apenas Mestre pode dar
-        renascimento: formValue.progressao.renascimento,
-        insolitus: formValue.progressao.insolitus,
-        nvs: formValue.progressao.nvs
-      },
-      descricaoFisica: {
-        altura: formValue.descricaoFisica.altura,
-        peso: formValue.descricaoFisica.peso,
-        idade: formValue.descricaoFisica.idade,
-        olhos: formValue.descricaoFisica.olhos,
-        cabelo: formValue.descricaoFisica.cabelo,
-        pele: formValue.descricaoFisica.pele,
-        aparencia: formValue.descricaoFisica.aparencia
-      },
-      atributos: formValue.atributos.atributos.map((attr: any) => ({
-        nome: attr.nome,
-        valorBase: attr.valorBase
-        // valorNivel, valorOutros, modificador serão calculados pelo backend
-      })),
-      vida: {
-        vidaVigor: formValue.vida.vidaVigor,
-        vidaOutros: formValue.vida.vidaOutros,
-        vidaNivel: formValue.vida.vidaNivel,
-        vidaTotal: 0, // Backend recalculará
-        sanguePercentual: formValue.vida.sanguePercentual,
-        membros: [] // TODO: Implementar membros depois
-      },
-      observacoes: formValue.observacoes.observacoes
+      nome: formValue.identificacao.nome,
+      jogadorId: userId ? Number(userId) : null,
     };
 
     const operation$ = this.isEditMode()
-      ? this.fichaService.updateFicha(this.fichaId()!, fichaData)
-      : this.fichaService.createFicha(fichaData);
+      ? this.fichaService.updateFicha(this.fichaId()!, { nome: fichaData.nome })
+      : this.fichaService.createFicha(gameId!, fichaData);
 
     operation$.pipe(
       takeUntilDestroyed(this.destroyRef)

@@ -56,7 +56,7 @@ import { Ficha } from '@core/models';
 
         <div class="flex align-items-center gap-2">
           <p-icon-field iconPosition="left">
-            <p-input-icon class="pi pi-search" />
+            <p-inputicon class="pi pi-search" />
             <input
               pInputText
               type="text"
@@ -190,16 +190,10 @@ import { Ficha } from '@core/models';
                     <h3 class="font-bold text-xl m-0 mb-1" style="font-family: var(--rpg-font-display)">
                       {{ ficha.nome }}
                     </h3>
-                    @if (ficha.identificacao?.origem) {
-                      <p class="text-sm text-color-secondary m-0">
-                        <i class="pi pi-map-marker mr-1"></i>
-                        {{ ficha.identificacao!.origem }}
-                      </p>
-                    }
                   </div>
-                  @if (ficha.progressao?.nivel != null) {
+                  @if (ficha.nivel != null) {
                     <p-tag
-                      [value]="'Nv. ' + ficha.progressao!.nivel"
+                      [value]="'Nv. ' + ficha.nivel"
                       severity="info"
                     />
                   } @else {
@@ -209,34 +203,25 @@ import { Ficha } from '@core/models';
 
                 <!-- Raça / Classe -->
                 <div class="flex gap-2 flex-wrap">
-                  @if (ficha.identificacao?.racaNome) {
+                  @if (ficha.racaNome) {
                     <span class="badge-atributo">
-                      <i class="pi pi-users mr-1"></i>{{ ficha.identificacao!.racaNome }}
+                      <i class="pi pi-users mr-1"></i>{{ ficha.racaNome }}
                     </span>
                   }
-                  @if (ficha.identificacao?.classeNome) {
+                  @if (ficha.classeNome) {
                     <span class="badge-atributo">
-                      <i class="pi pi-shield mr-1"></i>{{ ficha.identificacao!.classeNome }}
+                      <i class="pi pi-shield mr-1"></i>{{ ficha.classeNome }}
                     </span>
                   }
                 </div>
 
                 <!-- Stats resumidos -->
                 <div class="flex gap-3 text-sm">
-                  @if (ficha.progressao?.experiencia != null) {
-                    <div class="flex align-items-center gap-1">
-                      <i class="pi pi-star" style="color: var(--rpg-amber-400)"></i>
-                      <span class="valor-numerico--sm">{{ ficha.progressao!.experiencia }}</span>
-                      <span class="text-color-secondary">XP</span>
-                    </div>
-                  }
-                  @if (ficha.calculados?.vidaTotal != null) {
-                    <div class="flex align-items-center gap-1">
-                      <i class="pi pi-heart text-red-400"></i>
-                      <span class="valor-numerico--sm">{{ ficha.calculados!.vidaTotal }}</span>
-                      <span class="text-color-secondary">HP</span>
-                    </div>
-                  }
+                  <div class="flex align-items-center gap-1">
+                    <i class="pi pi-star" style="color: var(--rpg-amber-400)"></i>
+                    <span class="valor-numerico--sm">{{ ficha.xp }}</span>
+                    <span class="text-color-secondary">XP</span>
+                  </div>
                 </div>
 
                 <!-- Divisor -->
