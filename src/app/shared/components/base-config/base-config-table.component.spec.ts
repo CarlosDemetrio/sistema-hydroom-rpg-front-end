@@ -1,6 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/angular';
 import { vi } from 'vitest';
-import { inputBinding } from '@angular/core';
 
 import {
   BaseConfigTableComponent,
@@ -48,17 +47,17 @@ async function renderTabela(overrides: RenderOptions = {}) {
     canReorder = false,
   } = overrides;
 
-  const bindings = [
-    inputBinding('titulo',    () => titulo),
-    inputBinding('items',     () => items),
-    inputBinding('columns',   () => columns),
-    inputBinding('loading',   () => loading),
-    inputBinding('canReorder', () => canReorder),
-    ...(subtitulo !== undefined ? [inputBinding('subtitulo', () => subtitulo)] : []),
-    ...(labelNovo !== undefined ? [inputBinding('labelNovo', () => labelNovo)] : []),
-  ];
-
-  return render(BaseConfigTableComponent, { bindings });
+  return render(BaseConfigTableComponent, {
+    componentInputs: {
+      titulo,
+      items,
+      columns,
+      loading,
+      canReorder,
+      ...(subtitulo !== undefined ? { subtitulo } : {}),
+      ...(labelNovo !== undefined ? { labelNovo } : {}),
+    },
+  });
 }
 
 // ============================================================

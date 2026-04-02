@@ -4,23 +4,16 @@
  * ABORDAGEM DE TESTES:
  * O componente usa `effect()` no constructor que sincroniza `previewValues` com
  * `todasVariaveis()`. Testes de renderização completa com PrimeNG InputNumber causam
- * loop de change detection no jsdom (processo CPU 99%). Por isso, os testes focam em:
- *
- * 1. Testes de lógica pura: `avaliarFormula`, `validarFormula`, `inserirVariavel`,
- *    `getPreviewValue`/`setPreviewValue`, `todasVariaveis`, `previewResult` — acessados
- *    diretamente via `(component as any)` sem renderizar o template PrimeNG.
- *
- * 2. Testes de renderização: template HTML básico (label, input), sem dependência de
- *    InputNumber que causa o loop.
- *
- * 3. Testes de debounce: usando `vi.useFakeTimers()`.
+ * loop de change detection no jsdom (processo CPU 99%). Por isso:
+ * - InputNumberModule é excluído via componentImports + NO_ERRORS_SCHEMA
+ * - Testes de lógica pura acessam métodos via `(component as any)` sem renderizar o template PrimeNG
  */
 
-import { TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { render } from '@testing-library/angular';
 import { vi } from 'vitest';
-
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -30,7 +23,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { FormulaEditorComponent, VariavelDinamica } from './formula-editor.component';
 
 // ============================================================
-// Helper: cria o componente via TestBed sem renderizar p-inputNumber
+// Helper: render sem InputNumberModule (evita loop CD no jsdom)
 // ============================================================
 
 async function criarFixture(overrides: {
@@ -41,53 +34,36 @@ async function criarFixture(overrides: {
   placeholder?: string;
   disabled?: boolean;
 } = {}) {
-  // Override: substitui InputNumberModule por módulo vazio para evitar loop
-  await TestBed.configureTestingModule({
-    imports: [FormulaEditorComponent],
-  })
-  .overrideComponent(FormulaEditorComponent, {
-    set: {
-      imports: [
-        DecimalPipe,
-        FormsModule,
-        ButtonModule,
-        InputTextModule,
-        MessageModule,
-        TagModule,
-        TooltipModule,
-        // InputNumberModule removido intencionalmente para evitar loop de CD no jsdom
-      ],
+  const result = await render(FormulaEditorComponent, {
+    componentInputs: {
+      variaveisFixas:     overrides.variaveisFixas   ?? [],
+      variaveisDinamicas: overrides.variaveisDinamicas ?? [],
+      label:              overrides.label            ?? 'Fórmula',
+      placeholder:        overrides.placeholder      ?? 'Ex: FOR + AGI / 2',
+      disabled:           overrides.disabled         ?? false,
     },
-  })
-  .compileComponents();
+    // Exclui InputNumberModule para evitar loop de change detection no jsdom
+    componentImports: [
+      DecimalPipe,
+      FormsModule,
+      ButtonModule,
+      InputTextModule,
+      MessageModule,
+      TagModule,
+      TooltipModule,
+    ],
+    schemas: [NO_ERRORS_SCHEMA],
+  });
 
-  const fixture = TestBed.createComponent(FormulaEditorComponent);
-  const component = fixture.componentInstance;
+  const component = result.fixture.componentInstance;
 
-  // Setar inputs via componentRef.setInput (funciona com input() e model())
-  if (overrides.variaveisFixas !== undefined) {
-    fixture.componentRef.setInput('variaveisFixas', overrides.variaveisFixas);
-  }
-  if (overrides.variaveisDinamicas !== undefined) {
-    fixture.componentRef.setInput('variaveisDinamicas', overrides.variaveisDinamicas);
-  }
-  if (overrides.label !== undefined) {
-    fixture.componentRef.setInput('label', overrides.label);
-  }
-  if (overrides.placeholder !== undefined) {
-    fixture.componentRef.setInput('placeholder', overrides.placeholder);
-  }
-  if (overrides.disabled !== undefined) {
-    fixture.componentRef.setInput('disabled', overrides.disabled);
-  }
   if (overrides.formula !== undefined) {
     component.formula.set(overrides.formula);
+    result.fixture.detectChanges();
+    await result.fixture.whenStable();
   }
 
-  fixture.detectChanges();
-  await fixture.whenStable();
-
-  return { fixture, component };
+  return { fixture: result.fixture, component };
 }
 
 // ============================================================
@@ -96,7 +72,7 @@ async function criarFixture(overrides: {
 
 describe('FormulaEditorComponent', () => {
   afterEach(() => {
-    TestBed.resetTestingModule();
+    vi.useRealTimers();
   });
 
   // ----------------------------------------------------------
@@ -256,7 +232,7 @@ describe('FormulaEditorComponent', () => {
       expect(result.resultado).toBe(8);
     });
 
-    it('deve retornar ok=true com resultado=undefined para fórmula vazia', async () => {
+    it('deve retornar ok=false para fórmula vazia (previewResult com fórmula vazia)', async () => {
       const { component } = await criarFixture();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = (component as any).previewResult();
@@ -266,7 +242,7 @@ describe('FormulaEditorComponent', () => {
   });
 
   // ----------------------------------------------------------
-  // 5. previewResult (computed)
+  // 5. previewResult (computed) — testado via lógica pura
   // ----------------------------------------------------------
 
   describe('previewResult', () => {
@@ -279,9 +255,9 @@ describe('FormulaEditorComponent', () => {
 
     it('deve calcular resultado correto com valores padrão (1) para cada variável', async () => {
       const { component } = await criarFixture({
-        formula: 'total + nivel',
         variaveisFixas: ['total', 'nivel'],
       });
+      component.formula.set('total + nivel');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = (component as any).previewResult();
       expect(result.ok).toBe(true);
@@ -291,9 +267,9 @@ describe('FormulaEditorComponent', () => {
 
     it('deve retornar ok=false para fórmula inválida', async () => {
       const { component } = await criarFixture({
-        formula: 'total +',
         variaveisFixas: ['total'],
       });
+      component.formula.set('total +');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = (component as any).previewResult();
       expect(result.ok).toBe(false);
@@ -334,7 +310,7 @@ describe('FormulaEditorComponent', () => {
 
   describe('inserirVariavel', () => {
     it('deve inserir variável ao final da fórmula quando não há input nativo com cursor', async () => {
-      const { component } = await criarFixture({ variaveisFixas: ['total'], formula: '' });
+      const { component } = await criarFixture({ variaveisFixas: ['total'] });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (component as any).inserirVariavel('total');
       expect(component.formula()).toContain('total');
@@ -343,7 +319,6 @@ describe('FormulaEditorComponent', () => {
     it('não deve alterar a fórmula quando disabled=true', async () => {
       const { component } = await criarFixture({
         variaveisFixas: ['total'],
-        formula: '',
         disabled: true,
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -354,8 +329,8 @@ describe('FormulaEditorComponent', () => {
     it('deve concatenar com separador quando fórmula não termina em espaço', async () => {
       const { component } = await criarFixture({
         variaveisFixas: ['total', 'nivel'],
-        formula: 'nivel',
       });
+      component.formula.set('nivel');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (component as any).inserirVariavel('total');
       const resultado = component.formula();
@@ -366,8 +341,8 @@ describe('FormulaEditorComponent', () => {
     it('não deve inserir espaço duplo quando fórmula já termina com espaço', async () => {
       const { component } = await criarFixture({
         variaveisFixas: ['total'],
-        formula: 'nivel ',
       });
+      component.formula.set('nivel ');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (component as any).inserirVariavel('total');
       expect(component.formula()).not.toMatch(/  /);
@@ -376,7 +351,6 @@ describe('FormulaEditorComponent', () => {
     it('deve disparar validação após inserir variável', async () => {
       const { component } = await criarFixture({
         variaveisFixas: ['total'],
-        formula: '',
       });
       const validationSpy = vi.fn();
       component.validationChange.subscribe(validationSpy);
@@ -472,10 +446,6 @@ describe('FormulaEditorComponent', () => {
       vi.useFakeTimers();
     });
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
     it('deve atualizar o signal formula imediatamente ao digitar', async () => {
       const { component } = await criarFixture({ variaveisFixas: ['total'] });
 
@@ -522,9 +492,9 @@ describe('FormulaEditorComponent', () => {
 
     it('deve emitir validationChange=true imediatamente ao limpar a fórmula (sem aguardar debounce)', async () => {
       const { component } = await criarFixture({
-        formula: 'total / 2',
         variaveisFixas: ['total'],
       });
+      component.formula.set('total / 2');
       const spy = vi.fn();
       component.validationChange.subscribe(spy);
 

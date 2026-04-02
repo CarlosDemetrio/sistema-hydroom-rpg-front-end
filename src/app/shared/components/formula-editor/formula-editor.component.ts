@@ -8,6 +8,7 @@ import {
   model,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
@@ -158,10 +159,7 @@ interface AvaliacaoResult {
 
       <!-- Mensagem de erro de validação -->
       @if (validationError()) {
-        <p-message
-          severity="error"
-          [text]="validationError()!"
-        />
+        <p-message severity="error">{{ validationError() }}</p-message>
       }
 
     </div>
@@ -209,7 +207,8 @@ export class FormulaEditorComponent {
   constructor() {
     effect(() => {
       const variaveis = this.todasVariaveis();
-      const current = this.previewValues();
+      // untracked: não rastrear previewValues para evitar loop infinito
+      const current = untracked(() => this.previewValues());
       const updated: Record<string, number> = {};
       for (const v of variaveis) {
         updated[v.sigla] = current[v.sigla] ?? 1;

@@ -7,6 +7,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { AtributosConfigComponent } from './atributos-config.component';
 import { AtributoConfigService } from '@core/services/business/config';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import { AtributoConfig } from '@core/models';
 import { ToastService } from '@services/toast.service';
 import { CurrentGameService } from '@core/services/current-game.service';
@@ -94,11 +95,14 @@ async function renderAtributos(
   const currentGameServiceMock = criarCurrentGameServiceMock(temJogo);
   const toastServiceMock       = criarToastServiceMock();
 
+  const configApiMock = { reordenarAtributos: vi.fn().mockReturnValue(of(void 0)) };
+
   const result = await render(AtributosConfigComponent, {
     providers: [
       { provide: AtributoConfigService,  useValue: atributoServiceMock },
       { provide: CurrentGameService,     useValue: currentGameServiceMock },
       { provide: ToastService,           useValue: toastServiceMock },
+      { provide: ConfigApiService,       useValue: configApiMock },
       // ConfirmationService real necessário para o ConfirmDialog do PrimeNG funcionar
       ConfirmationService,
     ],
