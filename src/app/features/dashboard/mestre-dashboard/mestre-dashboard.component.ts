@@ -116,6 +116,18 @@ import { AuthService } from '@services/auth.service';
               </div>
             </p-card>
           </div>
+
+          <div class="col-12 md:col-4">
+            <p-card class="hover-lift cursor-pointer h-full" (click)="verNpcs()">
+              <div class="flex flex-column align-items-center text-center gap-3 py-3">
+                <div class="flex align-items-center justify-content-center border-circle bg-primary w-5rem h-5rem">
+                  <i class="pi pi-users text-3xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold m-0 text-primary">NPCs</h3>
+                <p class="text-color-secondary m-0">Gerencie personagens não-jogadores</p>
+              </div>
+            </p-card>
+          </div>
         </div>
       </div>
 
@@ -209,6 +221,10 @@ export class MestreDashboardComponent implements OnInit {
 
   verConfig() {
     this.router.navigate(['/mestre/config']);
+  }
+
+  verNpcs() {
+    this.router.navigate(['/mestre/npcs']);
   }
 
   verJogo(id: number) {

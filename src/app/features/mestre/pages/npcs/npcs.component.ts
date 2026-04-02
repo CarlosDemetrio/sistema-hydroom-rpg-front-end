@@ -1,0 +1,435 @@
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, computed, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { DrawerModule } from 'primeng/drawer';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+import { Ficha } from '@core/models/ficha.model';
+import { NpcCreateDto } from '@core/models/dtos/ficha.dto';
+import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { CurrentGameService } from '@core/services/current-game.service';
+import { ConfigStore } from '@core/stores/config.store';
+import { ToastService } from '@services/toast.service';
+import { EmptyStateComponent } from '@shared/components/empty-state.component';
+import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
+
+/**
+ * NPCs Component (Mestre)
+ *
+ * Lista e criação de NPCs do jogo atual.
+ * SMART COMPONENT — injeta serviços diretamente.
+ *
+ * Endpoints:
+ * - GET  /api/v1/jogos/{jogoId}/npcs  — carregado via FichaBusinessService.loadNpcs()
+ * - POST /api/v1/jogos/{jogoId}/npcs  — criado via FichaBusinessService.criarNpc()
+ */
+@Component({
+  selector: 'app-npcs',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    ReactiveFormsModule,
+    ButtonModule,
+    CardModule,
+    DrawerModule,
+    InputTextModule,
+    SelectModule,
+    TableModule,
+    TagModule,
+    TooltipModule,
+    EmptyStateComponent,
+    LoadingSpinnerComponent,
+  ],
+  template: `
+    <div class="p-4">
+
+      <!-- Page Header -->
+      <div class="flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 class="text-3xl font-bold m-0 mb-2">
+            <i class="pi pi-users text-primary mr-2"></i>
+            NPCs
+          </h1>
+          <p class="text-color-secondary m-0">
+            Personagens não-jogadores do jogo
+            @if (currentGameName()) {
+              <span class="font-semibold text-primary"> — {{ currentGameName() }}</span>
+            }
+          </p>
+        </div>
+        <p-button
+          label="Novo NPC"
+          icon="pi pi-plus"
+          (onClick)="abrirDrawer()"
+          [disabled]="!hasGame()"
+        ></p-button>
+      </div>
+
+      <!-- Aviso: sem jogo selecionado -->
+      @if (!hasGame()) {
+        <p-card>
+          <div class="flex align-items-center gap-3 p-4 border-round surface-100">
+            <i class="pi pi-exclamation-triangle text-2xl" style="color: var(--p-amber-400)"></i>
+            <div>
+              <p class="font-semibold m-0 mb-1">Nenhum jogo selecionado</p>
+              <p class="text-sm text-color-secondary m-0">Selecione um jogo no cabeçalho para gerenciar NPCs.</p>
+            </div>
+          </div>
+        </p-card>
+      } @else {
+
+        <!-- Conteúdo principal -->
+        <p-card>
+
+          @if (isLoading()) {
+            <app-loading-spinner message="Carregando NPCs..."></app-loading-spinner>
+          } @else if (npcs().length === 0) {
+            <app-empty-state
+              icon="pi pi-users"
+              message="Nenhum NPC criado"
+              description="Clique em 'Novo NPC' para criar o primeiro personagem não-jogador deste jogo."
+            ></app-empty-state>
+          } @else {
+            <p-table
+              [value]="npcs()"
+              [rowHover]="true"
+              [paginator]="true"
+              [rows]="10"
+              [rowsPerPageOptions]="[5, 10, 20]"
+              dataKey="id"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Nome</th>
+                  <th>Raça</th>
+                  <th>Classe</th>
+                  <th>Nível</th>
+                  <th>Tipo</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </ng-template>
+
+              <ng-template #body let-npc>
+                <tr>
+                  <td>
+                    <span class="font-semibold">{{ npc.nome }}</span>
+                  </td>
+                  <td>
+                    @if (npc.racaNome) {
+                      {{ npc.racaNome }}
+                    } @else {
+                      <span class="text-color-secondary">—</span>
+                    }
+                  </td>
+                  <td>
+                    @if (npc.classeNome) {
+                      {{ npc.classeNome }}
+                    } @else {
+                      <span class="text-color-secondary">—</span>
+                    }
+                  </td>
+                  <td>{{ npc.nivel }}</td>
+                  <td>
+                    <p-tag value="NPC" severity="warn" icon="pi pi-users"></p-tag>
+                  </td>
+                  <td class="text-center">
+                    <p-button
+                      icon="pi pi-eye"
+                      [rounded]="true"
+                      [text]="true"
+                      pTooltip="Ver Ficha"
+                      tooltipPosition="top"
+                      (onClick)="verFicha(npc.id)"
+                    ></p-button>
+                  </td>
+                </tr>
+              </ng-template>
+
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="6" class="text-center p-4">Nenhum NPC encontrado</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          }
+
+        </p-card>
+      }
+
+    </div>
+
+    <!-- Drawer: Criar NPC -->
+    <p-drawer
+      [visible]="drawerVisible()"
+      (visibleChange)="onDrawerVisibleChange($event)"
+      header="Novo NPC"
+      position="right"
+      class="w-full md:w-30rem"
+    >
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="flex flex-column gap-4 p-2">
+
+          <!-- Nome -->
+          <div class="flex flex-column gap-2">
+            <label for="npc-nome" class="font-semibold">
+              Nome <span class="text-red-400">*</span>
+            </label>
+            <input
+              pInputText
+              id="npc-nome"
+              formControlName="nome"
+              placeholder="Ex: Goblin Chefe"
+              [class.ng-invalid]="form.get('nome')?.invalid && form.get('nome')?.touched"
+              aria-label="Nome do NPC"
+            />
+            @if (form.get('nome')?.invalid && form.get('nome')?.touched) {
+              <small class="text-red-400">
+                @if (form.get('nome')?.errors?.['required']) { Campo obrigatório }
+                @if (form.get('nome')?.errors?.['minlength']) { Mínimo de 2 caracteres }
+                @if (form.get('nome')?.errors?.['maxlength']) { Máximo de 100 caracteres }
+              </small>
+            }
+          </div>
+
+          <!-- Raça -->
+          <div class="flex flex-column gap-2">
+            <label for="npc-raca" class="font-semibold">Raça</label>
+            <p-select
+              inputId="npc-raca"
+              formControlName="racaId"
+              [options]="racasOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione uma raça (opcional)"
+              [showClear]="true"
+              class="w-full"
+              aria-label="Raça do NPC"
+            ></p-select>
+          </div>
+
+          <!-- Classe -->
+          <div class="flex flex-column gap-2">
+            <label for="npc-classe" class="font-semibold">Classe</label>
+            <p-select
+              inputId="npc-classe"
+              formControlName="classeId"
+              [options]="classesOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione uma classe (opcional)"
+              [showClear]="true"
+              class="w-full"
+              aria-label="Classe do NPC"
+            ></p-select>
+          </div>
+
+          <!-- Gênero -->
+          <div class="flex flex-column gap-2">
+            <label for="npc-genero" class="font-semibold">Gênero</label>
+            <p-select
+              inputId="npc-genero"
+              formControlName="generoId"
+              [options]="generosOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione um gênero (opcional)"
+              [showClear]="true"
+              class="w-full"
+              aria-label="Gênero do NPC"
+            ></p-select>
+          </div>
+
+          <!-- Índole -->
+          <div class="flex flex-column gap-2">
+            <label for="npc-indole" class="font-semibold">Índole</label>
+            <p-select
+              inputId="npc-indole"
+              formControlName="indoleId"
+              [options]="indolesOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione uma índole (opcional)"
+              [showClear]="true"
+              class="w-full"
+              aria-label="Índole do NPC"
+            ></p-select>
+          </div>
+
+          <!-- Presença -->
+          <div class="flex flex-column gap-2">
+            <label for="npc-presenca" class="font-semibold">Presença</label>
+            <p-select
+              inputId="npc-presenca"
+              formControlName="presencaId"
+              [options]="presencasOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione uma presença (opcional)"
+              [showClear]="true"
+              class="w-full"
+              aria-label="Presença do NPC"
+            ></p-select>
+          </div>
+
+        </div>
+
+        <div class="flex justify-content-end gap-2 mt-5 pt-4 border-top-1 surface-border">
+          <p-button
+            label="Cancelar"
+            severity="secondary"
+            [outlined]="true"
+            type="button"
+            (onClick)="fecharDrawer()"
+          ></p-button>
+          <p-button
+            label="Criar NPC"
+            icon="pi pi-check"
+            type="submit"
+            [loading]="isSaving()"
+          ></p-button>
+        </div>
+      </form>
+    </p-drawer>
+  `,
+})
+export class NpcsComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+  private fichaService = inject(FichaBusinessService);
+  private currentGameService = inject(CurrentGameService);
+  private configStore = inject(ConfigStore);
+  private toastService = inject(ToastService);
+
+  // State
+  npcs = signal<Ficha[]>([]);
+  isLoading = signal(false);
+  isSaving = signal(false);
+  drawerVisible = signal(false);
+
+  // Current game
+  hasGame = this.currentGameService.hasCurrentGame;
+  currentGameId = this.currentGameService.currentGameId;
+  currentGameName = computed(() => this.currentGameService.currentGame()?.nome ?? null);
+
+  // Config options for selects
+  racasOptions = computed(() =>
+    this.configStore.racas().map(r => ({ label: r.nome, value: r.id }))
+  );
+
+  classesOptions = computed(() =>
+    this.configStore.classes().map(c => ({ label: c.nome, value: c.id }))
+  );
+
+  generosOptions = computed(() =>
+    this.configStore.generos().map(g => ({ label: g.nome, value: g.id }))
+  );
+
+  indolesOptions = computed(() =>
+    this.configStore.indoles().map(i => ({ label: i.nome, value: i.id }))
+  );
+
+  presencasOptions = computed(() =>
+    this.configStore.presencas().map(p => ({ label: p.nome, value: p.id }))
+  );
+
+  // Form
+  form: FormGroup = this.fb.group({
+    nome:      ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    racaId:    [null],
+    classeId:  [null],
+    generoId:  [null],
+    indoleId:  [null],
+    presencaId:[null],
+  });
+
+  ngOnInit(): void {
+    if (this.hasGame()) {
+      this.carregarNpcs();
+    }
+  }
+
+  carregarNpcs(): void {
+    const jogoId = this.currentGameId();
+    if (!jogoId) return;
+
+    this.isLoading.set(true);
+    this.fichaService.loadNpcs(jogoId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (lista) => {
+          this.npcs.set(lista);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.toastService.error('Erro ao carregar NPCs');
+        },
+      });
+  }
+
+  abrirDrawer(): void {
+    this.form.reset();
+    this.form.markAsUntouched();
+    this.drawerVisible.set(true);
+  }
+
+  fecharDrawer(): void {
+    this.drawerVisible.set(false);
+    this.form.reset();
+    this.form.markAsUntouched();
+  }
+
+  onDrawerVisibleChange(visible: boolean): void {
+    if (!visible) {
+      this.fecharDrawer();
+    }
+  }
+
+  salvar(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.toastService.warning('Preencha todos os campos obrigatórios', 'Atenção');
+      return;
+    }
+
+    const jogoId = this.currentGameId();
+    if (!jogoId) return;
+
+    const dto: NpcCreateDto = {
+      jogoId,
+      nome:       this.form.value.nome,
+      racaId:     this.form.value.racaId ?? null,
+      classeId:   this.form.value.classeId ?? null,
+      generoId:   this.form.value.generoId ?? null,
+      indoleId:   this.form.value.indoleId ?? null,
+      presencaId: this.form.value.presencaId ?? null,
+    };
+
+    this.isSaving.set(true);
+    this.fichaService.criarNpc(jogoId, dto)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (npcCriado) => {
+          this.npcs.update(lista => [...lista, npcCriado]);
+          this.isSaving.set(false);
+          this.fecharDrawer();
+          this.toastService.success(`NPC "${npcCriado.nome}" criado com sucesso`);
+        },
+        error: () => {
+          this.isSaving.set(false);
+          this.toastService.error('Erro ao criar NPC');
+        },
+      });
+  }
+
+  verFicha(fichaId: number): void {
+    this.router.navigate(['/jogador/fichas', fichaId]);
+  }
+}
