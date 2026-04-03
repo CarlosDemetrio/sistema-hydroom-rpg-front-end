@@ -169,6 +169,14 @@ export class FichasApiService {
   // ==================== ATRIBUTOS DIRETOS ====================
 
   /**
+   * GET /api/v1/fichas/{id}/atributos
+   * Lista atributos da ficha com valores base, nível, outros e total calculado.
+   */
+  getAtributos(fichaId: number): Observable<FichaAtributoResponse[]> {
+    return this.http.get<FichaAtributoResponse[]>(`${this.baseUrl}/fichas/${fichaId}/atributos`);
+  }
+
+  /**
    * PUT /api/v1/fichas/{id}/atributos
    * Atualiza atributos da ficha em lote.
    * Mestre pode editar qualquer ficha; Jogador só as próprias.
@@ -179,6 +187,14 @@ export class FichasApiService {
   }
 
   // ==================== APTIDOES DIRETAS ====================
+
+  /**
+   * GET /api/v1/fichas/{id}/aptidoes
+   * Lista aptidões da ficha com valores base, sorte, classe e total calculado.
+   */
+  getAptidoes(fichaId: number): Observable<FichaAptidaoResponse[]> {
+    return this.http.get<FichaAptidaoResponse[]>(`${this.baseUrl}/fichas/${fichaId}/aptidoes`);
+  }
 
   /**
    * PUT /api/v1/fichas/{id}/aptidoes

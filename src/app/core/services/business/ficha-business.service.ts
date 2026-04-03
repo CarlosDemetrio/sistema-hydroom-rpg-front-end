@@ -5,6 +5,8 @@ import { FichasStore } from '@core/stores/fichas.store';
 import { FichasApiService, FichaFilters } from '@core/services/api/fichas-api.service';
 import {
   Ficha,
+  FichaAtributoResponse,
+  FichaAptidaoResponse,
   FichaVantagemResponse,
   FichaCompletaData,
   ComprarVantagemDto,
@@ -142,6 +144,18 @@ export class FichaBusinessService {
         this.fichasStore.setCurrentFicha(ficha);
       })
     );
+  }
+
+  // ============================================
+  // ATRIBUTOS / APTIDOES
+  // ============================================
+
+  loadAtributos(fichaId: number): Observable<FichaAtributoResponse[]> {
+    return this.fichasApi.getAtributos(fichaId);
+  }
+
+  loadAptidoes(fichaId: number): Observable<FichaAptidaoResponse[]> {
+    return this.fichasApi.getAptidoes(fichaId);
   }
 
   // ============================================

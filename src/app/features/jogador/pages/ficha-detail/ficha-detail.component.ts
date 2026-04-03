@@ -404,37 +404,32 @@ export class FichaDetailComponent implements OnInit {
     }
   }
 
-  private carregarAtributos(_fichaId: number): void {
+  private carregarAtributos(fichaId: number): void {
     this.loadingAtributos.set(true);
-    // Atributos are embedded in FichaResumo.atributosTotais (Record<string, number>)
-    // Full FichaAtributoResponse list requires the ficha object — use resumo totais for now
-    // TODO: When backend exposes GET /api/v1/fichas/{id}/atributos, replace with API call
-    const resumo = this.resumo();
-    if (resumo) {
-      const atributos: FichaAtributoResponse[] = Object.entries(resumo.atributosTotais).map(
-        ([abrev, total], index) => ({
-          id: index,
-          atributoConfigId: index,
-          atributoNome: abrev,
-          atributoAbreviacao: abrev,
-          base: 0,
-          nivel: 0,
-          outros: 0,
-          total,
-          impeto: 0,
-        })
-      );
-      this.atributos.set(atributos);
-    }
-    this.loadingAtributos.set(false);
+    this.fichaBusinessService.loadAtributos(fichaId).subscribe({
+      next: (atributos) => {
+        this.atributos.set(atributos);
+        this.loadingAtributos.set(false);
+      },
+      error: () => {
+        this.toastService.error('Erro ao carregar atributos.');
+        this.loadingAtributos.set(false);
+      },
+    });
   }
 
-  private carregarAptidoes(_fichaId: number): void {
+  private carregarAptidoes(fichaId: number): void {
     this.loadingAptidoes.set(true);
-    // TODO: When backend exposes GET /api/v1/fichas/{id}/aptidoes, call it here
-    // For Phase 1, aptidoes tab shows empty state until endpoint is available
-    this.aptidoes.set([]);
-    this.loadingAptidoes.set(false);
+    this.fichaBusinessService.loadAptidoes(fichaId).subscribe({
+      next: (aptidoes) => {
+        this.aptidoes.set(aptidoes);
+        this.loadingAptidoes.set(false);
+      },
+      error: () => {
+        this.toastService.error('Erro ao carregar aptidoes.');
+        this.loadingAptidoes.set(false);
+      },
+    });
   }
 
   private carregarVantagens(fichaId: number): void {
