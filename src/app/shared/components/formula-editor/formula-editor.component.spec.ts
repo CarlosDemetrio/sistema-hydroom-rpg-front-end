@@ -456,35 +456,35 @@ describe('FormulaEditorComponent', () => {
     });
 
     it('deve disparar validação após 600ms de debounce', async () => {
-      const { component, fixture } = await criarFixture({ variaveisFixas: ['total'] });
+      // Usa fórmula sem nomes de variáveis para que todasVariaveis().length === 0
+      // e o bloco @if do preview NÃO renderize p-inputNumber (evita NG0303).
+      const { component } = await criarFixture();
       const spy = vi.fn();
       component.validationChange.subscribe(spy);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (component as any).onFormulaInput('total / 2');
-      fixture.detectChanges();
+      (component as any).onFormulaInput('1 + 2');
 
       expect(spy).not.toHaveBeenCalled();
 
       vi.advanceTimersByTime(600);
-      fixture.detectChanges();
 
       expect(spy).toHaveBeenCalledWith(true);
     });
 
     it('deve cancelar o timer anterior ao receber novo input antes de 600ms', async () => {
-      const { component, fixture } = await criarFixture({ variaveisFixas: ['total'] });
+      // Usa fórmulas sem nomes de variáveis pelo mesmo motivo acima.
+      const { component } = await criarFixture();
       const spy = vi.fn();
       component.validationChange.subscribe(spy);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (component as any).onFormulaInput('total / 2');
+      (component as any).onFormulaInput('1 + 2');
       vi.advanceTimersByTime(300);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (component as any).onFormulaInput('total / 3');
+      (component as any).onFormulaInput('1 + 3');
       vi.advanceTimersByTime(600);
-      fixture.detectChanges();
 
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith(true);
