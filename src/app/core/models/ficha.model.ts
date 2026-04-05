@@ -27,6 +27,10 @@ export interface Ficha {
 
 /**
  * Resumo calculado de uma ficha (GET /api/v1/fichas/{id}/resumo)
+ *
+ * Campos opcionais serão adicionados ao backend nas Specs 007/GAP-06:
+ * - vidaAtual / essenciaAtual: estado atual de combate (null = total, ou seja, cheio)
+ * - pontosVantagemDisponiveis: pontos acumulados não gastos (null = 0 antes do backend implementar)
  */
 export interface FichaResumo {
   id: number;
@@ -38,8 +42,14 @@ export interface FichaResumo {
   atributosTotais: Record<string, number>;
   bonusTotais: Record<string, number>;
   vidaTotal: number;
+  /** Vida atual em combate. Undefined/null = total (ficha com vida cheia). Chegará pelo backend na Spec 007. */
+  vidaAtual?: number | null;
   essenciaTotal: number;
+  /** Essência atual (não gasta). Undefined/null = total. Chegará pelo backend na Spec 007/GAP-07. */
+  essenciaAtual?: number | null;
   ameacaTotal: number;
+  /** Pontos de vantagem disponíveis para gastar. Undefined/null = 0. Será incluído na Spec 007/GAP-06. */
+  pontosVantagemDisponiveis?: number | null;
 }
 
 /**

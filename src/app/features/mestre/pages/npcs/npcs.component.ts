@@ -430,6 +430,6 @@ export class NpcsComponent implements OnInit {
   }
 
   verFicha(fichaId: number): void {
-    this.router.navigate(['/jogador/fichas', fichaId]);
+    this.router.navigate(['/mestre/fichas', fichaId]);
   }
 }

@@ -193,7 +193,7 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
               } @else {
                 <app-ficha-vantagens-tab
                   [vantagens]="vantagens()"
-                  [pontosVantagemRestantes]="0"
+                  [pontosVantagemRestantes]="resumo()!.pontosVantagemDisponiveis ?? 0"
                   [podeAumentarNivel]="podeEditar()"
                   (aumentarNivelVantagem)="onAumentarNivelVantagem($event)"
                 />

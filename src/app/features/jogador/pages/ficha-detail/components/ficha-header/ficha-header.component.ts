@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
   output,
 } from '@angular/core';
@@ -75,13 +76,15 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
         <div class="flex flex-col gap-1">
           <div class="flex justify-between text-sm">
             <span class="font-medium">Vida</span>
-            <span class="text-color-secondary">{{ resumo().vidaTotal }}</span>
+            <span class="text-color-secondary">
+              {{ resumo().vidaAtual ?? resumo().vidaTotal }} / {{ resumo().vidaTotal }}
+            </span>
           </div>
           <p-progressBar
-            [value]="100"
+            [value]="vidaPercent()"
             class="vida-bar"
             [showValue]="false"
-            [attr.aria-label]="'Vida total: ' + resumo().vidaTotal"
+            [attr.aria-label]="'Vida: ' + (resumo().vidaAtual ?? resumo().vidaTotal) + ' de ' + resumo().vidaTotal"
           />
         </div>
 
@@ -89,13 +92,15 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
         <div class="flex flex-col gap-1">
           <div class="flex justify-between text-sm">
             <span class="font-medium">Essencia</span>
-            <span class="text-color-secondary">{{ resumo().essenciaTotal }}</span>
+            <span class="text-color-secondary">
+              {{ resumo().essenciaAtual ?? resumo().essenciaTotal }} / {{ resumo().essenciaTotal }}
+            </span>
           </div>
           <p-progressBar
-            [value]="100"
+            [value]="essenciaPercent()"
             class="essencia-bar"
             [showValue]="false"
-            [attr.aria-label]="'Essencia total: ' + resumo().essenciaTotal"
+            [attr.aria-label]="'Essencia: ' + (resumo().essenciaAtual ?? resumo().essenciaTotal) + ' de ' + resumo().essenciaTotal"
           />
         </div>
 
@@ -207,4 +212,20 @@ export class FichaHeaderComponent {
   editarClick = output<void>();
   deletarClick = output<void>();
   duplicarClick = output<void>();
+
+  /** Percentual de vida atual em relação ao total. Retorna 100 quando vidaAtual não foi informado pelo backend (ficha cheia). */
+  protected vidaPercent = computed<number>(() => {
+    const r = this.resumo();
+    if (r.vidaTotal <= 0) return 0;
+    const atual = r.vidaAtual ?? r.vidaTotal;
+    return Math.round(Math.max(0, Math.min(100, (atual / r.vidaTotal) * 100)));
+  });
+
+  /** Percentual de essência atual em relação ao total. Retorna 100 quando essenciaAtual não foi informado pelo backend. */
+  protected essenciaPercent = computed<number>(() => {
+    const r = this.resumo();
+    if (r.essenciaTotal <= 0) return 0;
+    const atual = r.essenciaAtual ?? r.essenciaTotal;
+    return Math.round(Math.max(0, Math.min(100, (atual / r.essenciaTotal) * 100)));
+  });
 }
