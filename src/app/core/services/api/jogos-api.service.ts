@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import {
   Jogo,
   JogoResumo,
@@ -8,7 +9,7 @@ import {
   DuplicarJogoResponse,
   DashboardMestre,
 } from '@core/models/jogo.model';
-import { Participante } from '@core/models/participante.model';
+import { Participante, StatusParticipante } from '@core/models/participante.model';
 import { CreateJogoDto, UpdateJogoDto, DuplicarJogoDto } from '@core/models/dtos/jogo.dto';
 import { environment } from '@env/environment';
 
@@ -30,11 +31,15 @@ import { environment } from '@env/environment';
  * - GET    /api/v1/jogos/{id}/dashboard               — dashboard do Mestre
  *
  * Participantes:
- * - GET    /api/v1/jogos/{jogoId}/participantes               — listar participantes
- * - POST   /api/v1/jogos/{jogoId}/participantes/solicitar     — solicitar entrada
- * - PUT    /api/v1/jogos/{jogoId}/participantes/{id}/aprovar  — aprovar (Mestre)
- * - PUT    /api/v1/jogos/{jogoId}/participantes/{id}/rejeitar — rejeitar (Mestre)
- * - DELETE /api/v1/jogos/{jogoId}/participantes/{id}          — banir (Mestre)
+ * - GET    /api/v1/jogos/{jogoId}/participantes                      — listar participantes (filtro opcional por status)
+ * - GET    /api/v1/jogos/{jogoId}/participantes/meu-status           — meu status de participação (404 se não participa)
+ * - POST   /api/v1/jogos/{jogoId}/participantes/solicitar            — solicitar entrada
+ * - PUT    /api/v1/jogos/{jogoId}/participantes/{id}/aprovar         — aprovar (Mestre)
+ * - PUT    /api/v1/jogos/{jogoId}/participantes/{id}/rejeitar        — rejeitar (Mestre)
+ * - PUT    /api/v1/jogos/{jogoId}/participantes/{id}/banir           — banir permanentemente (Mestre)
+ * - PUT    /api/v1/jogos/{jogoId}/participantes/{id}/desbanir        — desbanir (Mestre)
+ * - DELETE /api/v1/jogos/{jogoId}/participantes/{id}                 — remoção provisória / soft delete (Mestre)
+ * - DELETE /api/v1/jogos/{jogoId}/participantes/minha-solicitacao    — cancelar própria solicitação (Jogador)
  */
 @Injectable({ providedIn: 'root' })
 export class JogosApiService {
@@ -144,9 +149,27 @@ export class JogosApiService {
   /**
    * GET /api/v1/jogos/{jogoId}/participantes
    * Mestre vê todos (qualquer status). Jogador vê apenas APROVADOS.
+   * Filtro opcional por status.
    */
-  listParticipantes(jogoId: number): Observable<Participante[]> {
-    return this.http.get<Participante[]>(`${this.baseUrl}/${jogoId}/participantes`);
+  listParticipantes(jogoId: number, status?: StatusParticipante): Observable<Participante[]> {
+    const options = status ? { params: { status } } : {};
+    return this.http.get<Participante[]>(`${this.baseUrl}/${jogoId}/participantes`, options);
+  }
+
+  /**
+   * GET /api/v1/jogos/{jogoId}/participantes/meu-status
+   * Retorna a participação do usuário autenticado neste jogo.
+   * Retorna null quando o usuário não tem nenhuma participação (404).
+   */
+  meuStatusParticipacao(jogoId: number): Observable<Participante | null> {
+    return this.http.get<Participante>(
+      `${this.baseUrl}/${jogoId}/participantes/meu-status`
+    ).pipe(
+      catchError((err: HttpErrorResponse) => {
+        if (err.status === 404) return of(null);
+        throw err;
+      })
+    );
   }
 
   /**
@@ -180,12 +203,44 @@ export class JogosApiService {
   }
 
   /**
-   * DELETE /api/v1/jogos/{jogoId}/participantes/{participanteId}
-   * Bane um participante do jogo — marca como BANIDO (Mestre apenas).
+   * PUT /api/v1/jogos/{jogoId}/participantes/{participanteId}/banir
+   * Bane permanentemente um participante (Mestre apenas).
    */
   banirParticipante(jogoId: number, participanteId: number): Observable<Participante> {
-    return this.http.delete<Participante>(
+    return this.http.put<Participante>(
+      `${this.baseUrl}/${jogoId}/participantes/${participanteId}/banir`,
+      {}
+    );
+  }
+
+  /**
+   * PUT /api/v1/jogos/{jogoId}/participantes/{participanteId}/desbanir
+   * Reverte o banimento de um participante (Mestre apenas).
+   */
+  desbanirParticipante(jogoId: number, participanteId: number): Observable<Participante> {
+    return this.http.put<Participante>(
+      `${this.baseUrl}/${jogoId}/participantes/${participanteId}/desbanir`,
+      {}
+    );
+  }
+
+  /**
+   * DELETE /api/v1/jogos/{jogoId}/participantes/{participanteId}
+   * Remoção provisória (soft delete) — participante pode re-solicitar (Mestre apenas).
+   */
+  removerParticipante(jogoId: number, participanteId: number): Observable<void> {
+    return this.http.delete<void>(
       `${this.baseUrl}/${jogoId}/participantes/${participanteId}`
+    );
+  }
+
+  /**
+   * DELETE /api/v1/jogos/{jogoId}/participantes/minha-solicitacao
+   * Cancela a própria solicitação de participação pendente (Jogador).
+   */
+  cancelarSolicitacao(jogoId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/${jogoId}/participantes/minha-solicitacao`
     );
   }
 }

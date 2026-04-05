@@ -24,8 +24,8 @@ export class ParticipanteBusinessService {
   // LOAD
   // ============================================
 
-  loadParticipantes(jogoId: number): Observable<Participante[]> {
-    return this.jogosApi.listParticipantes(jogoId).pipe(
+  loadParticipantes(jogoId: number, status?: StatusParticipante): Observable<Participante[]> {
+    return this.jogosApi.listParticipantes(jogoId, status).pipe(
       tap(participantes => this.jogosStore.setParticipantes(jogoId, participantes))
     );
   }
@@ -55,6 +55,28 @@ export class ParticipanteBusinessService {
   banirParticipante(jogoId: number, participanteId: number): Observable<Participante> {
     return this.jogosApi.banirParticipante(jogoId, participanteId).pipe(
       tap(updated => this.jogosStore.updateParticipanteInState(jogoId, participanteId, updated))
+    );
+  }
+
+  desbanirParticipante(jogoId: number, participanteId: number): Observable<Participante> {
+    return this.jogosApi.desbanirParticipante(jogoId, participanteId).pipe(
+      tap(updated => this.jogosStore.updateParticipanteInState(jogoId, participanteId, updated))
+    );
+  }
+
+  removerParticipante(jogoId: number, participanteId: number): Observable<void> {
+    return this.jogosApi.removerParticipante(jogoId, participanteId).pipe(
+      tap(() => this.jogosStore.removeParticipante(jogoId, participanteId))
+    );
+  }
+
+  meuStatus(jogoId: number): Observable<Participante | null> {
+    return this.jogosApi.meuStatusParticipacao(jogoId);
+  }
+
+  cancelarSolicitacao(jogoId: number): Observable<void> {
+    return this.jogosApi.cancelarSolicitacao(jogoId).pipe(
+      tap(() => this.loadParticipantes(jogoId).subscribe())
     );
   }
 

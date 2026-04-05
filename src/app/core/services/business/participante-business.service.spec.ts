@@ -106,6 +106,10 @@ describe('ParticipanteBusinessService', () => {
       aprovarParticipante: vi.fn(),
       rejeitarParticipante: vi.fn(),
       banirParticipante: vi.fn(),
+      desbanirParticipante: vi.fn(),
+      removerParticipante: vi.fn(),
+      meuStatusParticipacao: vi.fn(),
+      cancelarSolicitacao: vi.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -134,7 +138,16 @@ describe('ParticipanteBusinessService', () => {
 
       service.loadParticipantes(1).subscribe();
 
-      expect(jogosApiMock['listParticipantes']).toHaveBeenCalledWith(1);
+      expect(jogosApiMock['listParticipantes']).toHaveBeenCalledWith(1, undefined);
+    });
+
+    it('deve passar o filtro de status quando fornecido', () => {
+      configurarTestBed();
+      jogosApiMock['listParticipantes'].mockReturnValue(of([participantePendenteStub]));
+
+      service.loadParticipantes(1, 'PENDENTE').subscribe();
+
+      expect(jogosApiMock['listParticipantes']).toHaveBeenCalledWith(1, 'PENDENTE');
     });
 
     it('deve atualizar o store com os participantes retornados', () => {
@@ -239,7 +252,7 @@ describe('ParticipanteBusinessService', () => {
   });
 
   // ============================================================
-  // banirParticipante
+  // banirParticipante — agora usa PUT /{pid}/banir
   // ============================================================
 
   describe('banirParticipante', () => {
@@ -261,6 +274,91 @@ describe('ParticipanteBusinessService', () => {
       service.banirParticipante(1, 11).subscribe();
 
       expect(jogosStoreMock.updateParticipanteInState).toHaveBeenCalledWith(1, 11, banido);
+    });
+  });
+
+  // ============================================================
+  // desbanirParticipante
+  // ============================================================
+
+  describe('desbanirParticipante', () => {
+    it('deve chamar a API com jogoId e participanteId corretos', () => {
+      configurarTestBed([participanteBanidoStub]);
+      const desbanido = { ...participanteBanidoStub, status: 'APROVADO' as StatusParticipante };
+      jogosApiMock['desbanirParticipante'].mockReturnValue(of(desbanido));
+
+      service.desbanirParticipante(1, 12).subscribe();
+
+      expect(jogosApiMock['desbanirParticipante']).toHaveBeenCalledWith(1, 12);
+    });
+
+    it('deve atualizar o participante no store após desbanir', () => {
+      configurarTestBed([participanteBanidoStub]);
+      const desbanido = { ...participanteBanidoStub, status: 'APROVADO' as StatusParticipante };
+      jogosApiMock['desbanirParticipante'].mockReturnValue(of(desbanido));
+
+      service.desbanirParticipante(1, 12).subscribe();
+
+      expect(jogosStoreMock.updateParticipanteInState).toHaveBeenCalledWith(1, 12, desbanido);
+    });
+  });
+
+  // ============================================================
+  // removerParticipante — DELETE /{pid} (remoção provisória)
+  // ============================================================
+
+  describe('removerParticipante', () => {
+    it('deve chamar a API com jogoId e participanteId corretos', () => {
+      configurarTestBed([participanteAprovadoStub]);
+      jogosApiMock['removerParticipante'].mockReturnValue(of(undefined));
+
+      service.removerParticipante(1, 11).subscribe();
+
+      expect(jogosApiMock['removerParticipante']).toHaveBeenCalledWith(1, 11);
+    });
+
+    it('deve remover o participante do store após remoção', () => {
+      configurarTestBed([participanteAprovadoStub]);
+      jogosApiMock['removerParticipante'].mockReturnValue(of(undefined));
+
+      service.removerParticipante(1, 11).subscribe();
+
+      expect(jogosStoreMock.removeParticipante).toHaveBeenCalledWith(1, 11);
+    });
+  });
+
+  // ============================================================
+  // meuStatus
+  // ============================================================
+
+  describe('meuStatus', () => {
+    it('deve delegar para meuStatusParticipacao da API', () => {
+      configurarTestBed();
+      jogosApiMock['meuStatusParticipacao'].mockReturnValue(of(participantePendenteStub));
+
+      service.meuStatus(1).subscribe();
+
+      expect(jogosApiMock['meuStatusParticipacao']).toHaveBeenCalledWith(1);
+    });
+
+    it('deve retornar o participante quando existe participação', () => {
+      configurarTestBed();
+      jogosApiMock['meuStatusParticipacao'].mockReturnValue(of(participanteAprovadoStub));
+
+      let resultado: Participante | null | undefined;
+      service.meuStatus(1).subscribe(p => (resultado = p));
+
+      expect(resultado?.status).toBe('APROVADO');
+    });
+
+    it('deve retornar null quando API retorna null (usuário sem participação)', () => {
+      configurarTestBed();
+      jogosApiMock['meuStatusParticipacao'].mockReturnValue(of(null));
+
+      let resultado: Participante | null | undefined;
+      service.meuStatus(1).subscribe(p => (resultado = p));
+
+      expect(resultado).toBeNull();
     });
   });
 
