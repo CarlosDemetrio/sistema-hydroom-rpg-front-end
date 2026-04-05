@@ -66,12 +66,12 @@ Este documento contém prompts otimizados para gerar código de alta qualidade u
 
 ---
 
-## 2. Geração de Testes Unitários (Jest + Testing Library)
+## 2. Geração de Testes Unitários (Vitest + Testing Library)
 **Contexto:** Use após criar um componente ou serviço para garantir cobertura.
 
-> "Gere a suíte de testes unitários em Jest para o arquivo aberto:
+> "Gere a suíte de testes unitários em Vitest para o arquivo aberto:
 > - **Setup:** Use `@testing-library/angular`.
-> - **Mocks:** Use `jest.fn()` para mockar dependências injetadas via `inject()`.
+> - **Mocks:** Use `vi.fn()` para mockar dependências injetadas via `inject()`.
 > - **Signals:** Garanta que os testes verifiquem mudanças de estado nos signals após interações do usuário (fireEvent).
 > - **Padrão:** Siga a estrutura Describe/It com a metodologia AAA (Arrange-Act-Assert)."
 
