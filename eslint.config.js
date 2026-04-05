@@ -20,10 +20,10 @@ module.exports = defineConfig([
 
       // Padrões obrigatórios Angular 21
       "@angular-eslint/prefer-inject": "error",
-      "@angular-eslint/prefer-on-push-change-detection": "warn",
       "@angular-eslint/no-empty-lifecycle-method": "error",
       "@angular-eslint/use-lifecycle-interface": "error",
       "@angular-eslint/no-output-native": "error",
+      "@angular-eslint/no-output-on-prefix": "warn",
       "@angular-eslint/no-input-rename": "error",
 
       // TypeScript: evitar any e erros comuns
