@@ -7,9 +7,14 @@
  * loop de change detection no jsdom (processo CPU 99%). Por isso:
  * - InputNumberModule é excluído via componentImports + NO_ERRORS_SCHEMA
  * - Testes de lógica pura acessam métodos via `(component as any)` sem renderizar o template PrimeNG
+ *
+ * NOTA JIT: Em modo JIT (Vitest sem plugin Angular), `input()` API não registra
+ * entradas no ɵcmp.inputs. Logo, componentInputs/setInput falham silenciosamente.
+ * Usamos ɵSIGNAL (símbolo interno) para definir o valor nos nós signal diretamente
+ * após a criação do componente, antes do primeiro detectChanges.
  */
 
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { render } from '@testing-library/angular';
@@ -23,6 +28,21 @@ import { TooltipModule } from 'primeng/tooltip';
 import { FormulaEditorComponent, VariavelDinamica } from './formula-editor.component';
 
 // ============================================================
+// Helper: seta o valor de um signal input diretamente via nó interno
+// Necessário em JIT porque input() não é registrado em ɵcmp.inputs
+// ============================================================
+
+function setSignalInput<T>(component: unknown, inputName: string, value: T): void {
+  const signalFn = (component as Record<string, unknown>)[inputName];
+  if (signalFn && (signalFn as Record<symbol, unknown>)[SIGNAL_SYM as symbol]) {
+    const node = (signalFn as Record<symbol, unknown>)[SIGNAL_SYM as symbol] as {
+      applyValueToInputSignal: (node: unknown, v: T) => void;
+    };
+    node.applyValueToInputSignal(node, value);
+  }
+}
+
+// ============================================================
 // Helper: render sem InputNumberModule (evita loop CD no jsdom)
 // ============================================================
 
@@ -34,14 +54,8 @@ async function criarFixture(overrides: {
   placeholder?: string;
   disabled?: boolean;
 } = {}) {
+  // Renderiza sem componentInputs — inputs são setados via ɵSIGNAL após criação
   const result = await render(FormulaEditorComponent, {
-    componentInputs: {
-      variaveisFixas:     overrides.variaveisFixas   ?? [],
-      variaveisDinamicas: overrides.variaveisDinamicas ?? [],
-      label:              overrides.label            ?? 'Fórmula',
-      placeholder:        overrides.placeholder      ?? 'Ex: FOR + AGI / 2',
-      disabled:           overrides.disabled         ?? false,
-    },
     // Exclui InputNumberModule para evitar loop de change detection no jsdom
     componentImports: [
       DecimalPipe,
@@ -53,9 +67,21 @@ async function criarFixture(overrides: {
       TooltipModule,
     ],
     schemas: [NO_ERRORS_SCHEMA],
+    detectChangesOnRender: false,
   });
 
   const component = result.fixture.componentInstance;
+
+  // Define os valores dos signal inputs diretamente no nó do signal
+  setSignalInput(component, 'variaveisFixas',     overrides.variaveisFixas   ?? []);
+  setSignalInput(component, 'variaveisDinamicas', overrides.variaveisDinamicas ?? []);
+  setSignalInput(component, 'label',              overrides.label            ?? 'Fórmula');
+  setSignalInput(component, 'placeholder',        overrides.placeholder      ?? 'Ex: FOR + AGI / 2');
+  setSignalInput(component, 'disabled',           overrides.disabled         ?? false);
+
+  // Primeira detecção de mudanças após definir os inputs
+  result.fixture.detectChanges();
+  await result.fixture.whenStable();
 
   if (overrides.formula !== undefined) {
     component.formula.set(overrides.formula);
@@ -442,12 +468,13 @@ describe('FormulaEditorComponent', () => {
   // ----------------------------------------------------------
 
   describe('onFormulaInput com debounce', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
+    // NOTA: vi.useFakeTimers() é chamado APÓS criarFixture() em cada teste,
+    // porque fixture.whenStable() trava quando os timers já estão falsos
+    // (Zone.js aguarda macrotasks que nunca resolvem com fake timers ativos).
 
     it('deve atualizar o signal formula imediatamente ao digitar', async () => {
       const { component } = await criarFixture({ variaveisFixas: ['total'] });
+      vi.useFakeTimers();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (component as any).onFormulaInput('total / 2');
@@ -459,6 +486,7 @@ describe('FormulaEditorComponent', () => {
       // Usa fórmula sem nomes de variáveis para que todasVariaveis().length === 0
       // e o bloco @if do preview NÃO renderize p-inputNumber (evita NG0303).
       const { component } = await criarFixture();
+      vi.useFakeTimers();
       const spy = vi.fn();
       component.validationChange.subscribe(spy);
 
@@ -475,6 +503,7 @@ describe('FormulaEditorComponent', () => {
     it('deve cancelar o timer anterior ao receber novo input antes de 600ms', async () => {
       // Usa fórmulas sem nomes de variáveis pelo mesmo motivo acima.
       const { component } = await criarFixture();
+      vi.useFakeTimers();
       const spy = vi.fn();
       component.validationChange.subscribe(spy);
 
@@ -495,6 +524,7 @@ describe('FormulaEditorComponent', () => {
         variaveisFixas: ['total'],
       });
       component.formula.set('total / 2');
+      vi.useFakeTimers();
       const spy = vi.fn();
       component.validationChange.subscribe(spy);
 
