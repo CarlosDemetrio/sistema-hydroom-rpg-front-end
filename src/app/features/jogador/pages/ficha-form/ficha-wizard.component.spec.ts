@@ -128,6 +128,7 @@ const fichaRascunhoMock: Ficha = {
   xp: 0,
   renascimentos: 0,
   isNpc: false,
+  descricao: null,
   dataCriacao: '2024-01-01T00:00:00',
   dataUltimaAtualizacao: '2024-01-01T00:00:00',
 };
@@ -591,7 +592,7 @@ describe('FichaWizardComponent', () => {
       expect(comp.fichaId()).toBe(42);
     });
 
-    it('determina passo 2 quando rascunho tem passo 1 completo', async () => {
+    it('determina passo 3 quando rascunho tem passo 1 completo (passo 2 opcional e pulado)', async () => {
       const { fixture } = await renderWizard({
         queryParams: { fichaId: '42' },
         fichasApiOverride: {
@@ -601,7 +602,7 @@ describe('FichaWizardComponent', () => {
       const comp = fixture.componentInstance;
       fixture.detectChanges();
 
-      expect(comp.passoAtual()).toBe(2);
+      expect(comp.passoAtual()).toBe(3);
     });
 
     it('determina passo 1 quando rascunho tem campos incompletos', async () => {
@@ -722,10 +723,49 @@ describe('FichaWizardComponent', () => {
       expect(comp.passoAtual()).toBe(1);
     });
 
-    it('nos passos 2-6, avancarPasso incrementa sem chamar a API', async () => {
+    it('nos passos 3-6, avancarPasso incrementa sem chamar a API', async () => {
       const { fixture, fichasApi } = await renderWizard();
       const comp = fixture.componentInstance;
 
+      comp.passoAtual.set(3);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.passoAtual()).toBe(4);
+      expect(fichasApi.createFicha).not.toHaveBeenCalled();
+      expect(fichasApi.updateFicha).not.toHaveBeenCalled();
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 7. Auto-save: avanco do passo 2
+  // ----------------------------------------------------------
+
+  describe('auto-save ao avancar do passo 2', () => {
+    it('chama updateFicha (PUT) com descricao ao avancar do passo 2', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.fichaId.set(42);
+      comp.passoAtual.set(2);
+      comp.formPasso2.set({ descricao: 'Minha descricao' });
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(fichasApi.updateFicha).toHaveBeenCalledWith(42, expect.objectContaining({
+        descricao: 'Minha descricao',
+      }));
+    });
+
+    it('avanca para passo 3 apos salvar passo 2 com sucesso', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.fichaId.set(42);
       comp.passoAtual.set(2);
       fixture.detectChanges();
 
@@ -733,14 +773,89 @@ describe('FichaWizardComponent', () => {
       fixture.detectChanges();
 
       expect(comp.passoAtual()).toBe(3);
-      expect(fichasApi.createFicha).not.toHaveBeenCalled();
+    });
+
+    it('avanca para passo 3 sem chamar API quando fichaId e null', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      // fichaId null (nao deveria acontecer, mas cobre o edge case)
+      comp.fichaId.set(null);
+      comp.passoAtual.set(2);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.passoAtual()).toBe(3);
       expect(fichasApi.updateFicha).not.toHaveBeenCalled();
+    });
+
+    it('muda estadoSalvamento para "erro" quando updateFicha falha no passo 2', async () => {
+      const { fixture } = await renderWizard({
+        fichasApiOverride: {
+          updateFicha: vi.fn().mockReturnValue(throwError(() => new Error('Server error'))),
+        },
+      });
+      const comp = fixture.componentInstance;
+
+      comp.fichaId.set(42);
+      comp.passoAtual.set(2);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.estadoSalvamento()).toBe('erro');
+      expect(comp.passoAtual()).toBe(2); // Nao avanca em caso de erro
     });
   });
 
   // ----------------------------------------------------------
-  // 7. Deteccao de rota NPC
+  // 8. onFormPasso2Changed
   // ----------------------------------------------------------
+
+  describe('onFormPasso2Changed', () => {
+    it('atualiza formPasso2 quando step emite descricaoChanged', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.onFormPasso2Changed('Nova descricao');
+      fixture.detectChanges();
+
+      expect(comp.formPasso2().descricao).toBe('Nova descricao');
+    });
+
+    it('atualiza formPasso2 com null quando step emite null', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.onFormPasso2Changed(null);
+      fixture.detectChanges();
+
+      expect(comp.formPasso2().descricao).toBeNull();
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 9. Retomada: formPasso2 preenchido com descricao da ficha
+  // ----------------------------------------------------------
+
+  describe('retomada com descricao', () => {
+    it('pre-preenche formPasso2 com descricao da ficha rascunho', async () => {
+      const fichaComDescricao: Ficha = { ...fichaRascunhoMock, descricao: 'Historia epica' };
+      const { fixture } = await renderWizard({
+        queryParams: { fichaId: '42' },
+        fichasApiOverride: {
+          getFicha: vi.fn().mockReturnValue(of(fichaComDescricao)),
+        },
+      });
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(comp.formPasso2().descricao).toBe('Historia epica');
+    });
+  });
 
   describe('rota de NPC', () => {
     it('define isNpc=true no formPasso1 quando rota tem data.npc=true', async () => {

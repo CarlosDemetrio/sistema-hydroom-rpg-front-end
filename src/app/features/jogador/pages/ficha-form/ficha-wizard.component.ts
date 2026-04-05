@@ -28,7 +28,8 @@ import {
 import { Ficha } from '@core/models/ficha.model';
 import { CreateFichaDto, UpdateFichaDto } from '@core/models/dtos/ficha.dto';
 import { StepIdentificacaoComponent } from './steps/step-identificacao/step-identificacao.component';
-import { EstadoSalvamento, FormPasso1 } from './ficha-wizard.types';
+import { StepDescricaoComponent } from './steps/step-descricao/step-descricao.component';
+import { EstadoSalvamento, FormPasso1, FormPasso2 } from './ficha-wizard.types';
 import { Observable } from 'rxjs';
 
 /**
@@ -54,6 +55,7 @@ import { Observable } from 'rxjs';
     ToastModule,
     ProgressSpinnerModule,
     StepIdentificacaoComponent,
+    StepDescricaoComponent,
   ],
   providers: [MessageService],
   template: `
@@ -108,13 +110,12 @@ import { Observable } from 'rxjs';
           ></app-step-identificacao>
         }
 
-        <!-- Passos 2-6: Placeholders para T7-T11 -->
+        <!-- Passo 2: Descricao -->
         @if (passoAtual() === 2) {
-          <div class="surface-100 border-round p-5 text-center">
-            <i class="pi pi-cog text-primary text-4xl mb-3 block"></i>
-            <p class="text-xl font-semibold m-0">Passo 2 — Atributos</p>
-            <p class="text-color-secondary mt-2">Em breve (T7)</p>
-          </div>
+          <app-step-descricao
+            [descricao]="formPasso2().descricao"
+            (descricaoChanged)="onFormPasso2Changed($event)"
+          ></app-step-descricao>
         }
 
         @if (passoAtual() === 3) {
@@ -307,6 +308,12 @@ export class FichaWizardComponent implements OnInit {
   });
 
   // ============================================================
+  // Dados do formulario Passo 2
+  // ============================================================
+
+  readonly formPasso2 = signal<FormPasso2>({ descricao: null });
+
+  // ============================================================
   // Computed: validacao do passo atual
   // ============================================================
 
@@ -341,8 +348,8 @@ export class FichaWizardComponent implements OnInit {
 
   readonly passos: MenuItem[] = [
     { label: 'Identificacao' },
+    { label: 'Descricao' },
     { label: 'Atributos' },
-    { label: 'Vantagens' },
     { label: 'Aptidoes' },
     { label: 'Revisao' },
     { label: 'Conclusao' },
@@ -442,8 +449,9 @@ export class FichaWizardComponent implements OnInit {
             indoleId: ficha.indoleId,
             presencaId: ficha.presencaId,
             isNpc: ficha.isNpc,
-            descricao: null,
+            descricao: ficha.descricao ?? null,
           });
+          this.formPasso2.set({ descricao: ficha.descricao ?? null });
           this.racaIdSelecionada.set(ficha.racaId);
           const passoInicial = this.determinarPassoInicial(ficha);
           this.passoAtual.set(passoInicial);
@@ -471,8 +479,9 @@ export class FichaWizardComponent implements OnInit {
     ) {
       return 1;
     }
-    // Passo 1 completo — passo 2 em diante sera determinado por T7+
-    return 2;
+    // Passo 1 completo e passo 2 (opcional) ja pode ser considerado visitado —
+    // iniciar no passo 3 para nao repetir a descricao quando o rascunho ja foi salvo
+    return 3;
   }
 
   // ============================================================
@@ -484,6 +493,8 @@ export class FichaWizardComponent implements OnInit {
 
     if (this.passoAtual() === 1) {
       this.salvarPasso1();
+    } else if (this.passoAtual() === 2) {
+      this.salvarPasso2();
     } else {
       this.passoAtual.update((p) => p + 1);
     }
@@ -527,6 +538,39 @@ export class FichaWizardComponent implements OnInit {
     });
   }
 
+  private salvarPasso2(): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) {
+      // Sem fichaId nao deveria acontecer apos passo 1
+      this.passoAtual.set(3);
+      return;
+    }
+
+    this.estadoSalvamento.set('salvando');
+
+    const dto: UpdateFichaDto = {
+      descricao: this.formPasso2().descricao || null,
+    };
+
+    this.fichasApi.updateFicha(fichaId, dto)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.estadoSalvamento.set('salvo');
+          this.passoAtual.set(3);
+          setTimeout(() => this.estadoSalvamento.set('idle'), 3000);
+        },
+        error: () => {
+          this.estadoSalvamento.set('erro');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro ao salvar',
+            detail: 'Nao foi possivel salvar a descricao. Tente novamente.',
+          });
+        },
+      });
+  }
+
   private criarFicha(): Observable<Ficha> {
     const f = this.formPasso1();
     const dto: CreateFichaDto = {
@@ -561,6 +605,10 @@ export class FichaWizardComponent implements OnInit {
 
   onFormPasso1Changed(form: FormPasso1): void {
     this.formPasso1.set(form);
+  }
+
+  onFormPasso2Changed(descricao: string | null): void {
+    this.formPasso2.set({ descricao });
   }
 
   onRacaSelecionada(racaId: number | null): void {

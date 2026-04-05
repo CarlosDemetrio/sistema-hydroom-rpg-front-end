@@ -41,6 +41,7 @@ export interface UpdateFichaDto {
   presencaId?: number | null;
   xp?: number;
   renascimentos?: number;
+  descricao?: string | null;
 }
 
 /**

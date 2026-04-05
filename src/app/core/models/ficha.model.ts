@@ -21,6 +21,7 @@ export interface Ficha {
   xp: number;
   renascimentos: number;
   isNpc: boolean;
+  descricao: string | null;
   dataCriacao: string;
   dataUltimaAtualizacao: string;
 }

@@ -14,3 +14,7 @@ export interface FormPasso1 {
   isNpc: boolean;
   descricao: string | null;
 }
+
+export interface FormPasso2 {
+  descricao: string | null;
+}
