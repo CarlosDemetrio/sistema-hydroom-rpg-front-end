@@ -70,6 +70,17 @@ export const routes: Routes = [
             canActivate: [currentGameGuard]
           },
           {
+            path: 'fichas/criar',
+            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent),
+            canActivate: [currentGameGuard]
+          },
+          {
+            path: 'fichas/criar-npc',
+            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent),
+            canActivate: [currentGameGuard],
+            data: { npc: true }
+          },
+          {
             path: 'config',
             loadComponent: () => import('./features/mestre/pages/config/config-layout.component').then(m => m.ConfigLayoutComponent),
             canActivate: [currentGameGuard],
@@ -153,7 +164,11 @@ export const routes: Routes = [
           },
           {
             path: 'fichas/nova',
-            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-form.component').then(m => m.FichaFormComponent)
+            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent)
+          },
+          {
+            path: 'fichas/criar',
+            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent)
           },
           {
             path: 'fichas/:id',
@@ -161,7 +176,7 @@ export const routes: Routes = [
           },
           {
             path: 'fichas/:id/edit',
-            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-form.component').then(m => m.FichaFormComponent)
+            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent)
           },
           {
             path: 'jogos',
