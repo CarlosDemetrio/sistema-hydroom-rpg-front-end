@@ -11,6 +11,7 @@ import { DrawerModule } from 'primeng/drawer';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
@@ -22,9 +23,14 @@ import {
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
 import { VantagemConfig, CategoriaVantagem } from '@core/models';
+import { AtributoConfig } from '@core/models/atributo-config.model';
+import { AptidaoConfig } from '@core/models/aptidao-config.model';
+import { BonusConfig, MembroCorpoConfig } from '@core/models/config.models';
+import { VantagemEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
 import { VantagemConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { uniqueNameValidator } from '@shared/validators/config-validators';
+import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
 
 @Component({
   selector: 'app-vantagens-config',
@@ -40,11 +46,13 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
     InputNumberModule,
     InputTextModule,
     SelectModule,
+    SkeletonModule,
     TabsModule,
     TagModule,
     TextareaModule,
     TooltipModule,
     BaseConfigTableComponent,
+    EfeitoFormComponent,
   ],
   providers: [ConfirmationService],
   template: `
@@ -109,6 +117,17 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
             Pré-requisitos
             @if (selectedVantagem()?.preRequisitos?.length) {
               <span class="ml-1 badge-atributo">{{ selectedVantagem()!.preRequisitos.length }}</span>
+            }
+          </p-tab>
+          <p-tab
+            value="efeitos"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
+            Efeitos
+            @if (efeitos().length) {
+              <span class="ml-1 badge-atributo">{{ efeitos().length }}</span>
             }
           </p-tab>
         </p-tablist>
@@ -309,6 +328,106 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
               </div>
             </div>
           </p-tabpanel>
+
+          <!-- Aba: Efeitos Mecânicos -->
+          <p-tabpanel value="efeitos">
+            <div class="flex flex-column gap-3 p-2">
+              <div class="rpg-section-title">Efeitos Mecânicos</div>
+              <small class="text-color-secondary">
+                Defina os efeitos concretos que esta vantagem concede ao personagem.
+                Cada nível comprado pode aumentar os bônus conforme configurado.
+              </small>
+
+              <!-- Loading dos efeitos -->
+              @if (loadingEfeitos()) {
+                <div class="flex flex-column gap-2">
+                  <p-skeleton height="3rem" />
+                  <p-skeleton height="3rem" />
+                </div>
+              } @else {
+
+                <!-- Lista de efeitos existentes -->
+                @if (efeitos().length) {
+                  <div class="flex flex-column gap-2">
+                    @for (efeito of efeitos(); track efeito.id) {
+                      <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
+                        <div class="flex flex-column gap-1 flex-1">
+                          <div class="flex align-items-center gap-2">
+                            <p-tag [value]="efeito.tipoEfeito" severity="info" />
+                            @if (efeito.atributoAlvoNome) {
+                              <span class="text-sm">→ {{ efeito.atributoAlvoNome }}</span>
+                            }
+                            @if (efeito.aptidaoAlvoNome) {
+                              <span class="text-sm">→ {{ efeito.aptidaoAlvoNome }}</span>
+                            }
+                            @if (efeito.bonusAlvoNome) {
+                              <span class="text-sm">→ {{ efeito.bonusAlvoNome }}</span>
+                            }
+                            @if (efeito.membroAlvoNome) {
+                              <span class="text-sm">→ {{ efeito.membroAlvoNome }}</span>
+                            }
+                          </div>
+                          <div class="flex gap-3 text-sm text-color-secondary">
+                            @if (efeito.valorFixo != null) {
+                              <span>Fixo: {{ efeito.valorFixo }}</span>
+                            }
+                            @if (efeito.valorPorNivel != null) {
+                              <span>Por nível: {{ efeito.valorPorNivel }}</span>
+                            }
+                            @if (efeito.descricaoEfeito) {
+                              <span>{{ efeito.descricaoEfeito }}</span>
+                            }
+                          </div>
+                        </div>
+                        <p-button
+                          icon="pi pi-trash"
+                          [rounded]="true"
+                          [text]="true"
+                          severity="danger"
+                          (onClick)="confirmarDelecaoEfeito(efeito)"
+                          pTooltip="Remover efeito"
+                        />
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="text-center p-4 text-color-secondary">
+                    <i class="pi pi-bolt text-3xl mb-2 block"></i>
+                    <p class="m-0">Nenhum efeito configurado</p>
+                    <small>Adicione efeitos para definir o impacto mecânico desta vantagem.</small>
+                  </div>
+                }
+
+                <!-- Formulário para novo efeito -->
+                @if (mostrarFormAdicionarEfeito()) {
+                  <div class="p-3 border-1 border-round surface-border">
+                    <p class="font-semibold mb-3 mt-0">Novo Efeito</p>
+                    <app-efeito-form
+                      [vantagemId]="selectedVantagem()!.id"
+                      [nivelMaximoVantagem]="selectedVantagem()!.nivelMaximo"
+                      [atributosDisponiveis]="atributosConfig()"
+                      [aptidoesDisponiveis]="aptidoesConfig()"
+                      [bonusDisponiveis]="bonusConfig()"
+                      [membrosDisponiveis]="membrosConfig()"
+                      (efeitoSalvo)="onEfeitoSalvo($event)"
+                      (cancelar)="mostrarFormAdicionarEfeito.set(false)"
+                    />
+                  </div>
+                }
+
+                @if (!mostrarFormAdicionarEfeito()) {
+                  <p-button
+                    label="Adicionar Efeito"
+                    icon="pi pi-plus"
+                    [outlined]="true"
+                    (onClick)="mostrarFormAdicionarEfeito.set(true)"
+                  />
+                }
+
+              }
+            </div>
+          </p-tabpanel>
+
         </p-tabpanels>
       </p-tabs>
     </p-drawer>
@@ -324,13 +443,24 @@ export class VantagensConfigComponent extends BaseConfigComponent<
   private confirmationService = inject(ConfirmationService);
   private configApi = inject(ConfigApiService);
 
-  protected drawerVisible = signal(false);
-  protected loading = signal(false);
-  protected searchQuery = signal('');
-  protected activeTab = signal('dados');
-  protected selectedVantagem = signal<VantagemConfig | null>(null);
-  protected selectedPreRequisitoId = signal<number | null>(null);
-  protected categoriasVantagem = signal<CategoriaVantagem[]>([]);
+  protected drawerVisible           = signal(false);
+  protected loading                 = signal(false);
+  protected searchQuery             = signal('');
+  protected activeTab               = signal('dados');
+  protected selectedVantagem        = signal<VantagemConfig | null>(null);
+  protected selectedPreRequisitoId  = signal<number | null>(null);
+  protected categoriasVantagem      = signal<CategoriaVantagem[]>([]);
+
+  // Efeitos
+  protected efeitos                 = signal<VantagemEfeito[]>([]);
+  protected loadingEfeitos          = signal(false);
+  protected mostrarFormAdicionarEfeito = signal(false);
+
+  // Dados de configuração para os dropdowns do formulário de efeito
+  protected atributosConfig  = signal<AtributoConfig[]>([]);
+  protected aptidoesConfig   = signal<AptidaoConfig[]>([]);
+  protected bonusConfig      = signal<BonusConfig[]>([]);
+  protected membrosConfig    = signal<MembroCorpoConfig[]>([]);
 
   readonly columns: ConfigTableColumn[] = [
     { field: 'ordemExibicao',  header: 'Ordem', width: '5rem' },
@@ -380,6 +510,22 @@ export class VantagensConfigComponent extends BaseConfigComponent<
       this.configApi.listCategoriasVantagem(jogoId)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({ next: (c) => this.categoriasVantagem.set(c) });
+
+      this.configApi.listAtributos(jogoId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (a) => this.atributosConfig.set(a) });
+
+      this.configApi.listAptidoes(jogoId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (a) => this.aptidoesConfig.set(a) });
+
+      this.configApi.listBonus(jogoId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (b) => this.bonusConfig.set(b) });
+
+      this.configApi.listMembrosCorpo(jogoId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (m) => this.membrosConfig.set(m) });
     }
   }
 
@@ -387,12 +533,19 @@ export class VantagensConfigComponent extends BaseConfigComponent<
     this.openDialog(item);
     this.selectedVantagem.set(item ?? null);
     this.activeTab.set('dados');
+    this.efeitos.set([]);
+    this.mostrarFormAdicionarEfeito.set(false);
     this.drawerVisible.set(true);
+    if (item?.id) {
+      this.carregarEfeitos(item.id);
+    }
   }
 
   closeDrawer(): void {
     this.drawerVisible.set(false);
     this.selectedVantagem.set(null);
+    this.efeitos.set([]);
+    this.mostrarFormAdicionarEfeito.set(false);
     this.closeDialog();
   }
 
@@ -435,6 +588,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
           this.activeTab.set('prerequisitos');
           this.editMode.set(true);
           this.currentEditId.set(v.id);
+          this.carregarEfeitos(v.id);
         }
         this.loadData();
         this.loading.set(false);
@@ -475,6 +629,68 @@ export class VantagensConfigComponent extends BaseConfigComponent<
     this.configApi.getVantagem(vantagemId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (v) => this.selectedVantagem.set(v) });
+  }
+
+  // ============================================================
+  // Efeitos Mecânicos
+  // ============================================================
+
+  private carregarEfeitos(vantagemId: number): void {
+    const jogoId = this.currentGameId();
+    if (!jogoId) return;
+    this.loadingEfeitos.set(true);
+    this.configApi.listVantagemEfeitos(jogoId, vantagemId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (lista) => {
+          this.efeitos.set(lista);
+          this.loadingEfeitos.set(false);
+        },
+        error: () => this.loadingEfeitos.set(false),
+      });
+  }
+
+  onEfeitoSalvo(dto: CriarVantagemEfeitoDto): void {
+    const vantagemId = this.selectedVantagem()?.id;
+    const jogoId     = this.currentGameId();
+    if (!vantagemId || !jogoId) return;
+
+    this.configApi.criarVantagemEfeito(jogoId, vantagemId, dto)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.mostrarFormAdicionarEfeito.set(false);
+          this.carregarEfeitos(vantagemId);
+          this.toastService.success('Efeito adicionado com sucesso', 'Sucesso');
+        },
+      });
+  }
+
+  confirmarDelecaoEfeito(efeito: VantagemEfeito): void {
+    this.confirmationService.confirm({
+      message: `Tem certeza que deseja remover o efeito "${efeito.tipoEfeito}"? Esta ação não pode ser desfeita.`,
+      header: 'Confirmar Remoção',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sim, remover',
+      rejectLabel: 'Cancelar',
+      acceptButtonProps: { severity: 'danger' },
+      accept: () => this.deletarEfeito(efeito),
+    });
+  }
+
+  private deletarEfeito(efeito: VantagemEfeito): void {
+    const vantagemId = this.selectedVantagem()?.id;
+    const jogoId     = this.currentGameId();
+    if (!vantagemId || !jogoId) return;
+
+    this.configApi.deletarVantagemEfeito(jogoId, vantagemId, efeito.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.carregarEfeitos(vantagemId);
+          this.toastService.success('Efeito removido com sucesso', 'Sucesso');
+        },
+      });
   }
 
   override confirmDelete(id: number): void {
