@@ -52,8 +52,13 @@ const fichaResumoStub: FichaResumo = {
   atributosTotais: { FOR: 10 },
   bonusTotais: {},
   vidaTotal: 80,
+  vidaAtual: 80,
   essenciaTotal: 50,
+  essenciaAtual: 50,
   ameacaTotal: 20,
+  pontosVantagemDisponiveis: 0,
+  pontosAtributoDisponiveis: 0,
+  pontosAptidaoDisponiveis: 0,
 };
 
 const userMestreStub: UserInfo = {
