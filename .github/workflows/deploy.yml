@@ -1,0 +1,146 @@
+name: Deploy Frontend to OCI
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Pular testes antes do deploy?'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  # ======================================================
+  # Job 1: Testes
+  # ======================================================
+  test:
+    name: Testes
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Executar testes
+        run: npm test -- --watch=false
+
+  # ======================================================
+  # Job 2: Build e Deploy
+  # ======================================================
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: ${{ always() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build producao
+        run: npm run build -- --configuration production
+
+      - name: Preparar artefato
+        run: |
+          # Angular 21 output: dist/<project-name>/browser/
+          echo "Conteudo do dist:"
+          ls -la dist/ficha-controlador-front-end/browser/
+          echo ""
+          echo "Tamanho total:"
+          du -sh dist/ficha-controlador-front-end/browser/
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.OCI_VM_HOST }}
+          username: ${{ secrets.OCI_VM_USER }}
+          key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -e
+            echo "Preparando diretorio do frontend..."
+            mkdir -p /opt/frontend
+            mkdir -p /opt/frontend-backup
+
+            # Backup da versao anterior
+            if [ -d /opt/frontend ] && [ "$(ls -A /opt/frontend 2>/dev/null)" ]; then
+              BACKUP_TS=$(date +%Y%m%d-%H%M%S)
+              cp -r /opt/frontend "/opt/frontend-backup/frontend-${BACKUP_TS}" || true
+              # Manter apenas 3 backups
+              ls -dt /opt/frontend-backup/frontend-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
+            fi
+
+            echo "Diretorio pronto para receber os arquivos."
+
+      - name: Copiar arquivos via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_VM_HOST }}
+          username: ${{ secrets.OCI_VM_USER }}
+          key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          port: 22
+          source: "dist/ficha-controlador-front-end/browser/*"
+          target: "/opt/frontend"
+          strip_components: 3
+
+      - name: Verificar deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.OCI_VM_HOST }}
+          username: ${{ secrets.OCI_VM_USER }}
+          key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+            echo "Verificando arquivos deployados:"
+            ls -la /opt/frontend/
+            echo ""
+
+            if [ -f /opt/frontend/index.html ]; then
+              echo "index.html encontrado!"
+              echo "Tamanho total:"
+              du -sh /opt/frontend/
+              echo ""
+              echo "Deploy do frontend concluido!"
+            else
+              echo "ERRO: index.html nao encontrado!"
+              exit 1
+            fi
+
+      - name: Resumo do Deploy
+        if: success()
+        run: |
+          echo "### Deploy Frontend Realizado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ambiente**: OCI Free Tier" >> $GITHUB_STEP_SUMMARY
+          echo "- **Quando**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Por**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notificar falha
+        if: failure()
+        run: |
+          echo "### Deploy Frontend Falhou!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Verifique os logs acima para detalhes." >> $GITHUB_STEP_SUMMARY
