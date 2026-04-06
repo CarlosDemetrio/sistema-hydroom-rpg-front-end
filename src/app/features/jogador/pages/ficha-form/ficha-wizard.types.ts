@@ -18,3 +18,18 @@ export interface FormPasso1 {
 export interface FormPasso2 {
   descricao: string | null;
 }
+
+/**
+ * Representa um atributo da ficha no estado editavel do Passo 3.
+ * Mapeado a partir de FichaAtributoResponse para uso no wizard.
+ */
+export interface FichaAtributoEditavel {
+  /** ID do registro FichaAtributo no backend (para atualizacao em lote). */
+  atributoConfigId: number;
+  atributoNome: string;
+  atributoAbreviacao: string;
+  /** Pontos base distribuidos pelo jogador. Editavel. */
+  base: number;
+  /** Bonus de raca (somente leitura). */
+  outros: number;
+}

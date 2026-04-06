@@ -51,6 +51,10 @@ export interface FichaResumo {
   ameacaTotal: number;
   /** Pontos de vantagem disponíveis para gastar. Undefined/null = 0. Será incluído na Spec 007/GAP-06. */
   pontosVantagemDisponiveis?: number | null;
+  /** Pontos de atributo disponíveis para distribuir. Incluído via Spec 006/GAP-06. */
+  pontosAtributoDisponiveis?: number | null;
+  /** Pontos de aptidão disponíveis para distribuir. Incluído via Spec 006/GAP-06. */
+  pontosAptidaoDisponiveis?: number | null;
 }
 
 /**

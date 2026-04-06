@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnInit,
   signal,
@@ -22,15 +23,17 @@ import {
   ClassePersonagem,
   GeneroConfig,
   IndoleConfig,
+  NivelConfig,
   PresencaConfig,
   Raca,
 } from '@core/models/config.models';
-import { Ficha } from '@core/models/ficha.model';
+import { AtualizarAtributoDto, Ficha } from '@core/models/ficha.model';
 import { CreateFichaDto, UpdateFichaDto } from '@core/models/dtos/ficha.dto';
 import { StepIdentificacaoComponent } from './steps/step-identificacao/step-identificacao.component';
 import { StepDescricaoComponent } from './steps/step-descricao/step-descricao.component';
-import { EstadoSalvamento, FormPasso1, FormPasso2 } from './ficha-wizard.types';
-import { Observable } from 'rxjs';
+import { StepAtributosComponent } from './steps/step-atributos/step-atributos.component';
+import { EstadoSalvamento, FichaAtributoEditavel, FormPasso1, FormPasso2 } from './ficha-wizard.types';
+import { forkJoin, Observable } from 'rxjs';
 
 /**
  * FichaWizardComponent (SMART — Orquestrador)
@@ -56,6 +59,7 @@ import { Observable } from 'rxjs';
     ProgressSpinnerModule,
     StepIdentificacaoComponent,
     StepDescricaoComponent,
+    StepAtributosComponent,
   ],
   providers: [MessageService],
   template: `
@@ -119,11 +123,18 @@ import { Observable } from 'rxjs';
         }
 
         @if (passoAtual() === 3) {
-          <div class="surface-100 border-round p-5 text-center">
-            <i class="pi pi-star text-primary text-4xl mb-3 block"></i>
-            <p class="text-xl font-semibold m-0">Passo 3 — Vantagens</p>
-            <p class="text-color-secondary mt-2">Em breve (T8)</p>
-          </div>
+          @if (carregandoAtributos()) {
+            <div class="flex justify-content-center p-5">
+              <p-progress-spinner strokeWidth="4" animationDuration=".8s"></p-progress-spinner>
+            </div>
+          } @else {
+            <app-step-atributos
+              [atributos]="formPasso3()"
+              [pontosDisponiveis]="pontosAtributoDisponiveis()"
+              [limitadorAtributo]="limitadorAtributo()"
+              (atributosChanged)="onFormPasso3Changed($event)"
+            ></app-step-atributos>
+          }
         }
 
         @if (passoAtual() === 4) {
@@ -238,6 +249,20 @@ export class FichaWizardComponent implements OnInit {
   private messageService = inject(MessageService);
   private destroyRef = inject(DestroyRef);
 
+  constructor() {
+    // Carrega os dados do passo 3 quando o jogador entra nele pela primeira vez
+    effect(() => {
+      if (
+        this.passoAtual() === 3 &&
+        this.fichaId() !== null &&
+        this.formPasso3().length === 0 &&
+        !this.carregandoAtributos()
+      ) {
+        this.carregarDadosPasso3();
+      }
+    });
+  }
+
   // ============================================================
   // Estado do wizard
   // ============================================================
@@ -312,6 +337,15 @@ export class FichaWizardComponent implements OnInit {
   // ============================================================
 
   readonly formPasso2 = signal<FormPasso2>({ descricao: null });
+
+  // ============================================================
+  // Dados do formulario Passo 3 — Atributos
+  // ============================================================
+
+  readonly formPasso3 = signal<FichaAtributoEditavel[]>([]);
+  readonly pontosAtributoDisponiveis = signal<number>(0);
+  readonly limitadorAtributo = signal<number>(20);
+  readonly carregandoAtributos = signal<boolean>(false);
 
   // ============================================================
   // Computed: validacao do passo atual
@@ -495,6 +529,8 @@ export class FichaWizardComponent implements OnInit {
       this.salvarPasso1();
     } else if (this.passoAtual() === 2) {
       this.salvarPasso2();
+    } else if (this.passoAtual() === 3) {
+      this.salvarPasso3();
     } else {
       this.passoAtual.update((p) => p + 1);
     }
@@ -571,6 +607,79 @@ export class FichaWizardComponent implements OnInit {
       });
   }
 
+  private carregarDadosPasso3(): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) return;
+
+    this.carregandoAtributos.set(true);
+
+    forkJoin({
+      atributos: this.fichasApi.getAtributos(fichaId),
+      resumo: this.fichasApi.getFichaResumo(fichaId),
+      niveis: this.configApi.listNiveis(this.jogoId()),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ atributos, resumo, niveis }) => {
+          const nivel1 = niveis.find((n: NivelConfig) => n.nivel === 1) ?? niveis[0];
+          this.limitadorAtributo.set(nivel1?.limitadorAtributo ?? 20);
+          this.pontosAtributoDisponiveis.set(resumo.pontosAtributoDisponiveis ?? 0);
+          this.formPasso3.set(
+            atributos.map((a) => ({
+              atributoConfigId: a.atributoConfigId,
+              atributoNome: a.atributoNome,
+              atributoAbreviacao: a.atributoAbreviacao,
+              base: a.base,
+              outros: a.outros,
+            }))
+          );
+          this.carregandoAtributos.set(false);
+        },
+        error: () => {
+          this.carregandoAtributos.set(false);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: 'Nao foi possivel carregar os atributos.',
+          });
+        },
+      });
+  }
+
+  private salvarPasso3(): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) {
+      this.passoAtual.set(4);
+      return;
+    }
+
+    this.estadoSalvamento.set('salvando');
+
+    const dtos: AtualizarAtributoDto[] = this.formPasso3().map((a) => ({
+      atributoConfigId: a.atributoConfigId,
+      base: a.base,
+    }));
+
+    this.fichasApi
+      .atualizarAtributos(fichaId, dtos)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.estadoSalvamento.set('salvo');
+          this.passoAtual.set(4);
+          setTimeout(() => this.estadoSalvamento.set('idle'), 3000);
+        },
+        error: () => {
+          this.estadoSalvamento.set('erro');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro ao salvar',
+            detail: 'Nao foi possivel salvar os atributos. Tente novamente.',
+          });
+        },
+      });
+  }
+
   private criarFicha(): Observable<Ficha> {
     const f = this.formPasso1();
     const dto: CreateFichaDto = {
@@ -609,6 +718,10 @@ export class FichaWizardComponent implements OnInit {
 
   onFormPasso2Changed(descricao: string | null): void {
     this.formPasso2.set({ descricao });
+  }
+
+  onFormPasso3Changed(atributos: FichaAtributoEditavel[]): void {
+    this.formPasso3.set(atributos);
   }
 
   onRacaSelecionada(racaId: number | null): void {
