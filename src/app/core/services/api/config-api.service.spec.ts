@@ -4,7 +4,16 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { ConfigApiService } from './config-api.service';
 import { AtributoConfig, CreateAtributoDto, UpdateAtributoDto } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
-import { NivelConfig, ClassePersonagem, Raca, ReordenarRequest } from '@core/models/config.models';
+import {
+  NivelConfig,
+  ClassePersonagem,
+  ClasseBonusConfig,
+  ClasseAptidaoBonus,
+  Raca,
+  RacaBonusAtributo,
+  RacaClassePermitida,
+  ReordenarRequest,
+} from '@core/models/config.models';
 
 const CONFIG_URL = '/api/v1/configuracoes';
 
@@ -368,6 +377,210 @@ describe('ConfigApiService', () => {
       const req = httpMock.expectOne('/api/jogos/10/config/categorias-vantagem/1');
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
+    });
+  });
+
+  // ============================================================
+  // Sub-recursos de ClassePersonagem
+  // ============================================================
+
+  describe('Sub-recursos de ClassePersonagem', () => {
+    const classeBonusStub: ClasseBonusConfig = {
+      id: 10,
+      classeId: 1,
+      bonusConfigId: 2,
+      bonusNome: 'B.B.A',
+      valorPorNivel: 0.5,
+    };
+
+    const classeAptidaoBonusStub: ClasseAptidaoBonus = {
+      id: 20,
+      classeId: 1,
+      aptidaoConfigId: 5,
+      aptidaoNome: 'Furtividade',
+      bonus: 2,
+    };
+
+    describe('listClasseBonus', () => {
+      it('deve fazer GET em /classes/{classeId}/bonus', () => {
+        service.listClasseBonus(1).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/bonus`);
+        expect(req.request.method).toBe('GET');
+        req.flush([classeBonusStub]);
+      });
+    });
+
+    describe('addClasseBonus', () => {
+      it('deve enviar POST com bonusConfigId e valorPorNivel', () => {
+        const dto = { bonusConfigId: 2, valorPorNivel: 0.5 };
+        service.addClasseBonus(1, dto).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/bonus`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(dto);
+        req.flush(classeBonusStub);
+      });
+
+      it('deve enviar valorPorNivel fracionário corretamente', () => {
+        const dto = { bonusConfigId: 3, valorPorNivel: 0.25 };
+        let result: ClasseBonusConfig | undefined;
+        service.addClasseBonus(1, dto).subscribe((r) => (result = r));
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/bonus`);
+        expect(req.request.body.valorPorNivel).toBe(0.25);
+        req.flush({ ...classeBonusStub, bonusConfigId: 3, valorPorNivel: 0.25 });
+
+        expect(result?.valorPorNivel).toBe(0.25);
+      });
+    });
+
+    describe('removeClasseBonus', () => {
+      it('deve fazer DELETE em /classes/{classeId}/bonus/{bonusId}', () => {
+        service.removeClasseBonus(1, 10).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/bonus/10`);
+        expect(req.request.method).toBe('DELETE');
+        req.flush(null);
+      });
+    });
+
+    describe('listClasseAptidaoBonus', () => {
+      it('deve fazer GET em /classes/{classeId}/aptidao-bonus', () => {
+        service.listClasseAptidaoBonus(1).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/aptidao-bonus`);
+        expect(req.request.method).toBe('GET');
+        req.flush([classeAptidaoBonusStub]);
+      });
+    });
+
+    describe('addClasseAptidaoBonus', () => {
+      it('deve enviar POST com aptidaoConfigId e bonus', () => {
+        const dto = { aptidaoConfigId: 5, bonus: 2 };
+        service.addClasseAptidaoBonus(1, dto).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/aptidao-bonus`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(dto);
+        req.flush(classeAptidaoBonusStub);
+      });
+
+      it('deve enviar bonus zero corretamente', () => {
+        const dto = { aptidaoConfigId: 5, bonus: 0 };
+        service.addClasseAptidaoBonus(1, dto).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/aptidao-bonus`);
+        expect(req.request.body.bonus).toBe(0);
+        req.flush({ ...classeAptidaoBonusStub, bonus: 0 });
+      });
+    });
+
+    describe('removeClasseAptidaoBonus', () => {
+      it('deve fazer DELETE em /classes/{classeId}/aptidao-bonus/{id}', () => {
+        service.removeClasseAptidaoBonus(1, 20).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/classes/1/aptidao-bonus/20`);
+        expect(req.request.method).toBe('DELETE');
+        req.flush(null);
+      });
+    });
+  });
+
+  // ============================================================
+  // Sub-recursos de Raça
+  // ============================================================
+
+  describe('Sub-recursos de Raça', () => {
+    const racaBonusAtributoStub: RacaBonusAtributo = {
+      id: 30,
+      racaId: 1,
+      atributoConfigId: 3,
+      atributoNome: 'Vigor',
+      bonus: 2,
+    };
+
+    const racaClassePermitidaStub: RacaClassePermitida = {
+      id: 40,
+      racaId: 1,
+      classeId: 7,
+      classeNome: 'Mago',
+    };
+
+    describe('listRacaBonusAtributos', () => {
+      it('deve fazer GET em /racas/{racaId}/bonus-atributos', () => {
+        service.listRacaBonusAtributos(1).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/racas/1/bonus-atributos`);
+        expect(req.request.method).toBe('GET');
+        req.flush([racaBonusAtributoStub]);
+      });
+    });
+
+    describe('addRacaBonusAtributo', () => {
+      it('deve enviar POST com atributoConfigId e bonus positivo', () => {
+        const dto = { atributoConfigId: 3, bonus: 2 };
+        service.addRacaBonusAtributo(1, dto).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/racas/1/bonus-atributos`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(dto);
+        req.flush(racaBonusAtributoStub);
+      });
+
+      it('deve enviar bonus negativo (penalidade) corretamente', () => {
+        const dto = { atributoConfigId: 3, bonus: -1 };
+        let result: RacaBonusAtributo | undefined;
+        service.addRacaBonusAtributo(1, dto).subscribe((r) => (result = r));
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/racas/1/bonus-atributos`);
+        expect(req.request.body.bonus).toBe(-1);
+        req.flush({ ...racaBonusAtributoStub, bonus: -1 });
+
+        expect(result?.bonus).toBe(-1);
+      });
+    });
+
+    describe('removeRacaBonusAtributo', () => {
+      it('deve fazer DELETE em /racas/{racaId}/bonus-atributos/{id}', () => {
+        service.removeRacaBonusAtributo(1, 30).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/racas/1/bonus-atributos/30`);
+        expect(req.request.method).toBe('DELETE');
+        req.flush(null);
+      });
+    });
+
+    describe('listRacaClassesPermitidas', () => {
+      it('deve fazer GET em /racas/{racaId}/classes-permitidas', () => {
+        service.listRacaClassesPermitidas(1).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/racas/1/classes-permitidas`);
+        expect(req.request.method).toBe('GET');
+        req.flush([racaClassePermitidaStub]);
+      });
+    });
+
+    describe('addRacaClassePermitida', () => {
+      it('deve enviar POST com classeId', () => {
+        const dto = { classeId: 7 };
+        service.addRacaClassePermitida(1, dto).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/racas/1/classes-permitidas`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(dto);
+        req.flush(racaClassePermitidaStub);
+      });
+    });
+
+    describe('removeRacaClassePermitida', () => {
+      it('deve fazer DELETE em /racas/{racaId}/classes-permitidas/{id}', () => {
+        service.removeRacaClassePermitida(1, 40).subscribe();
+
+        const req = httpMock.expectOne(`${CONFIG_URL}/racas/1/classes-permitidas/40`);
+        expect(req.request.method).toBe('DELETE');
+        req.flush(null);
+      });
     });
   });
 

@@ -74,7 +74,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
         [titulo]="'Raças'"
         [subtitulo]="'Configure as raças de personagem (Humano, Elfo, Anão, etc.)'"
         [labelNovo]="'Nova Raça'"
-        [items]="filteredItems()"
+        [items]="racasComInfo()"
         [loading]="loading()"
         [columns]="columns"
         [canReorder]="true"
@@ -214,6 +214,9 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
                         <span class="valor-numerico--sm" [class.text-green-400]="bonus.bonus > 0" [class.text-red-400]="bonus.bonus < 0">
                           {{ bonus.bonus > 0 ? '+' : '' }}{{ bonus.bonus }}
                         </span>
+                        @if (bonus.bonus < 0) {
+                          <span class="text-xs text-red-400">(penalidade)</span>
+                        }
                       </div>
                       <p-button
                         icon="pi pi-trash"
@@ -337,9 +340,10 @@ export class RacasConfigComponent extends BaseConfigComponent<
   protected bonusValor = signal(1);
 
   readonly columns: ConfigTableColumn[] = [
-    { field: 'ordemExibicao', header: 'Ordem', width: '5rem' },
-    { field: 'nome',          header: 'Nome' },
-    { field: 'descricao',     header: 'Descrição' },
+    { field: 'ordemExibicao',  header: 'Ordem',   width: '5rem' },
+    { field: 'nome',           header: 'Nome' },
+    { field: 'descricao',      header: 'Descrição' },
+    { field: 'restricaoLabel', header: 'Classes',  width: '10rem' },
   ];
 
   protected filteredItems = computed(() => {
@@ -351,6 +355,16 @@ export class RacasConfigComponent extends BaseConfigComponent<
         (r.descricao ?? '').toLowerCase().includes(q),
     );
   });
+
+  protected racasComInfo = computed(() =>
+    this.filteredItems().map((r) => ({
+      ...r,
+      restricaoLabel: r.classesPermitidas?.length
+        ? `${r.classesPermitidas.length} classe(s)`
+        : 'Sem restrições',
+      temRestricao: (r.classesPermitidas?.length ?? 0) > 0,
+    }))
+  );
 
   protected atributosDisponiveis = computed(() => {
     const ja = new Set((this.selectedRaca()?.bonusAtributos ?? []).map((b) => b.atributoConfigId));

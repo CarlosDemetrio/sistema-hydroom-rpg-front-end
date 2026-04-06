@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
@@ -29,6 +30,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
   selector: 'app-classes-config',
   standalone: true,
   imports: [
+    DecimalPipe,
     FormsModule,
     ReactiveFormsModule,
     ButtonModule,
@@ -212,6 +214,9 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
                     <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
                       <div class="flex flex-column gap-1">
                         <span class="font-semibold">{{ bonus.bonusNome }}</span>
+                        <span class="text-sm text-color-secondary">
+                          +{{ bonus.valorPorNivel | number:'1.0-2' }} por nível
+                        </span>
                         @if (getBonusFormula(bonus.bonusConfigId); as formula) {
                           <code class="text-xs text-color-secondary font-mono">{{ formula }}</code>
                         }
@@ -235,21 +240,40 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
               }
 
               <!-- Adicionar bônus -->
-              <div class="flex gap-2 mt-2">
+              <div class="flex flex-column gap-2 mt-2">
                 <p-select
                   [options]="bonusDisponiveis()"
                   [(ngModel)]="selectedBonusId"
                   optionLabel="nome"
                   optionValue="id"
                   placeholder="Selecione um bônus..."
-                  class="flex-1"
+                  class="w-full"
                 />
-                <p-button
-                  icon="pi pi-plus"
-                  label="Adicionar"
-                  [disabled]="!selectedBonusId()"
-                  (onClick)="addClasseBonus()"
-                />
+                <div class="flex gap-2 align-items-end">
+                  <div class="flex flex-column gap-1 flex-1">
+                    <label class="text-sm font-semibold">Valor por nível</label>
+                    <p-input-number
+                      [(ngModel)]="valorPorNivelInput"
+                      [showButtons]="true"
+                      [min]="0.01"
+                      [step]="0.01"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                      style="width: 100%"
+                    />
+                    @if (selectedBonusId() && valorPorNivelInput() > 0) {
+                      <small class="text-color-secondary">
+                        Exemplo no nível 5: +{{ (valorPorNivelInput() * 5) | number:'1.0-2' }}
+                      </small>
+                    }
+                  </div>
+                  <p-button
+                    icon="pi pi-plus"
+                    label="Adicionar"
+                    [disabled]="!selectedBonusId() || valorPorNivelInput() <= 0"
+                    (onClick)="addClasseBonus()"
+                  />
+                </div>
               </div>
             </div>
           </p-tabpanel>
@@ -263,7 +287,10 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
                 <div class="flex flex-column gap-2">
                   @for (apt of selectedClasse()!.aptidaoBonus; track apt.id) {
                     <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
-                      <span class="font-semibold">{{ apt.aptidaoNome }}</span>
+                      <div class="flex align-items-center gap-2">
+                        <span class="font-semibold">{{ apt.aptidaoNome }}</span>
+                        <span class="text-sm font-semibold text-green-400">+{{ apt.bonus }}</span>
+                      </div>
                       <p-button
                         icon="pi pi-trash"
                         [rounded]="true"
@@ -292,10 +319,18 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
                   placeholder="Selecione uma aptidão..."
                   class="flex-1"
                 />
+                <p-input-number
+                  [(ngModel)]="bonusAptidaoInput"
+                  [showButtons]="true"
+                  [min]="0"
+                  placeholder="Bônus"
+                  pTooltip="Bônus fixo (mín. 0)"
+                  style="width: 7rem"
+                />
                 <p-button
                   icon="pi pi-plus"
                   label="Adicionar"
-                  [disabled]="!selectedAptidaoId()"
+                  [disabled]="!selectedAptidaoId() || bonusAptidaoInput() < 0"
                   (onClick)="addClasseAptidaoBonus()"
                 />
               </div>
@@ -327,6 +362,8 @@ export class ClassesConfigComponent extends BaseConfigComponent<
   protected todasAptidoes = signal<AptidaoConfig[]>([]);
   protected selectedBonusId = signal<number | null>(null);
   protected selectedAptidaoId = signal<number | null>(null);
+  protected valorPorNivelInput = signal<number>(1.0);
+  protected bonusAptidaoInput = signal<number>(0);
 
   readonly columns: ConfigTableColumn[] = [
     { field: 'ordemExibicao', header: 'Ordem', width: '5rem' },
@@ -448,12 +485,14 @@ export class ClassesConfigComponent extends BaseConfigComponent<
   addClasseBonus(): void {
     const classeId = this.selectedClasse()?.id;
     const bonusId = this.selectedBonusId();
-    if (!classeId || !bonusId) return;
-    this.configApi.addClasseBonus(classeId, { bonusConfigId: bonusId })
+    const valorPorNivel = this.valorPorNivelInput();
+    if (!classeId || !bonusId || valorPorNivel <= 0) return;
+    this.configApi.addClasseBonus(classeId, { bonusConfigId: bonusId, valorPorNivel })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.selectedBonusId.set(null);
+          this.valorPorNivelInput.set(1.0);
           this.refreshSelectedClasse(classeId);
           this.toastService.success('Bônus adicionado à classe', 'Sucesso');
         },
@@ -476,12 +515,14 @@ export class ClassesConfigComponent extends BaseConfigComponent<
   addClasseAptidaoBonus(): void {
     const classeId = this.selectedClasse()?.id;
     const aptidaoId = this.selectedAptidaoId();
-    if (!classeId || !aptidaoId) return;
-    this.configApi.addClasseAptidaoBonus(classeId, { aptidaoConfigId: aptidaoId })
+    const bonus = this.bonusAptidaoInput();
+    if (!classeId || !aptidaoId || bonus < 0) return;
+    this.configApi.addClasseAptidaoBonus(classeId, { aptidaoConfigId: aptidaoId, bonus })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.selectedAptidaoId.set(null);
+          this.bonusAptidaoInput.set(0);
           this.refreshSelectedClasse(classeId);
           this.toastService.success('Aptidão adicionada à classe', 'Sucesso');
         },

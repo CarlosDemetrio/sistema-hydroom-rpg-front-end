@@ -7,9 +7,14 @@ import { TipoAptidao } from '@core/models/tipo-aptidao.model';
 import { VantagemConfig, CreateVantagemDto, UpdateVantagemDto } from '@core/models/vantagem-config.model';
 import { VantagemEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
 import {
+  PontosVantagemConfig,
   CategoriaVantagem,
+  ClasseBonusConfig,
+  ClasseAptidaoBonus,
   ClassePersonagem,
   Raca,
+  RacaBonusAtributo,
+  RacaClassePermitida,
   NivelConfig,
   DadoProspeccaoConfig,
   PresencaConfig,
@@ -189,24 +194,24 @@ export class ConfigApiService {
   }
 
   // Sub-recursos de Classe
-  listClasseBonus(classeId: number): Observable<unknown[]> {
-    return this.http.get<unknown[]>(`${this.configUrl}/classes/${classeId}/bonus`);
+  listClasseBonus(classeId: number): Observable<ClasseBonusConfig[]> {
+    return this.http.get<ClasseBonusConfig[]>(`${this.configUrl}/classes/${classeId}/bonus`);
   }
 
-  addClasseBonus(classeId: number, dto: { bonusConfigId: number }): Observable<unknown> {
-    return this.http.post<unknown>(`${this.configUrl}/classes/${classeId}/bonus`, dto);
+  addClasseBonus(classeId: number, dto: { bonusConfigId: number; valorPorNivel: number }): Observable<ClasseBonusConfig> {
+    return this.http.post<ClasseBonusConfig>(`${this.configUrl}/classes/${classeId}/bonus`, dto);
   }
 
   removeClasseBonus(classeId: number, bonusId: number): Observable<void> {
     return this.http.delete<void>(`${this.configUrl}/classes/${classeId}/bonus/${bonusId}`);
   }
 
-  listClasseAptidaoBonus(classeId: number): Observable<unknown[]> {
-    return this.http.get<unknown[]>(`${this.configUrl}/classes/${classeId}/aptidao-bonus`);
+  listClasseAptidaoBonus(classeId: number): Observable<ClasseAptidaoBonus[]> {
+    return this.http.get<ClasseAptidaoBonus[]>(`${this.configUrl}/classes/${classeId}/aptidao-bonus`);
   }
 
-  addClasseAptidaoBonus(classeId: number, dto: { aptidaoConfigId: number }): Observable<unknown> {
-    return this.http.post<unknown>(`${this.configUrl}/classes/${classeId}/aptidao-bonus`, dto);
+  addClasseAptidaoBonus(classeId: number, dto: { aptidaoConfigId: number; bonus: number }): Observable<ClasseAptidaoBonus> {
+    return this.http.post<ClasseAptidaoBonus>(`${this.configUrl}/classes/${classeId}/aptidao-bonus`, dto);
   }
 
   removeClasseAptidaoBonus(classeId: number, aptidaoBonusId: number): Observable<void> {
@@ -281,6 +286,30 @@ export class ConfigApiService {
     return this.http.delete<void>(`/api/jogos/${jogoId}/config/categorias-vantagem/${id}`);
   }
 
+  // ===== Pontos de Vantagem =====
+  // ATENÇÃO: URL diferente — sem /v1/ e com jogoId no path
+  // Base: /api/jogos/{jogoId}/config/pontos-vantagem
+
+  listPontosVantagem(jogoId: number): Observable<PontosVantagemConfig[]> {
+    return this.http.get<PontosVantagemConfig[]>(`/api/jogos/${jogoId}/config/pontos-vantagem`);
+  }
+
+  getPontosVantagem(jogoId: number, id: number): Observable<PontosVantagemConfig> {
+    return this.http.get<PontosVantagemConfig>(`/api/jogos/${jogoId}/config/pontos-vantagem/${id}`);
+  }
+
+  createPontosVantagem(jogoId: number, dto: { nivel: number; pontosGanhos: number }): Observable<PontosVantagemConfig> {
+    return this.http.post<PontosVantagemConfig>(`/api/jogos/${jogoId}/config/pontos-vantagem`, dto);
+  }
+
+  updatePontosVantagem(jogoId: number, id: number, dto: { nivel?: number; pontosGanhos?: number }): Observable<PontosVantagemConfig> {
+    return this.http.put<PontosVantagemConfig>(`/api/jogos/${jogoId}/config/pontos-vantagem/${id}`, dto);
+  }
+
+  deletePontosVantagem(jogoId: number, id: number): Observable<void> {
+    return this.http.delete<void>(`/api/jogos/${jogoId}/config/pontos-vantagem/${id}`);
+  }
+
   // ===== Raças =====
   // Base: /api/v1/configuracoes/racas
 
@@ -313,24 +342,24 @@ export class ConfigApiService {
   }
 
   // Sub-recursos de Raça
-  listRacaBonusAtributos(racaId: number): Observable<unknown[]> {
-    return this.http.get<unknown[]>(`${this.configUrl}/racas/${racaId}/bonus-atributos`);
+  listRacaBonusAtributos(racaId: number): Observable<RacaBonusAtributo[]> {
+    return this.http.get<RacaBonusAtributo[]>(`${this.configUrl}/racas/${racaId}/bonus-atributos`);
   }
 
-  addRacaBonusAtributo(racaId: number, dto: { atributoConfigId: number; bonus: number }): Observable<unknown> {
-    return this.http.post<unknown>(`${this.configUrl}/racas/${racaId}/bonus-atributos`, dto);
+  addRacaBonusAtributo(racaId: number, dto: { atributoConfigId: number; bonus: number }): Observable<RacaBonusAtributo> {
+    return this.http.post<RacaBonusAtributo>(`${this.configUrl}/racas/${racaId}/bonus-atributos`, dto);
   }
 
   removeRacaBonusAtributo(racaId: number, bonusAtributoId: number): Observable<void> {
     return this.http.delete<void>(`${this.configUrl}/racas/${racaId}/bonus-atributos/${bonusAtributoId}`);
   }
 
-  listRacaClassesPermitidas(racaId: number): Observable<unknown[]> {
-    return this.http.get<unknown[]>(`${this.configUrl}/racas/${racaId}/classes-permitidas`);
+  listRacaClassesPermitidas(racaId: number): Observable<RacaClassePermitida[]> {
+    return this.http.get<RacaClassePermitida[]>(`${this.configUrl}/racas/${racaId}/classes-permitidas`);
   }
 
-  addRacaClassePermitida(racaId: number, dto: { classeId: number }): Observable<unknown> {
-    return this.http.post<unknown>(`${this.configUrl}/racas/${racaId}/classes-permitidas`, dto);
+  addRacaClassePermitida(racaId: number, dto: { classeId: number }): Observable<RacaClassePermitida> {
+    return this.http.post<RacaClassePermitida>(`${this.configUrl}/racas/${racaId}/classes-permitidas`, dto);
   }
 
   removeRacaClassePermitida(racaId: number, classePermitidaId: number): Observable<void> {
