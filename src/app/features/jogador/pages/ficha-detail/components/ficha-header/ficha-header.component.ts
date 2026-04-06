@@ -115,7 +115,7 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
       </div>
 
       <!-- Action buttons -->
-      @if (podeEditar() || podeDeletar() || podeDuplicar() || mostrarBotaoVisibilidade()) {
+      @if (podeEditar() || podeDeletar() || podeDuplicar() || mostrarBotaoVisibilidade() || podeResetar()) {
         <div class="flex gap-2 mt-3 flex-wrap">
           @if (podeEditar()) {
             <p-button
@@ -135,6 +135,18 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
               size="small"
               [attr.aria-label]="'Duplicar ficha ' + ficha().nome"
               (onClick)="duplicarClick.emit()"
+            />
+          }
+          @if (podeResetar()) {
+            <p-button
+              label="Resetar Estado"
+              icon="pi pi-refresh"
+              text
+              severity="warn"
+              size="small"
+              [loading]="resetando()"
+              [attr.aria-label]="'Resetar estado de combate da ficha ' + ficha().nome"
+              (onClick)="resetarClick.emit()"
             />
           }
           @if (podeDeletar()) {
@@ -238,12 +250,18 @@ export class FichaHeaderComponent {
   podeDuplicar = input<boolean>(false);
   /** Quando true, exibe badge de visibilidade NPC (desktop) e botao para abrir drawer (mobile). */
   mostrarBotaoVisibilidade = input<boolean>(false);
+  /** Quando true, exibe o botao "Resetar Estado" (Mestre only). */
+  podeResetar = input<boolean>(false);
+  /** Indica que o reset esta em andamento (exibe loading no botao). */
+  resetando = input<boolean>(false);
 
   editarClick = output<void>();
   deletarClick = output<void>();
   duplicarClick = output<void>();
   /** Emitido ao clicar no botao visibilidade (mobile only). */
   visibilidadeClick = output<void>();
+  /** Emitido ao clicar em "Resetar Estado" (Mestre only). */
+  resetarClick = output<void>();
 
   /** Percentual de vida atual em relação ao total. Retorna 0 quando vidaTotal é zero (evita divisão por zero). */
   protected vidaPercent = computed<number>(() => {

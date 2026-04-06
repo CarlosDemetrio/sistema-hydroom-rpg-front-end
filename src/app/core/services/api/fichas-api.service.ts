@@ -275,6 +275,18 @@ export class FichasApiService {
     return this.http.post<DuplicarFichaResponse>(`${this.baseUrl}/fichas/${fichaId}/duplicar`, dto);
   }
 
+  // ==================== ESTADO DE COMBATE ====================
+
+  /**
+   * POST /api/v1/fichas/{id}/resetar-estado
+   * Reseta o estado de combate da ficha (apenas MESTRE):
+   * vidaAtual → vidaTotal, essenciaAtual → essenciaTotal, danoRecebido de todos os membros → 0.
+   * NÃO reseta: prospecção, atributos, aptidões, vantagens, XP, nível.
+   */
+  resetarEstado(fichaId: number): Observable<FichaResumo> {
+    return this.http.post<FichaResumo>(`${this.baseUrl}/fichas/${fichaId}/resetar-estado`, {});
+  }
+
   // ==================== ANOTACOES ====================
 
   /**

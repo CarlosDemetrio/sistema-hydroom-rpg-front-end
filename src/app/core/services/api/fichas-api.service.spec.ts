@@ -350,4 +350,44 @@ describe('FichasApiService', () => {
       req.flush([]);
     });
   });
+
+  // ============================================
+  // resetarEstado
+  // ============================================
+
+  describe('resetarEstado', () => {
+    it('deve fazer POST na URL correta com body vazio', () => {
+      service.resetarEstado(1).subscribe();
+
+      const req = httpMock.expectOne(`${BASE_URL}/fichas/1/resetar-estado`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({});
+      req.flush(fichaResumoStub);
+    });
+
+    it('deve retornar FichaResumo atualizado apos o reset', () => {
+      const resumoReset: FichaResumo = {
+        ...fichaResumoStub,
+        vidaAtual: fichaResumoStub.vidaTotal,
+        essenciaAtual: fichaResumoStub.essenciaTotal,
+      };
+
+      let resultado: FichaResumo | undefined;
+      service.resetarEstado(1).subscribe(r => (resultado = r));
+
+      const req = httpMock.expectOne(`${BASE_URL}/fichas/1/resetar-estado`);
+      req.flush(resumoReset);
+
+      expect(resultado?.vidaAtual).toBe(fichaResumoStub.vidaTotal);
+      expect(resultado?.essenciaAtual).toBe(fichaResumoStub.essenciaTotal);
+    });
+
+    it('deve usar fichaId corretamente na URL', () => {
+      service.resetarEstado(42).subscribe();
+
+      const req = httpMock.expectOne(`${BASE_URL}/fichas/42/resetar-estado`);
+      expect(req.request.method).toBe('POST');
+      req.flush(fichaResumoStub);
+    });
+  });
 });
