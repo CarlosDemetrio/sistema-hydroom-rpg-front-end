@@ -1,5 +1,5 @@
 /**
- * FichaDetailComponent — Spec (foco: mostrarPainelNpc e integracao com visibilidade)
+ * FichaDetailComponent — Spec (foco: mostrarPainelNpc, visibilidade e resetar estado)
  *
  * NOTA JIT (Armadilha 2): FichaDetailComponent importa multiplos filhos com input.required().
  * A abordagem correta é usar TestBed.overrideComponent() para substituir o template
@@ -13,6 +13,10 @@
  * 5. listarVisibilidade chamado ao carregar NPC com MESTRE
  * 6. listarVisibilidade NAO chamado para ficha normal
  * 7. onVisibilidadeAtualizada atualiza ficha()
+ * 8. podeResetar retorna true quando Mestre e ficha carregada
+ * 9. podeResetar retorna false quando Jogador
+ * 10. executarResetarEstado chama fichasApiService.resetarEstado com fichaId correto
+ * 11. executarResetarEstado atualiza signal resumo com resposta do backend
  */
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -23,6 +27,7 @@ import { ChangeDetectionStrategy, Component, NO_ERRORS_SCHEMA } from '@angular/c
 import { FichaDetailComponent } from './ficha-detail.component';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
 import { FichaVisibilidadeApiService } from '@core/services/api/ficha-visibilidade.api.service';
+import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
@@ -124,6 +129,13 @@ function criarVisibilidadeApiMock() {
   };
 }
 
+function criarFichasApiMock(resumoOverride?: Partial<FichaResumo>) {
+  const resumo = { ...criarResumo(), ...resumoOverride };
+  return {
+    resetarEstado: vi.fn().mockReturnValue(of(resumo)),
+  };
+}
+
 // ============================================================
 // Helper de render via TestBed.overrideComponent (fix NG0950 para Smart Components)
 // ============================================================
@@ -132,17 +144,21 @@ async function criarComponente(opts: {
   ficha?: Partial<Ficha>;
   isMestre?: boolean;
   fichaId?: string;
+  resumoReset?: Partial<FichaResumo>;
 } = {}) {
   const {
     ficha: fichaOverrides = {},
     isMestre = false,
     fichaId = '1',
+    resumoReset = {},
   } = opts;
 
   const ficha = criarFicha(fichaOverrides);
   const fichaService = criarFichaServiceMock(ficha);
   const authService = criarAuthServiceMock(isMestre);
   const visibilidadeApi = criarVisibilidadeApiMock();
+  const fichasApi = criarFichasApiMock(resumoReset);
+  const toastService = { success: vi.fn(), error: vi.fn() };
 
   // Template mínimo: sem filhos com input.required() para evitar NG0950
   TestBed.overrideComponent(FichaDetailComponent, {
@@ -160,9 +176,10 @@ async function criarComponente(opts: {
       MessageService,
       { provide: FichaBusinessService,       useValue: fichaService },
       { provide: FichaVisibilidadeApiService, useValue: visibilidadeApi },
+      { provide: FichasApiService,           useValue: fichasApi },
       { provide: ConfigApiService,           useValue: { listVantagens: vi.fn().mockReturnValue(of([])) } },
       { provide: AuthService,                useValue: authService },
-      { provide: ToastService,               useValue: { success: vi.fn(), error: vi.fn() } },
+      { provide: ToastService,               useValue: toastService },
       { provide: ActivatedRoute,             useValue: { snapshot: { params: { id: fichaId } } } },
     ],
     schemas: [NO_ERRORS_SCHEMA],
@@ -173,7 +190,7 @@ async function criarComponente(opts: {
   fixture.detectChanges();
   await fixture.whenStable();
 
-  return { fixture, component, fichaService, visibilidadeApi };
+  return { fixture, component, fichaService, visibilidadeApi, fichasApi, toastService };
 }
 
 // ============================================================
@@ -339,6 +356,117 @@ describe('FichaDetailComponent', () => {
 
       // Verifica que listarVisibilidade foi chamado (recarregamento pos-salvo)
       expect(visibilidadeApi.listarVisibilidade).toHaveBeenCalled();
+    });
+  });
+
+  // ----------------------------------------------------------
+  // podeResetar computed
+  // ----------------------------------------------------------
+
+  describe('podeResetar computed', () => {
+    it('retorna true quando Mestre e ficha carregada', async () => {
+      const { component } = await criarComponente({ isMestre: true });
+
+      const comp = component as unknown as {
+        podeResetar: () => boolean;
+        ficha: { set: (v: Ficha | null) => void };
+      };
+
+      comp.ficha.set(criarFicha());
+      expect(comp.podeResetar()).toBe(true);
+    });
+
+    it('retorna false quando Jogador mesmo com ficha carregada', async () => {
+      const { component } = await criarComponente({ isMestre: false });
+
+      const comp = component as unknown as {
+        podeResetar: () => boolean;
+        ficha: { set: (v: Ficha | null) => void };
+      };
+
+      comp.ficha.set(criarFicha());
+      expect(comp.podeResetar()).toBe(false);
+    });
+
+    it('retorna false quando Mestre mas ficha e null', async () => {
+      const { component } = await criarComponente({ isMestre: true });
+
+      const comp = component as unknown as {
+        podeResetar: () => boolean;
+        ficha: { set: (v: Ficha | null) => void };
+      };
+
+      comp.ficha.set(null);
+      expect(comp.podeResetar()).toBe(false);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // executarResetarEstado (via abrirConfirmacaoReset → accept)
+  // ----------------------------------------------------------
+
+  describe('resetarEstado', () => {
+    it('chama fichasApiService.resetarEstado com fichaId correto', async () => {
+      const { component, fichasApi } = await criarComponente({
+        isMestre: true,
+        fichaId: '7',
+      });
+
+      const comp = component as unknown as {
+        executarResetarEstado: () => void;
+        fichaId: () => number | null;
+      };
+
+      // Acesso direto ao metodo privado via cast
+      (component as unknown as { executarResetarEstado: () => void }).executarResetarEstado?.();
+
+      expect(fichasApi.resetarEstado).toHaveBeenCalledWith(7);
+    });
+
+    it('atualiza signal resumo com o retorno do backend apos reset', async () => {
+      const resumoReset = { vidaAtual: 80, vidaTotal: 80, essenciaAtual: 50, essenciaTotal: 50 };
+      const { component, fichasApi } = await criarComponente({
+        isMestre: true,
+        fichaId: '1',
+        resumoReset,
+      });
+
+      const comp = component as unknown as {
+        resumo: () => FichaResumo | null;
+        executarResetarEstado: () => void;
+      };
+
+      (component as unknown as { executarResetarEstado: () => void }).executarResetarEstado?.();
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      const resumo = comp.resumo();
+      expect(resumo?.vidaAtual).toBe(resumoReset.vidaAtual);
+      expect(resumo?.essenciaAtual).toBe(resumoReset.essenciaAtual);
+    });
+
+    it('exibe toast de sucesso apos reset bem-sucedido', async () => {
+      const { component, toastService } = await criarComponente({ isMestre: true });
+
+      (component as unknown as { executarResetarEstado: () => void }).executarResetarEstado?.();
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(toastService.success).toHaveBeenCalledWith('Estado de combate resetado com sucesso.');
+    });
+
+    it('exibe toast de erro quando reset falha', async () => {
+      const { component, fichasApi, toastService } = await criarComponente({ isMestre: true });
+
+      fichasApi.resetarEstado.mockReturnValue(
+        new (await import('rxjs')).Observable(obs => obs.error(new Error('500')))
+      );
+
+      (component as unknown as { executarResetarEstado: () => void }).executarResetarEstado?.();
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(toastService.error).toHaveBeenCalledWith('Erro ao resetar estado de combate.');
     });
   });
 });

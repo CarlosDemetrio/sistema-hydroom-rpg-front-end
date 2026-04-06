@@ -34,6 +34,7 @@ import {
 import { VantagemConfig } from '@models/vantagem-config.model';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
 import { FichaVisibilidadeApiService } from '@core/services/api/ficha-visibilidade.api.service';
+import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
@@ -45,6 +46,7 @@ import { FichaHeaderComponent } from './components/ficha-header/ficha-header.com
 import { FichaResumoTabComponent } from './components/ficha-resumo-tab/ficha-resumo-tab.component';
 import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/ficha-vantagens-tab.component';
 import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visibilidade.component';
+import { ProspeccaoComponent } from './components/prospeccao/prospeccao.component';
 
 @Component({
   selector: 'app-ficha-detail',
@@ -73,6 +75,7 @@ import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visi
     FichaResumoTabComponent,
     FichaVantagensTabComponent,
     NpcVisibilidadeComponent,
+    ProspeccaoComponent,
   ],
   template: `
     <p-toast />
@@ -130,10 +133,13 @@ import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visi
           [podeDeletar]="podeDeletar()"
           [podeDuplicar]="podeDuplicar()"
           [mostrarBotaoVisibilidade]="mostrarPainelNpc()"
+          [podeResetar]="podeResetar()"
+          [resetando]="resetando()"
           (editarClick)="irParaEdicao()"
           (deletarClick)="abrirConfirmacaoDeletar()"
           (duplicarClick)="showDuplicarDialog.set(true)"
           (visibilidadeClick)="drawerVisibilidadeAberto.set(true)"
+          (resetarClick)="abrirConfirmacaoReset()"
         />
       </div>
 
@@ -159,6 +165,9 @@ import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visi
                 </p-tab>
                 <p-tab [value]="4">
                   <i class="pi pi-pencil mr-2"></i>Anotacoes
+                </p-tab>
+                <p-tab [value]="5">
+                  <i class="pi pi-dice mr-2"></i>Prospecção
                 </p-tab>
               </p-tablist>
 
@@ -227,6 +236,16 @@ import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visi
                       [fichaId]="fichaId()!"
                       [userRole]="userRole()"
                       [userId]="userIdNumber()"
+                    />
+                  }
+                </p-tabpanel>
+
+                <!-- Aba 5: Prospecção -->
+                <p-tabpanel [value]="5">
+                  @if (fichaId() && ficha()) {
+                    <app-prospeccao
+                      [fichaId]="fichaId()!"
+                      [jogoId]="ficha()!.jogoId"
                     />
                   }
                 </p-tabpanel>
@@ -331,6 +350,7 @@ export class FichaDetailComponent implements OnInit {
   private router = inject(Router);
   private fichaBusinessService = inject(FichaBusinessService);
   private fichaVisibilidadeApiService = inject(FichaVisibilidadeApiService);
+  private fichasApiService = inject(FichasApiService);
   private configApiService = inject(ConfigApiService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
@@ -369,6 +389,7 @@ export class FichaDetailComponent implements OnInit {
   protected showDuplicarDialog = signal(false);
   protected novoNomeDuplicar = signal('');
   protected duplicando = signal(false);
+  protected resetando = signal(false);
 
   // Auth shortcuts
   protected userInfo = computed(() => this.authService.currentUser());
@@ -401,6 +422,9 @@ export class FichaDetailComponent implements OnInit {
     const f = this.ficha();
     return !!(f?.isNpc && this.isMestre());
   });
+
+  /** Exibe o botao "Resetar Estado" apenas para o Mestre quando há ficha carregada. */
+  protected podeResetar = computed(() => this.isMestre() && this.ficha() !== null);
 
   constructor() {
     effect(() => {
@@ -634,6 +658,36 @@ export class FichaDetailComponent implements OnInit {
       acceptLabel: 'Sim, deletar',
       rejectLabel: 'Cancelar',
       accept: () => this.deletarFicha(),
+    });
+  }
+
+  protected abrirConfirmacaoReset(): void {
+    this.confirmationService.confirm({
+      message: 'Isso restaurara vida, essencia e dano dos membros ao estado base. Esta acao nao pode ser desfeita.',
+      header: 'Resetar Estado de Combate',
+      icon: 'pi pi-refresh',
+      acceptButtonStyleClass: 'p-button-warning',
+      acceptLabel: 'Sim, resetar',
+      rejectLabel: 'Cancelar',
+      accept: () => this.executarResetarEstado(),
+    });
+  }
+
+  protected executarResetarEstado(): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) return;
+
+    this.resetando.set(true);
+    this.fichasApiService.resetarEstado(fichaId).subscribe({
+      next: (novoResumo) => {
+        this.resumo.set(novoResumo);
+        this.resetando.set(false);
+        this.toastService.success('Estado de combate resetado com sucesso.');
+      },
+      error: () => {
+        this.toastService.error('Erro ao resetar estado de combate.');
+        this.resetando.set(false);
+      },
     });
   }
 

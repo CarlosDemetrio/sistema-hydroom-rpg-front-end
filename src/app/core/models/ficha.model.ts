@@ -220,3 +220,42 @@ export interface FichaAptidaoResponse {
   /** Total calculado pelo backend: base + sorte + classe */
   total: number;
 }
+
+// ==================== PROSPECÇÃO ====================
+
+/**
+ * Status de um uso de prospecção.
+ * Alinhado com backend ProspeccaoUsoStatus enum.
+ */
+export type ProspeccaoUsoStatus = 'PENDENTE' | 'CONFIRMADO' | 'REVERTIDO';
+
+/**
+ * Resposta de um uso de dado de prospecção.
+ * Alinhado com backend ProspeccaoUsoResponse record.
+ */
+export interface ProspeccaoUsoResponse {
+  usoId: number;
+  dadoNome: string;
+  dadoProspeccaoConfigId: number;
+  fichaId: number;
+  personagemNome: string;
+  status: ProspeccaoUsoStatus;
+  criadoEm: string;
+}
+
+/**
+ * Request para conceder dados de prospecção a uma ficha (Mestre only).
+ * Alinhado com backend ConcederProspeccaoRequest record.
+ */
+export interface ConcederProspeccaoRequest {
+  dadoProspeccaoConfigId: number;
+  quantidade: number;
+}
+
+/**
+ * Request para registrar uso de dado de prospecção.
+ * Alinhado com backend UsarProspeccaoRequest record.
+ */
+export interface UsarProspeccaoRequest {
+  dadoProspeccaoConfigId: number;
+}
