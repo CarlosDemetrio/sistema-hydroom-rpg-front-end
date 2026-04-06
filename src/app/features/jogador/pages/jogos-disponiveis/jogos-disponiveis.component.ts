@@ -14,9 +14,12 @@ import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { JogosApiService } from '@core/services/api/jogos-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
+import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
 import { JogoResumo } from '@core/models/jogo.model';
+import { StatusParticipante } from '@core/models/participante.model';
 import { ToastService } from '@services/toast.service';
 
 @Component({
@@ -31,6 +34,7 @@ import { ToastService } from '@services/toast.service';
     SkeletonModule,
     TagModule,
     ToastModule,
+    TooltipModule,
   ],
   template: `
     <p-toast />
@@ -119,29 +123,67 @@ import { ToastService } from '@services/toast.service';
 
                 <!-- Ações -->
                 <div class="flex items-center justify-between mt-2 pt-3 border-t border-surface-200">
-                  @if (jogoAtivo()?.id === jogo.id) {
-                    <p-tag severity="success" icon="pi pi-check" value="Jogo atual" />
+                  <!-- Badge de status de participação -->
+                  @if (jogo.meuRole === 'JOGADOR') {
+                    @switch (getMeuStatus(jogo.id)) {
+                      @case ('PENDENTE') {
+                        <p-tag severity="warn" icon="pi pi-clock" value="Aguardando aprovação"
+                          [pTooltip]="'Sua solicitação está aguardando o Mestre'" />
+                      }
+                      @case ('APROVADO') {
+                        @if (jogoAtivo()?.id === jogo.id) {
+                          <p-tag severity="success" icon="pi pi-check" value="Jogo atual" />
+                        } @else {
+                          <p-tag severity="success" icon="pi pi-check" value="Aprovado" />
+                        }
+                      }
+                      @case ('REJEITADO') {
+                        <p-tag severity="danger" icon="pi pi-times" value="Solicitação rejeitada"
+                          [pTooltip]="'Você pode re-solicitar entrada'" />
+                      }
+                      @case ('BANIDO') {
+                        <p-tag severity="secondary" icon="pi pi-ban" value="Banido"
+                          [pTooltip]="'O Mestre te baniu deste jogo'" />
+                      }
+                      @default {
+                        <p-skeleton width="80px" height="1.75rem" borderRadius="16px" />
+                      }
+                    }
                   } @else {
-                    <p-tag [severity]="roleSeverity(jogo.meuRole)" [value]="roleLabel(jogo.meuRole)" />
+                    <!-- MESTRE -->
+                    <p-tag severity="warn" icon="pi pi-crown" value="Mestre" />
                   }
 
+                  <!-- Botões de ação -->
                   <div class="flex gap-2">
-                    @if (jogo.meuRole === 'JOGADOR' && jogo.ativo) {
+                    @if (podeEntrar(jogo)) {
+                      <p-button label="Entrar" icon="pi pi-play" size="small"
+                        (onClick)="selecionarJogo(jogo)" />
+                    }
+                    @if (podeSolicitar(jogo)) {
                       <p-button
-                        label="Entrar"
-                        icon="pi pi-play"
+                        label="Solicitar Entrada"
+                        icon="pi pi-send"
                         size="small"
-                        (onClick)="selecionarJogo(jogo)"
+                        [outlined]="true"
+                        severity="info"
+                        [loading]="solicitandoJogo() === jogo.id"
+                        (onClick)="solicitarEntrada(jogo)"
+                      />
+                    }
+                    @if (podeCancelar(jogo)) {
+                      <p-button
+                        label="Cancelar"
+                        icon="pi pi-times"
+                        size="small"
+                        [outlined]="true"
+                        severity="warn"
+                        (onClick)="cancelarSolicitacao(jogo)"
                       />
                     }
                     @if (jogo.meuRole === 'MESTRE') {
-                      <p-button
-                        label="Gerenciar"
-                        icon="pi pi-cog"
-                        size="small"
-                        outlined
-                        (onClick)="irParaJogo(jogo)"
-                      />
+                      <p-button label="Gerenciar" icon="pi pi-cog" size="small" outlined
+                        (onClick)="irParaJogo(jogo)" />
                     }
                   </div>
                 </div>
@@ -161,12 +203,15 @@ import { ToastService } from '@services/toast.service';
 export class JogosDisponiveisComponent implements OnInit {
   private jogosApi = inject(JogosApiService);
   private currentGameService = inject(CurrentGameService);
+  private participanteService = inject(ParticipanteBusinessService);
   private toastService = inject(ToastService);
   private router = inject(Router);
 
   protected jogos = signal<JogoResumo[]>([]);
   protected loading = signal(true);
   protected erro = signal<string | null>(null);
+  protected statusPorJogo = signal<Map<number, StatusParticipante | null>>(new Map());
+  protected solicitandoJogo = signal<number | null>(null);
 
   protected jogoAtivo = computed(() => this.currentGameService.currentGame());
 
@@ -182,11 +227,87 @@ export class JogosDisponiveisComponent implements OnInit {
       next: (jogos) => {
         this.jogos.set(jogos);
         this.loading.set(false);
+        this.carregarStatusParticipacao(jogos);
       },
       error: () => {
         this.erro.set('Não foi possível carregar os jogos. Verifique sua conexão.');
         this.loading.set(false);
       },
+    });
+  }
+
+  private carregarStatusParticipacao(jogos: JogoResumo[]): void {
+    jogos
+      .filter(j => j.meuRole === 'JOGADOR')
+      .forEach(j => {
+        this.participanteService.meuStatus(j.id).subscribe({
+          next: (participante) => {
+            this.statusPorJogo.update(map => {
+              const novoMap = new Map(map);
+              novoMap.set(j.id, participante?.status ?? null);
+              return novoMap;
+            });
+          },
+          error: () => {
+            // 404 = sem participação. Tratar como null.
+            this.statusPorJogo.update(map => {
+              const novoMap = new Map(map);
+              novoMap.set(j.id, null);
+              return novoMap;
+            });
+          },
+        });
+      });
+  }
+
+  protected getMeuStatus(jogoId: number): StatusParticipante | null {
+    return this.statusPorJogo().get(jogoId) ?? null;
+  }
+
+  protected podeEntrar(jogo: JogoResumo): boolean {
+    return jogo.meuRole === 'JOGADOR' && jogo.ativo && this.getMeuStatus(jogo.id) === 'APROVADO';
+  }
+
+  protected podeSolicitar(jogo: JogoResumo): boolean {
+    const status = this.getMeuStatus(jogo.id);
+    return jogo.meuRole === 'JOGADOR' && jogo.ativo && (status === null || status === 'REJEITADO');
+  }
+
+  protected podeCancelar(jogo: JogoResumo): boolean {
+    return jogo.meuRole === 'JOGADOR' && this.getMeuStatus(jogo.id) === 'PENDENTE';
+  }
+
+  protected solicitarEntrada(jogo: JogoResumo): void {
+    this.solicitandoJogo.set(jogo.id);
+    this.participanteService.solicitarParticipacao(jogo.id).subscribe({
+      next: () => {
+        this.statusPorJogo.update(map => {
+          const novoMap = new Map(map);
+          novoMap.set(jogo.id, 'PENDENTE');
+          return novoMap;
+        });
+        this.toastService.success('Solicitação enviada! Aguarde a aprovação do Mestre.');
+        this.solicitandoJogo.set(null);
+      },
+      error: (err: { error?: { message?: string } }) => {
+        const msg = err?.error?.message ?? 'Erro ao solicitar entrada';
+        this.toastService.error(msg);
+        this.solicitandoJogo.set(null);
+      },
+    });
+  }
+
+  protected cancelarSolicitacao(jogo: JogoResumo): void {
+    this.participanteService.cancelarSolicitacao(jogo.id).subscribe({
+      next: () => {
+        this.statusPorJogo.update(map => {
+          const novoMap = new Map(map);
+          novoMap.set(jogo.id, null);
+          return novoMap;
+        });
+        this.toastService.success('Solicitação cancelada.');
+      },
+      error: () => this.toastService.error('Erro ao cancelar solicitação'),
     });
   }
 
@@ -198,13 +319,5 @@ export class JogosDisponiveisComponent implements OnInit {
 
   protected irParaJogo(jogo: JogoResumo): void {
     this.router.navigate(['/mestre/jogos', jogo.id]);
-  }
-
-  protected roleSeverity(role: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
-    return role === 'MESTRE' ? 'warn' : 'info';
-  }
-
-  protected roleLabel(role: string): string {
-    return role === 'MESTRE' ? 'Mestre' : 'Jogador';
   }
 }
