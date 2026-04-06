@@ -25,7 +25,7 @@ import {
 import { VantagemConfig, CategoriaVantagem } from '@core/models';
 import { AtributoConfig } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
-import { BonusConfig, MembroCorpoConfig } from '@core/models/config.models';
+import { BonusConfig, DadoProspeccaoConfig, MembroCorpoConfig } from '@core/models/config.models';
 import { VantagemEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
 import { VantagemConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
@@ -409,6 +409,7 @@ import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
                       [aptidoesDisponiveis]="aptidoesConfig()"
                       [bonusDisponiveis]="bonusConfig()"
                       [membrosDisponiveis]="membrosConfig()"
+                      [dadosDisponiveis]="dadosConfig()"
                       (efeitoSalvo)="onEfeitoSalvo($event)"
                       (cancelar)="mostrarFormAdicionarEfeito.set(false)"
                     />
@@ -461,6 +462,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
   protected aptidoesConfig   = signal<AptidaoConfig[]>([]);
   protected bonusConfig      = signal<BonusConfig[]>([]);
   protected membrosConfig    = signal<MembroCorpoConfig[]>([]);
+  protected dadosConfig      = signal<DadoProspeccaoConfig[]>([]);
 
   readonly columns: ConfigTableColumn[] = [
     { field: 'ordemExibicao',  header: 'Ordem', width: '5rem' },
@@ -526,6 +528,10 @@ export class VantagensConfigComponent extends BaseConfigComponent<
       this.configApi.listMembrosCorpo(jogoId)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({ next: (m) => this.membrosConfig.set(m) });
+
+      this.configApi.listDadosProspeccao(jogoId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (d) => this.dadosConfig.set(d) });
     }
   }
 

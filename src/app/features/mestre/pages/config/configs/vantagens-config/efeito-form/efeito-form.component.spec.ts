@@ -18,7 +18,7 @@ import { vi } from 'vitest';
 import { EfeitoFormComponent } from './efeito-form.component';
 import { AtributoConfig } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
-import { BonusConfig, MembroCorpoConfig } from '@core/models/config.models';
+import { BonusConfig, DadoProspeccaoConfig, MembroCorpoConfig } from '@core/models/config.models';
 import { TipoEfeito } from '@core/models/vantagem-efeito.model';
 
 // ============================================================
@@ -88,6 +88,14 @@ const membroMock: MembroCorpoConfig = {
   dataUltimaAtualizacao: '2024-06-01T00:00:00',
 };
 
+const dadosMock: DadoProspeccaoConfig[] = [
+  { id: 10, jogoId: 10, nome: 'd4',  descricao: null, numeroFaces: 4,  ordemExibicao: 1, dataCriacao: '2024-01-01T00:00:00', dataUltimaAtualizacao: '2024-06-01T00:00:00' },
+  { id: 11, jogoId: 10, nome: 'd6',  descricao: null, numeroFaces: 6,  ordemExibicao: 2, dataCriacao: '2024-01-01T00:00:00', dataUltimaAtualizacao: '2024-06-01T00:00:00' },
+  { id: 12, jogoId: 10, nome: 'd8',  descricao: null, numeroFaces: 8,  ordemExibicao: 3, dataCriacao: '2024-01-01T00:00:00', dataUltimaAtualizacao: '2024-06-01T00:00:00' },
+  { id: 13, jogoId: 10, nome: 'd10', descricao: null, numeroFaces: 10, ordemExibicao: 4, dataCriacao: '2024-01-01T00:00:00', dataUltimaAtualizacao: '2024-06-01T00:00:00' },
+  { id: 14, jogoId: 10, nome: 'd12', descricao: null, numeroFaces: 12, ordemExibicao: 5, dataCriacao: '2024-01-01T00:00:00', dataUltimaAtualizacao: '2024-06-01T00:00:00' },
+];
+
 // ============================================================
 // Helper de render
 // ============================================================
@@ -98,6 +106,7 @@ async function renderEfeitoForm(opcoes: {
   aptidoes?: AptidaoConfig[];
   bonus?: BonusConfig[];
   membros?: MembroCorpoConfig[];
+  dados?: DadoProspeccaoConfig[];
 } = {}) {
   const result = await render(EfeitoFormComponent, {
     detectChangesOnRender: false,
@@ -112,6 +121,7 @@ async function renderEfeitoForm(opcoes: {
   setSignalInput(comp, 'aptidoesDisponiveis', opcoes.aptidoes ?? [aptidaoMock]);
   setSignalInput(comp, 'bonusDisponiveis', opcoes.bonus ?? [bonusMock]);
   setSignalInput(comp, 'membrosDisponiveis', opcoes.membros ?? [membroMock]);
+  setSignalInput(comp, 'dadosDisponiveis', opcoes.dados ?? []);
 
   result.fixture.detectChanges();
   await result.fixture.whenStable();
@@ -570,6 +580,75 @@ describe('EfeitoFormComponent', () => {
       const comp = fixture.componentInstance;
 
       expect(comp.descricaoTipoAtual()).toBe('');
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 7. DADO_UP — preview visual de progressão de dado
+  // ----------------------------------------------------------
+
+  describe('DADO_UP — preview de progressão de dado', () => {
+    it('deve ativar isDadoUp e ter dadosDisponiveis quando dados são fornecidos', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: dadosMock });
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'DADO_UP');
+      fixture.detectChanges();
+
+      expect(comp.isDadoUp()).toBe(true);
+      expect(comp.dadosDisponiveis().length).toBe(5);
+    });
+
+    it('deve retornar null para dadoResultantePreview quando nenhum dado base está selecionado', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: dadosMock });
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'DADO_UP');
+      comp.dadoBasePreviewId.set(null);
+      fixture.detectChanges();
+
+      expect(comp.dadoResultantePreview()).toBeNull();
+    });
+
+    it('deve calcular dadoResultantePreview: d4 (idx=0) + nível 2 → d8 (idx=2)', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: dadosMock, nivelMaximo: 5 });
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'DADO_UP');
+      comp.dadoBasePreviewId.set(10); // d4, idx=0
+      comp.nivelPreview.set(2);
+      fixture.detectChanges();
+
+      const resultado = comp.dadoResultantePreview();
+      expect(resultado).not.toBeNull();
+      expect(resultado!.id).toBe(12);   // d8
+      expect(resultado!.nome).toBe('d8');
+    });
+
+    it('deve retornar o último dado quando nível ultrapassa o máximo disponível', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: dadosMock, nivelMaximo: 10 });
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'DADO_UP');
+      comp.dadoBasePreviewId.set(13); // d10, idx=3
+      comp.nivelPreview.set(10);      // idx = min(3+10, 4) = 4 → d12
+      fixture.detectChanges();
+
+      const resultado = comp.dadoResultantePreview();
+      expect(resultado).not.toBeNull();
+      expect(resultado!.nome).toBe('d12'); // último da lista
+    });
+
+    it('deve retornar null para dadoResultantePreview quando dadosDisponiveis está vazio', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: [] });
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'DADO_UP');
+      comp.dadoBasePreviewId.set(10);
+      comp.nivelPreview.set(1);
+      fixture.detectChanges();
+
+      expect(comp.dadoResultantePreview()).toBeNull();
     });
   });
 });
