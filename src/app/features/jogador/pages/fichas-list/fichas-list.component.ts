@@ -203,8 +203,34 @@ import { Ficha } from '@core/models';
                         [attr.aria-label]="'Continuar criando ' + ficha.nome"
                       />
                     }
+                    <!-- Badge NPC: Aliado (acesso granular concedido) -->
+                    @if (ficha.isNpc && ficha.jogadorTemAcessoStats === true) {
+                      <p-tag
+                        value="Aliado"
+                        severity="success"
+                        icon="pi pi-check-circle"
+                        [rounded]="true"
+                        pTooltip="Voce tem acesso aos stats deste NPC"
+                        tooltipPosition="top"
+                        [attr.aria-label]="'NPC aliado: ' + ficha.nome + ' — voce pode ver os stats'"
+                      />
+                    }
+                    <!-- Badge NPC: stats ocultados (sem acesso granular) -->
+                    @if (ficha.isNpc && ficha.jogadorTemAcessoStats === false) {
+                      <span
+                        class="flex align-items-center gap-1 text-sm text-color-secondary"
+                        [attr.aria-label]="'Estatisticas de ' + ficha.nome + ' ocultadas pelo Mestre'"
+                        pTooltip="O Mestre nao revelou os stats deste NPC"
+                        tooltipPosition="top"
+                      >
+                        <i class="pi pi-lock" aria-hidden="true"></i>
+                        Estatisticas ocultadas
+                      </span>
+                    }
                   </div>
-                  @if (ficha.nivel != null) {
+                  @if (ficha.isNpc) {
+                    <p-tag value="NPC" severity="warn" />
+                  } @else if (ficha.nivel != null) {
                     <p-tag
                       [value]="'Nv. ' + ficha.nivel"
                       severity="info"
@@ -240,14 +266,29 @@ import { Ficha } from '@core/models';
                 <!-- Divisor -->
                 <div class="border-top-1 surface-border mt-auto pt-3">
                   <div class="flex gap-2" (click)="$event.stopPropagation()">
-                    <p-button
-                      label="Ver Ficha"
-                      icon="pi pi-eye"
-                      [outlined]="true"
-                      size="small"
-                      class="flex-1"
-                      (onClick)="verFicha(ficha.id!)"
-                    />
+                    <!-- NPC com stats revelados: "Ver Ficha Completa" -->
+                    @if (ficha.isNpc && ficha.jogadorTemAcessoStats === true) {
+                      <p-button
+                        label="Ver Ficha Completa"
+                        icon="pi pi-eye"
+                        [outlined]="true"
+                        size="small"
+                        class="flex-1"
+                        [attr.aria-label]="'Ver ficha completa de ' + ficha.nome"
+                        (onClick)="verFicha(ficha.id!)"
+                      />
+                    }
+                    <!-- NPC sem acesso: apenas nome/info básica visível -->
+                    @else if (!ficha.isNpc) {
+                      <p-button
+                        label="Ver Ficha"
+                        icon="pi pi-eye"
+                        [outlined]="true"
+                        size="small"
+                        class="flex-1"
+                        (onClick)="verFicha(ficha.id!)"
+                      />
+                    }
                     <p-button
                       label="Editar"
                       icon="pi pi-pencil"

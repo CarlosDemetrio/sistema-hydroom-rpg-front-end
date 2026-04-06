@@ -15,6 +15,7 @@ import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -27,9 +28,12 @@ import {
   FichaAtributoResponse,
   FichaResumo,
   FichaVantagemResponse,
+  JogadorAcessoItem,
+  NpcVisibilidadeUpdate,
 } from '@models/ficha.model';
 import { VantagemConfig } from '@models/vantagem-config.model';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { FichaVisibilidadeApiService } from '@core/services/api/ficha-visibilidade.api.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
@@ -40,6 +44,7 @@ import { FichaAtributosTabComponent } from './components/ficha-atributos-tab/fic
 import { FichaHeaderComponent } from './components/ficha-header/ficha-header.component';
 import { FichaResumoTabComponent } from './components/ficha-resumo-tab/ficha-resumo-tab.component';
 import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/ficha-vantagens-tab.component';
+import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visibilidade.component';
 
 @Component({
   selector: 'app-ficha-detail',
@@ -54,6 +59,7 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
     ConfirmDialogModule,
     DialogModule,
     DividerModule,
+    DrawerModule,
     InputTextModule,
     MessageModule,
     SkeletonModule,
@@ -66,6 +72,7 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
     FichaHeaderComponent,
     FichaResumoTabComponent,
     FichaVantagensTabComponent,
+    NpcVisibilidadeComponent,
   ],
   template: `
     <p-toast />
@@ -122,104 +129,147 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
           [podeEditar]="podeEditar()"
           [podeDeletar]="podeDeletar()"
           [podeDuplicar]="podeDuplicar()"
+          [mostrarBotaoVisibilidade]="mostrarPainelNpc()"
           (editarClick)="irParaEdicao()"
           (deletarClick)="abrirConfirmacaoDeletar()"
           (duplicarClick)="showDuplicarDialog.set(true)"
+          (visibilidadeClick)="drawerVisibilidadeAberto.set(true)"
         />
       </div>
 
-      <!-- Abas -->
-      <div class="p-3">
-        <p-tabs [value]="abaAtiva()" scrollable (valueChange)="onTabChange($event ?? 0)">
-          <p-tablist>
-            <p-tab [value]="0">
-              <i class="pi pi-chart-bar mr-2"></i>Resumo
-            </p-tab>
-            <p-tab [value]="1">
-              <i class="pi pi-sliders-h mr-2"></i>Atributos
-            </p-tab>
-            <p-tab [value]="2">
-              <i class="pi pi-list mr-2"></i>Aptidoes
-            </p-tab>
-            <p-tab [value]="3">
-              <i class="pi pi-star mr-2"></i>Vantagens
-            </p-tab>
-            <p-tab [value]="4">
-              <i class="pi pi-pencil mr-2"></i>Anotacoes
-            </p-tab>
-          </p-tablist>
+      <!-- Layout: 2 colunas em desktop quando NPC + MESTRE, coluna única caso contrário -->
+      <div [class]="mostrarPainelNpc() ? 'lg:grid lg:grid-cols-3 lg:gap-4' : ''">
 
-          <p-tabpanels>
-            <!-- Aba 0: Resumo -->
-            <p-tabpanel [value]="0">
-              <app-ficha-resumo-tab
-                [atributos]="atributos()"
-                [resumo]="resumo()!"
+        <!-- Coluna principal: Abas -->
+        <div [class]="mostrarPainelNpc() ? 'lg:col-span-2' : ''">
+          <div class="p-3">
+            <p-tabs [value]="abaAtiva()" scrollable (valueChange)="onTabChange($event ?? 0)">
+              <p-tablist>
+                <p-tab [value]="0">
+                  <i class="pi pi-chart-bar mr-2"></i>Resumo
+                </p-tab>
+                <p-tab [value]="1">
+                  <i class="pi pi-sliders-h mr-2"></i>Atributos
+                </p-tab>
+                <p-tab [value]="2">
+                  <i class="pi pi-list mr-2"></i>Aptidoes
+                </p-tab>
+                <p-tab [value]="3">
+                  <i class="pi pi-star mr-2"></i>Vantagens
+                </p-tab>
+                <p-tab [value]="4">
+                  <i class="pi pi-pencil mr-2"></i>Anotacoes
+                </p-tab>
+              </p-tablist>
+
+              <p-tabpanels>
+                <!-- Aba 0: Resumo -->
+                <p-tabpanel [value]="0">
+                  <app-ficha-resumo-tab
+                    [atributos]="atributos()"
+                    [resumo]="resumo()!"
+                  />
+                </p-tabpanel>
+
+                <!-- Aba 1: Atributos -->
+                <p-tabpanel [value]="1">
+                  @if (loadingAtributos()) {
+                    <div class="p-3">
+                      <p-skeleton height="2rem" class="mb-3" />
+                      @for (_ of [1, 2, 3, 4]; track $index) {
+                        <p-skeleton height="2.5rem" class="mb-1" />
+                      }
+                    </div>
+                  } @else {
+                    <app-ficha-atributos-tab [atributos]="atributos()" />
+                  }
+                </p-tabpanel>
+
+                <!-- Aba 2: Aptidoes -->
+                <p-tabpanel [value]="2">
+                  @if (loadingAptidoes()) {
+                    <div class="p-3">
+                      @for (_ of [1, 2, 3, 4]; track $index) {
+                        <p-skeleton height="2.5rem" class="mb-1" />
+                      }
+                    </div>
+                  } @else {
+                    <app-ficha-aptidoes-tab [aptidoes]="aptidoes()" />
+                  }
+                </p-tabpanel>
+
+                <!-- Aba 3: Vantagens -->
+                <p-tabpanel [value]="3">
+                  @if (loadingVantagens()) {
+                    <div class="p-3 flex flex-col gap-3">
+                      @for (_ of [1, 2, 3]; track $index) {
+                        <p-skeleton height="5rem" borderRadius="8px" />
+                      }
+                    </div>
+                  } @else {
+                    <app-ficha-vantagens-tab
+                      [vantagens]="vantagens()"
+                      [pontosVantagemRestantes]="resumo()!.pontosVantagemDisponiveis ?? 0"
+                      [podeAumentarNivel]="podeEditar()"
+                      [isMestre]="isMestre()"
+                      [vantagensInsolitusConfig]="vantagensInsolitusConfig()"
+                      (aumentarNivelVantagem)="onAumentarNivelVantagem($event)"
+                      (revogarVantagem)="onRevogarVantagem($event)"
+                      (concederInsolitusConfirmado)="onConcederInsolitus($event)"
+                    />
+                  }
+                </p-tabpanel>
+
+                <!-- Aba 4: Anotacoes -->
+                <p-tabpanel [value]="4">
+                  @if (userInfo()) {
+                    <app-ficha-anotacoes-tab
+                      [fichaId]="fichaId()!"
+                      [userRole]="userRole()"
+                      [userId]="userIdNumber()"
+                    />
+                  }
+                </p-tabpanel>
+              </p-tabpanels>
+            </p-tabs>
+          </div>
+        </div>
+
+        <!-- Coluna lateral: Painel de Visibilidade NPC (desktop lg+) -->
+        @if (mostrarPainelNpc()) {
+          <div class="hidden lg:block p-3">
+            <div class="surface-card border-round p-4 border-1 surface-border">
+              <app-npc-visibilidade
+                [fichaId]="fichaId()!"
+                [jogoId]="ficha()!.jogoId"
+                [visivelGlobalmente]="ficha()!.visivelGlobalmente ?? false"
+                [jogadoresComAcesso]="jogadoresComAcessoDetalhado()"
+                (visibilidadeAtualizada)="onVisibilidadeAtualizada($event)"
               />
-            </p-tabpanel>
-
-            <!-- Aba 1: Atributos -->
-            <p-tabpanel [value]="1">
-              @if (loadingAtributos()) {
-                <div class="p-3">
-                  <p-skeleton height="2rem" class="mb-3" />
-                  @for (_ of [1, 2, 3, 4]; track $index) {
-                    <p-skeleton height="2.5rem" class="mb-1" />
-                  }
-                </div>
-              } @else {
-                <app-ficha-atributos-tab [atributos]="atributos()" />
-              }
-            </p-tabpanel>
-
-            <!-- Aba 2: Aptidoes -->
-            <p-tabpanel [value]="2">
-              @if (loadingAptidoes()) {
-                <div class="p-3">
-                  @for (_ of [1, 2, 3, 4]; track $index) {
-                    <p-skeleton height="2.5rem" class="mb-1" />
-                  }
-                </div>
-              } @else {
-                <app-ficha-aptidoes-tab [aptidoes]="aptidoes()" />
-              }
-            </p-tabpanel>
-
-            <!-- Aba 3: Vantagens -->
-            <p-tabpanel [value]="3">
-              @if (loadingVantagens()) {
-                <div class="p-3 flex flex-col gap-3">
-                  @for (_ of [1, 2, 3]; track $index) {
-                    <p-skeleton height="5rem" borderRadius="8px" />
-                  }
-                </div>
-              } @else {
-                <app-ficha-vantagens-tab
-                  [vantagens]="vantagens()"
-                  [pontosVantagemRestantes]="resumo()!.pontosVantagemDisponiveis ?? 0"
-                  [podeAumentarNivel]="podeEditar()"
-                  [isMestre]="isMestre()"
-                  [vantagensInsolitusConfig]="vantagensInsolitusConfig()"
-                  (aumentarNivelVantagem)="onAumentarNivelVantagem($event)"
-                  (revogarVantagem)="onRevogarVantagem($event)"
-                  (concederInsolitusConfirmado)="onConcederInsolitus($event)"
-                />
-              }
-            </p-tabpanel>
-
-            <!-- Aba 4: Anotacoes -->
-            <p-tabpanel [value]="4">
-              @if (userInfo()) {
-                <app-ficha-anotacoes-tab
-                  [fichaId]="fichaId()!"
-                  [userRole]="userRole()"
-                  [userId]="userIdNumber()"
-                />
-              }
-            </p-tabpanel>
-          </p-tabpanels>
-        </p-tabs>
+            </div>
+          </div>
+        }
       </div>
+    }
+
+    <!-- Drawer mobile: Painel de Visibilidade NPC -->
+    @if (mostrarPainelNpc() && ficha()) {
+      <p-drawer
+        [visible]="drawerVisibilidadeAberto()"
+        (visibleChange)="drawerVisibilidadeAberto.set($event)"
+        header="Visibilidade do NPC"
+        position="bottom"
+        styleClass="lg:hidden"
+        [style]="{height: '70vh'}"
+      >
+        <app-npc-visibilidade
+          [fichaId]="fichaId()!"
+          [jogoId]="ficha()!.jogoId"
+          [visivelGlobalmente]="ficha()!.visivelGlobalmente ?? false"
+          [jogadoresComAcesso]="jogadoresComAcessoDetalhado()"
+          (visibilidadeAtualizada)="onVisibilidadeAtualizada($event)"
+        />
+      </p-drawer>
     }
 
     <!-- Dialog: Duplicar Ficha -->
@@ -280,6 +330,7 @@ export class FichaDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private fichaBusinessService = inject(FichaBusinessService);
+  private fichaVisibilidadeApiService = inject(FichaVisibilidadeApiService);
   private configApiService = inject(ConfigApiService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
@@ -299,6 +350,12 @@ export class FichaDetailComponent implements OnInit {
   protected vantagens = signal<FichaVantagemResponse[]>([]);
   /** Config de vantagens do tipo INSOLITUS disponíveis para conceder (carregado quando Mestre abre a aba). */
   protected vantagensInsolitusConfig = signal<VantagemConfig[]>([]);
+
+  // NPC Visibilidade state
+  /** Jogadores com acesso detalhado ao NPC (carregado quando mostrarPainelNpc=true). */
+  protected jogadoresComAcessoDetalhado = signal<JogadorAcessoItem[]>([]);
+  /** Controle do drawer mobile de visibilidade (mobile only). */
+  protected drawerVisibilidadeAberto = signal<boolean>(false);
 
   // UI state
   protected loading = signal(true);
@@ -339,6 +396,12 @@ export class FichaDetailComponent implements OnInit {
     this.authService.isMestre() || this.podeEditar()
   );
 
+  /** Exibe o painel lateral de visibilidade apenas quando a ficha é NPC e o usuário é Mestre. */
+  protected mostrarPainelNpc = computed(() => {
+    const f = this.ficha();
+    return !!(f?.isNpc && this.isMestre());
+  });
+
   constructor() {
     effect(() => {
       const id = this.fichaId();
@@ -370,6 +433,11 @@ export class FichaDetailComponent implements OnInit {
         this.loading.set(false);
         // Pre-load atributos from resumo (available immediately)
         // Full atributos list requires a separate call on tab activation
+
+        // Carregar visibilidade se for NPC e Mestre
+        if (ficha.isNpc && this.isMestre()) {
+          this.carregarVisibilidadeNpc(fichaId);
+        }
       },
       error: (err: { status?: number }) => {
         if (err.status === 404) {
@@ -380,6 +448,28 @@ export class FichaDetailComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  private carregarVisibilidadeNpc(fichaId: number): void {
+    this.fichaVisibilidadeApiService.listarVisibilidade(fichaId).subscribe({
+      next: (visibilidade) => {
+        this.jogadoresComAcessoDetalhado.set(visibilidade.jogadoresComAcesso);
+        // Sincronizar visivelGlobalmente na ficha local
+        this.ficha.update(f => f ? { ...f, visivelGlobalmente: visibilidade.visivelGlobalmente } : f);
+      },
+      error: () => {
+        // Falha silenciosa — painel continua visível mas sem dados de acesso detalhado
+      },
+    });
+  }
+
+  protected onVisibilidadeAtualizada(update: NpcVisibilidadeUpdate): void {
+    this.ficha.update(f => f ? { ...f, visivelGlobalmente: update.visivelGlobalmente } : f);
+    // Recarregar dados completos de visibilidade para manter jogadoresComAcessoDetalhado atualizado
+    const fichaId = this.fichaId();
+    if (fichaId) {
+      this.carregarVisibilidadeNpc(fichaId);
+    }
   }
 
   protected recarregar(): void {

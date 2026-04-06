@@ -7,6 +7,45 @@
  */
 export type FichaStatus = 'RASCUNHO' | 'ATIVA' | 'MORTA' | 'ABANDONADA';
 
+// ==================== VISIBILIDADE NPC ====================
+
+/**
+ * Item de acesso de um jogador a um NPC.
+ * Alinhado com backend JogadorAcessoItem.
+ */
+export interface JogadorAcessoItem {
+  jogadorId: number;
+  jogadorNome: string;
+  nomePersonagem: string;
+}
+
+/**
+ * Resposta do endpoint GET /api/v1/fichas/{fichaId}/visibilidade.
+ * Alinhado com backend FichaVisibilidadeResponse.
+ */
+export interface FichaVisibilidadeResponse {
+  fichaId: number;
+  visivelGlobalmente: boolean;
+  jogadoresComAcesso: JogadorAcessoItem[];
+}
+
+/**
+ * DTO para atualizar acesso individual de um jogador a um NPC.
+ * Alinhado com backend AtualizarVisibilidadeRequest.
+ */
+export interface AtualizarVisibilidadeDto {
+  jogadorId: number;
+  temAcesso: boolean;
+}
+
+/**
+ * Evento emitido pelo NpcVisibilidadeComponent ao salvar.
+ */
+export interface NpcVisibilidadeUpdate {
+  visivelGlobalmente: boolean;
+  jogadoresComAcesso: number[];
+}
+
 /**
  * Character Sheet (Ficha) model
  * Aligned with backend FichaResponse record.
@@ -35,14 +74,24 @@ export interface Ficha {
   status: FichaStatus;
   dataCriacao: string;
   dataUltimaAtualizacao: string;
+  /**
+   * Indica se o NPC é visível para todos os jogadores do jogo.
+   * Presente apenas em fichas com isNpc=true.
+   */
+  visivelGlobalmente?: boolean;
+  /**
+   * Para o Jogador autenticado: indica se ele tem acesso granular aos stats do NPC.
+   * Presente apenas quando o Jogador lista fichas e o NPC não é visível globalmente.
+   */
+  jogadorTemAcessoStats?: boolean;
 }
 
 /**
  * Resumo calculado de uma ficha (GET /api/v1/fichas/{id}/resumo)
  *
- * Campos opcionais serão adicionados ao backend nas Specs 007/GAP-06:
- * - vidaAtual / essenciaAtual: estado atual de combate (null = total, ou seja, cheio)
- * - pontosVantagemDisponiveis: pontos acumulados não gastos (null = 0 antes do backend implementar)
+ * Todos os campos são retornados pelo backend (Spec 009-T5 garantiu essenciaAtual/vidaAtual).
+ * vidaAtual e essenciaAtual refletem o estado atual de combate; quando a ficha está com
+ * vida/essência cheia, o backend retorna o mesmo valor que vidaTotal/essenciaTotal.
  */
 export interface FichaResumo {
   id: number;
@@ -54,11 +103,11 @@ export interface FichaResumo {
   atributosTotais: Record<string, number>;
   bonusTotais: Record<string, number>;
   vidaTotal: number;
-  /** Vida atual em combate. Undefined/null = total (ficha com vida cheia). Chegará pelo backend na Spec 007. */
-  vidaAtual?: number | null;
+  /** Vida atual em combate. Igual a vidaTotal quando a ficha está com vida cheia. */
+  vidaAtual: number;
   essenciaTotal: number;
-  /** Essência atual (não gasta). Undefined/null = total. Chegará pelo backend na Spec 007/GAP-07. */
-  essenciaAtual?: number | null;
+  /** Essência atual (não gasta). Igual a essenciaTotal quando a ficha está com essência cheia. */
+  essenciaAtual: number;
   ameacaTotal: number;
   /** Pontos de vantagem disponíveis para gastar. Calculado pelo backend (Spec 012/T5). */
   pontosVantagemDisponiveis: number;

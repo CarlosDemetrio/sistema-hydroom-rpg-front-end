@@ -77,14 +77,14 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
           <div class="flex justify-between text-sm">
             <span class="font-medium">Vida</span>
             <span class="text-color-secondary">
-              {{ resumo().vidaAtual ?? resumo().vidaTotal }} / {{ resumo().vidaTotal }}
+              {{ resumo().vidaAtual }} / {{ resumo().vidaTotal }}
             </span>
           </div>
           <p-progressBar
             [value]="vidaPercent()"
             class="vida-bar"
             [showValue]="false"
-            [attr.aria-label]="'Vida: ' + (resumo().vidaAtual ?? resumo().vidaTotal) + ' de ' + resumo().vidaTotal"
+            [attr.aria-label]="'Vida: ' + resumo().vidaAtual + ' de ' + resumo().vidaTotal"
           />
         </div>
 
@@ -93,14 +93,14 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
           <div class="flex justify-between text-sm">
             <span class="font-medium">Essencia</span>
             <span class="text-color-secondary">
-              {{ resumo().essenciaAtual ?? resumo().essenciaTotal }} / {{ resumo().essenciaTotal }}
+              {{ resumo().essenciaAtual }} / {{ resumo().essenciaTotal }}
             </span>
           </div>
           <p-progressBar
             [value]="essenciaPercent()"
             class="essencia-bar"
             [showValue]="false"
-            [attr.aria-label]="'Essencia: ' + (resumo().essenciaAtual ?? resumo().essenciaTotal) + ' de ' + resumo().essenciaTotal"
+            [attr.aria-label]="'Essencia: ' + resumo().essenciaAtual + ' de ' + resumo().essenciaTotal"
           />
         </div>
 
@@ -115,7 +115,7 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
       </div>
 
       <!-- Action buttons -->
-      @if (podeEditar() || podeDeletar() || podeDuplicar()) {
+      @if (podeEditar() || podeDeletar() || podeDuplicar() || mostrarBotaoVisibilidade()) {
         <div class="flex gap-2 mt-3 flex-wrap">
           @if (podeEditar()) {
             <p-button
@@ -147,6 +147,34 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
               [attr.aria-label]="'Deletar ficha de ' + ficha().nome"
               (onClick)="deletarClick.emit()"
             />
+          }
+          <!-- Botao visibilidade NPC (mobile only, lg+ usa painel lateral) -->
+          @if (mostrarBotaoVisibilidade()) {
+            <p-button
+              label="Visibilidade"
+              icon="pi pi-eye"
+              text
+              size="small"
+              styleClass="lg:hidden"
+              [attr.aria-label]="'Configurar visibilidade do NPC ' + ficha().nome"
+              (onClick)="visibilidadeClick.emit()"
+            />
+            <!-- Badge visibilidade (desktop) -->
+            <div class="hidden lg:flex items-center gap-1" aria-label="Status de visibilidade do NPC">
+              @if (ficha().visivelGlobalmente) {
+                <p-tag
+                  value="Visivel para todos"
+                  severity="success"
+                  icon="pi pi-eye"
+                />
+              } @else {
+                <p-tag
+                  value="Acesso restrito"
+                  severity="warn"
+                  icon="pi pi-eye-slash"
+                />
+              }
+            </div>
           }
         </div>
       }
@@ -208,24 +236,26 @@ export class FichaHeaderComponent {
   podeEditar = input<boolean>(false);
   podeDeletar = input<boolean>(false);
   podeDuplicar = input<boolean>(false);
+  /** Quando true, exibe badge de visibilidade NPC (desktop) e botao para abrir drawer (mobile). */
+  mostrarBotaoVisibilidade = input<boolean>(false);
 
   editarClick = output<void>();
   deletarClick = output<void>();
   duplicarClick = output<void>();
+  /** Emitido ao clicar no botao visibilidade (mobile only). */
+  visibilidadeClick = output<void>();
 
-  /** Percentual de vida atual em relação ao total. Retorna 100 quando vidaAtual não foi informado pelo backend (ficha cheia). */
+  /** Percentual de vida atual em relação ao total. Retorna 0 quando vidaTotal é zero (evita divisão por zero). */
   protected vidaPercent = computed<number>(() => {
     const r = this.resumo();
     if (r.vidaTotal <= 0) return 0;
-    const atual = r.vidaAtual ?? r.vidaTotal;
-    return Math.round(Math.max(0, Math.min(100, (atual / r.vidaTotal) * 100)));
+    return Math.round(Math.max(0, Math.min(100, (r.vidaAtual / r.vidaTotal) * 100)));
   });
 
-  /** Percentual de essência atual em relação ao total. Retorna 100 quando essenciaAtual não foi informado pelo backend. */
+  /** Percentual de essência atual em relação ao total. Retorna 0 quando essenciaTotal é zero (evita divisão por zero). */
   protected essenciaPercent = computed<number>(() => {
     const r = this.resumo();
     if (r.essenciaTotal <= 0) return 0;
-    const atual = r.essenciaAtual ?? r.essenciaTotal;
-    return Math.round(Math.max(0, Math.min(100, (atual / r.essenciaTotal) * 100)));
+    return Math.round(Math.max(0, Math.min(100, (r.essenciaAtual / r.essenciaTotal) * 100)));
   });
 }
