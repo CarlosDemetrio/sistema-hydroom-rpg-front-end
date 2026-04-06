@@ -60,12 +60,12 @@ export interface FichaResumo {
   /** Essência atual (não gasta). Undefined/null = total. Chegará pelo backend na Spec 007/GAP-07. */
   essenciaAtual?: number | null;
   ameacaTotal: number;
-  /** Pontos de vantagem disponíveis para gastar. Undefined/null = 0. Será incluído na Spec 007/GAP-06. */
-  pontosVantagemDisponiveis?: number | null;
-  /** Pontos de atributo disponíveis para distribuir. Incluído via Spec 006/GAP-06. */
-  pontosAtributoDisponiveis?: number | null;
-  /** Pontos de aptidão disponíveis para distribuir. Incluído via Spec 006/GAP-06. */
-  pontosAptidaoDisponiveis?: number | null;
+  /** Pontos de vantagem disponíveis para gastar. Calculado pelo backend (Spec 012/T5). */
+  pontosVantagemDisponiveis: number;
+  /** Pontos de atributo disponíveis para distribuir. Calculado pelo backend (Spec 012/T5). */
+  pontosAtributoDisponiveis: number;
+  /** Pontos de aptidão disponíveis para distribuir. Calculado pelo backend (Spec 012/T5). */
+  pontosAptidaoDisponiveis: number;
 }
 
 /**

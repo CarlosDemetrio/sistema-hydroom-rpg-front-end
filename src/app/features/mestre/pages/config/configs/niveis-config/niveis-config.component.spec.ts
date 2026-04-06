@@ -240,14 +240,19 @@ describe('NiveisConfigComponent', () => {
       expect(colunas).toContain('Limitador');
     });
 
-    it('deve exibir coluna de "Ações"', async () => {
-      // A coluna de ações é adicionada pelo BaseConfigTableComponent,
-      // mas verificamos que o BaseConfigTableComponent sempre a exibe.
-      // Aqui testamos apenas que os 5 campos dinâmicos estão definidos.
+    it('deve exibir coluna "Renascer"', async () => {
       const { fixture } = await renderNiveis();
       const comp = fixture.componentInstance;
 
-      expect(comp.columns.length).toBe(5);
+      const colunas = comp.columns.map(c => c.header);
+      expect(colunas).toContain('Renascer');
+    });
+
+    it('deve ter 6 colunas definidas (incluindo Renascer)', async () => {
+      const { fixture } = await renderNiveis();
+      const comp = fixture.componentInstance;
+
+      expect(comp.columns.length).toBe(6);
     });
   });
 
@@ -521,7 +526,53 @@ describe('NiveisConfigComponent', () => {
   });
 
   // ----------------------------------------------------------
-  // 8. Fechar drawer
+  // 8. Computed signals de consistência (T4)
+  // ----------------------------------------------------------
+
+  describe('consistência de dados (niveisComXpInvalida / lacunasNaSequencia)', () => {
+    it('deve detectar nível com XP menor que o nível anterior', async () => {
+      // nivel5 (XP=1000) depois de nivel10 (XP=5000) — inconsistente no índice 5
+      const nivelInvalido: NivelConfig = {
+        ...nivel5Mock,
+        id: 99,
+        nivel: 12,
+        xpNecessaria: 100, // menor que nivel10 (5000) — inválido
+      };
+      const { fixture } = await renderNiveis([nivel1Mock, nivel5Mock, nivel10Mock, nivelInvalido]);
+      const comp = fixture.componentInstance as any;
+
+      expect(comp.niveisComXpInvalida().has(12)).toBe(true);
+    });
+
+    it('deve retornar conjunto vazio quando XP está em ordem crescente', async () => {
+      const { fixture } = await renderNiveis([nivel1Mock, nivel5Mock, nivel10Mock]);
+      const comp = fixture.componentInstance as any;
+
+      expect(comp.niveisComXpInvalida().size).toBe(0);
+    });
+
+    it('deve detectar lacunas na sequência de níveis', async () => {
+      // Tem nível 1, 5 e 10 — faltam 2, 3, 4, 6, 7, 8, 9
+      const { fixture } = await renderNiveis([nivel1Mock, nivel5Mock, nivel10Mock]);
+      const comp = fixture.componentInstance as any;
+
+      const lacunas = comp.lacunasNaSequencia();
+      expect(lacunas).toContain(2);
+      expect(lacunas).toContain(6);
+    });
+
+    it('deve retornar lista vazia quando não há lacunas', async () => {
+      const nivel2: NivelConfig = { ...nivel1Mock, id: 10, nivel: 2, xpNecessaria: 100 };
+      const nivel3: NivelConfig = { ...nivel1Mock, id: 11, nivel: 3, xpNecessaria: 200 };
+      const { fixture } = await renderNiveis([nivel1Mock, nivel2, nivel3]);
+      const comp = fixture.componentInstance as any;
+
+      expect(comp.lacunasNaSequencia().length).toBe(0);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 9. Fechar drawer
   // ----------------------------------------------------------
 
   describe('closeDrawer', () => {

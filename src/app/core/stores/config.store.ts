@@ -4,6 +4,7 @@ import { AptidaoConfig } from '@core/models/aptidao-config.model';
 import { TipoAptidao } from '@core/models/tipo-aptidao.model';
 import { VantagemConfig } from '@core/models/vantagem-config.model';
 import {
+  PontosVantagemConfig,
   CategoriaVantagem,
   ClassePersonagem,
   Raca,
@@ -27,6 +28,7 @@ interface ConfigState {
   classes: ClassePersonagem[];
   vantagens: VantagemConfig[];
   categoriasVantagem: CategoriaVantagem[];
+  pontosVantagem: PontosVantagemConfig[];
   racas: Raca[];
   dadosProspeccao: DadoProspeccaoConfig[];
   presencas: PresencaConfig[];
@@ -46,6 +48,7 @@ const initialState: ConfigState = {
   classes: [],
   vantagens: [],
   categoriasVantagem: [],
+  pontosVantagem: [],
   racas: [],
   dadosProspeccao: [],
   presencas: [],
@@ -151,6 +154,10 @@ export const ConfigStore = signalStore(
 
     setCategoriasVantagem(categoriasVantagem: CategoriaVantagem[]) {
       patchState(store, { categoriasVantagem, loading: false, error: null });
+    },
+
+    setPontosVantagem(pontosVantagem: PontosVantagemConfig[]) {
+      patchState(store, { pontosVantagem, loading: false, error: null });
     },
 
     // Raças

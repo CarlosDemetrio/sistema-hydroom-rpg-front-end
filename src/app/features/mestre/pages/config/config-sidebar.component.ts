@@ -118,6 +118,20 @@ export class ConfigSidebarComponent {
       count: this.configStore.vantagens().length,
     },
     {
+      label: 'Categorias de Vantagem',
+      description: 'Combate, Magia, Social, etc.',
+      icon: 'pi pi-tag',
+      route: '/mestre/config/categorias-vantagem',
+      count: this.configStore.categoriasVantagem().length,
+    },
+    {
+      label: 'Pontos de Vantagem',
+      description: 'Pontos ganhos por nível',
+      icon: 'pi pi-star',
+      route: '/mestre/config/pontos-vantagem',
+      count: this.configStore.pontosVantagem().length,
+    },
+    {
       label: 'Níveis',
       description: 'Progressão de XP',
       icon: 'pi pi-arrow-up',

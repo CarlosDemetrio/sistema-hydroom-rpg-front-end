@@ -15,6 +15,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 /** Definição de coluna para a tabela genérica */
@@ -70,6 +71,7 @@ export interface ConfigTableColumn {
     InputTextModule,
     SkeletonModule,
     TableModule,
+    TagModule,
     TooltipModule,
   ],
   template: `
@@ -195,6 +197,12 @@ export interface ConfigTableColumn {
                 <!-- Detecta se é campo de sigla/abreviação para estilizar como badge -->
                 @if (isAbreviacaoField(col.field)) {
                   <span class="badge-atributo">{{ item[col.field] ?? '—' }}</span>
+                } @else if (isBooleanField(col.field, item)) {
+                  @if (item[col.field]) {
+                    <p-tag severity="warn" value="Sim" icon="pi pi-check" />
+                  } @else {
+                    <span class="text-color-secondary">—</span>
+                  }
                 } @else if (isNumericField(col.field, item)) {
                   <span class="valor-numerico--sm">{{ item[col.field] ?? '—' }}</span>
                 } @else {
@@ -352,6 +360,18 @@ export class BaseConfigTableComponent {
     return ['abreviacao', 'sigla', 'codigo'].includes(field);
   }
 
+  /** Campos que devem ser renderizados como valor booleano com p-tag */
+  protected isBooleanField(field: string, item: any): boolean {
+    const booleanFields = [
+      'permitirRenascimento',
+      'ativo',
+      'visivel',
+      'publico',
+      'isNpc',
+    ];
+    return booleanFields.includes(field) && typeof item?.[field] === 'boolean';
+  }
+
   /** Campos que devem ser renderizados como valor numérico */
   protected isNumericField(field: string, item: any): boolean {
     const numericFields = [
@@ -366,6 +386,7 @@ export class BaseConfigTableComponent {
       'pontosAtributo',
       'pontosAptidao',
       'limitadorAtributo',
+      'pontosGanhos',
     ];
     return numericFields.includes(field) && typeof item?.[field] === 'number';
   }

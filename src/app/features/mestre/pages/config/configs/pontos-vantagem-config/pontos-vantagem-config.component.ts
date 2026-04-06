@@ -4,11 +4,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DrawerModule } from 'primeng/drawer';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -18,21 +16,20 @@ import {
   BaseConfigTableComponent,
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
-import { NivelConfig } from '@core/models';
-import { NivelConfigService } from '@core/services/business/config';
+import { PontosVantagemConfig } from '@core/models/config.models';
+import { PontosVantagemConfigService } from '@core/services/business/config';
 
 @Component({
-  selector: 'app-niveis-config',
+  selector: 'app-pontos-vantagem-config',
   standalone: true,
+  changeDetection: 0, // OnPush
   imports: [
     ReactiveFormsModule,
     ButtonModule,
     CardModule,
-    CheckboxModule,
     ConfirmDialogModule,
     DrawerModule,
     InputNumberModule,
-    InputTextModule,
     MessageModule,
     TagModule,
     TooltipModule,
@@ -57,7 +54,7 @@ import { NivelConfigService } from '@core/services/business/config';
           <div>
             <p class="font-semibold m-0 mb-1">Nenhum jogo selecionado</p>
             <p class="text-sm text-color-secondary m-0">
-              Selecione um jogo no cabeçalho para gerenciar Níveis.
+              Selecione um jogo no cabeçalho para gerenciar Pontos de Vantagem.
             </p>
           </div>
         </div>
@@ -71,9 +68,14 @@ import { NivelConfigService } from '@core/services/business/config';
         />
       }
 
+      <div class="text-sm text-color-secondary mb-3 p-3 surface-50 border-round">
+        <i class="pi pi-info-circle mr-2"></i>
+        Níveis sem registro ganham 0 pontos de vantagem. Apenas os níveis aqui cadastrados concedem pontos.
+      </div>
+
       <app-base-config-table
-        [titulo]="'Níveis'"
-        [subtitulo]="'Configure a progressão de níveis, XP e pontos por nível (0 a 35)'"
+        [titulo]="'Pontos de Vantagem por Nível'"
+        [subtitulo]="'Configure quantos pontos de vantagem os personagens ganham ao atingir cada nível'"
         [labelNovo]="'Novo Nível'"
         [items]="filteredItems()"
         [loading]="loading()"
@@ -84,7 +86,25 @@ import { NivelConfigService } from '@core/services/business/config';
         (onEdit)="openDrawer($event)"
         (onDelete)="confirmDelete($event.id!)"
         (onSearch)="searchQuery.set($event)"
-      />
+      >
+        <ng-template #customCell let-item let-col="col">
+          @if (col.field === 'pontosGanhos') {
+            @if (item.pontosGanhos >= 2) {
+              <p-tag
+                severity="warn"
+                [value]="item.pontosGanhos.toString()"
+                icon="pi pi-star"
+                [pTooltip]="'Marco especial: ' + item.pontosGanhos + ' pontos'"
+              />
+            } @else {
+              <span>{{ item.pontosGanhos }}</span>
+            }
+          }
+          @if (col.field === 'acumulado') {
+            <span class="font-semibold text-primary">{{ acumuladoPorNivel().get(item.nivel) ?? 0 }}</span>
+          }
+        </ng-template>
+      </app-base-config-table>
 
     </p-card>
 
@@ -92,7 +112,7 @@ import { NivelConfigService } from '@core/services/business/config';
     <p-drawer
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
-      [header]="editMode() ? 'Editar Nível' : 'Novo Nível'"
+      [header]="editMode() ? 'Editar Configuração' : 'Novo Nível com Pontos'"
       position="right"
       class="w-full md:w-30rem"
     >
@@ -108,81 +128,31 @@ import { NivelConfigService } from '@core/services/business/config';
               inputId="nivel"
               formControlName="nivel"
               [showButtons]="true"
-              [min]="0"
+              [min]="1"
               [max]="35"
             />
-            <small class="text-color-secondary">Níveis de 0 (iniciante) a 35 (transcendente).</small>
+            <small class="text-color-secondary">Nível em que os pontos são concedidos (1 a 35). Cada nível pode ter apenas um registro.</small>
+            @if (form.get('nivel')?.invalid && form.get('nivel')?.touched) {
+              <small class="text-red-400">Nível é obrigatório (1–35).</small>
+            }
           </div>
 
-          <!-- XP Necessária -->
+          <!-- Pontos Ganhos -->
           <div class="flex flex-column gap-2">
-            <label for="xpNecessaria" class="font-semibold">
-              XP Necessária <span class="text-red-400">*</span>
+            <label for="pontosGanhos" class="font-semibold">
+              Pontos Ganhos <span class="text-red-400">*</span>
             </label>
             <p-input-number
-              inputId="xpNecessaria"
-              formControlName="xpNecessaria"
-              [showButtons]="true"
-              [min]="0"
-              [useGrouping]="true"
-            />
-            <small class="text-color-secondary">XP acumulada para atingir este nível.</small>
-          </div>
-
-          <div class="rpg-section-title">Pontos Ganhos ao Subir de Nível</div>
-
-          <!-- Pontos Atributo -->
-          <div class="flex flex-column gap-2">
-            <label for="pontosAtributo" class="font-semibold">
-              Pontos de Atributo <span class="text-red-400">*</span>
-            </label>
-            <p-input-number
-              inputId="pontosAtributo"
-              formControlName="pontosAtributo"
+              inputId="pontosGanhos"
+              formControlName="pontosGanhos"
               [showButtons]="true"
               [min]="0"
             />
+            <small class="text-color-secondary">Pontos de vantagem concedidos ao atingir este nível.</small>
+            @if (form.get('pontosGanhos')?.invalid && form.get('pontosGanhos')?.touched) {
+              <small class="text-red-400">Pontos ganhos é obrigatório (mínimo 0).</small>
+            }
           </div>
-
-          <!-- Pontos Aptidão -->
-          <div class="flex flex-column gap-2">
-            <label for="pontosAptidao" class="font-semibold">
-              Pontos de Aptidão <span class="text-red-400">*</span>
-            </label>
-            <p-input-number
-              inputId="pontosAptidao"
-              formControlName="pontosAptidao"
-              [showButtons]="true"
-              [min]="0"
-            />
-          </div>
-
-          <!-- Limitador Atributo -->
-          <div class="flex flex-column gap-2">
-            <label for="limitadorAtributo" class="font-semibold">
-              Limitador de Atributo <span class="text-red-400">*</span>
-            </label>
-            <p-input-number
-              inputId="limitadorAtributo"
-              formControlName="limitadorAtributo"
-              [showButtons]="true"
-              [min]="0"
-            />
-            <small class="text-color-secondary">
-              Teto máximo que qualquer atributo pode atingir neste nível.
-            </small>
-          </div>
-
-          <!-- Permite Renascimento -->
-          <div class="flex align-items-center gap-2">
-            <p-checkbox inputId="permitirRenascimento" formControlName="permitirRenascimento" [binary]="true" />
-            <label for="permitirRenascimento" class="font-semibold cursor-pointer">
-              Permite Renascimento
-            </label>
-          </div>
-          <small class="text-color-secondary -mt-3">
-            Renascimento disponível para personagens a partir deste nível.
-          </small>
 
         </div>
 
@@ -195,7 +165,7 @@ import { NivelConfigService } from '@core/services/business/config';
             (onClick)="closeDrawer()"
           />
           <p-button
-            [label]="editMode() ? 'Salvar Alterações' : 'Criar Nível'"
+            [label]="editMode() ? 'Salvar Alterações' : 'Criar Configuração'"
             icon="pi pi-check"
             type="submit"
           />
@@ -206,11 +176,11 @@ import { NivelConfigService } from '@core/services/business/config';
     <p-confirmDialog />
   `,
 })
-export class NiveisConfigComponent extends BaseConfigComponent<
-  NivelConfig,
-  NivelConfigService
+export class PontosVantagemConfigComponent extends BaseConfigComponent<
+  PontosVantagemConfig,
+  PontosVantagemConfigService
 > {
-  protected service = inject(NivelConfigService);
+  protected service = inject(PontosVantagemConfigService);
   private confirmationService = inject(ConfirmationService);
 
   protected drawerVisible = signal(false);
@@ -218,14 +188,12 @@ export class NiveisConfigComponent extends BaseConfigComponent<
   protected searchQuery = signal('');
 
   readonly columns: ConfigTableColumn[] = [
-    { field: 'nivel',                header: 'Nível',     width: '6rem' },
-    { field: 'xpNecessaria',         header: 'XP',        width: '8rem' },
-    { field: 'pontosAtributo',       header: 'Pts Attr.', width: '8rem' },
-    { field: 'pontosAptidao',        header: 'Pts Apt.',  width: '8rem' },
-    { field: 'limitadorAtributo',    header: 'Limitador', width: '8rem' },
-    { field: 'permitirRenascimento', header: 'Renascer',  width: '8rem' },
+    { field: 'nivel',        header: 'Nível',         width: '8rem' },
+    { field: 'pontosGanhos', header: 'Pontos Ganhos',  width: '10rem' },
+    { field: 'acumulado',    header: 'Acumulado',      width: '10rem' },
   ];
 
+  /** Filtra e ordena por nível */
   protected filteredItems = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.items().slice().sort((a, b) => a.nivel - b.nivel);
@@ -234,19 +202,19 @@ export class NiveisConfigComponent extends BaseConfigComponent<
       .sort((a, b) => a.nivel - b.nivel);
   });
 
-  /** Níveis com XP menor que o nível anterior (inconsistência de progressão) */
-  protected niveisComXpInvalida = computed(() => {
+  /** Mapa nível -> total acumulado de pontos de vantagem */
+  protected acumuladoPorNivel = computed(() => {
     const sorted = [...this.items()].sort((a, b) => a.nivel - b.nivel);
-    const invalidos = new Set<number>();
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].xpNecessaria < sorted[i - 1].xpNecessaria) {
-        invalidos.add(sorted[i].nivel);
-      }
+    let acumulado = 0;
+    const mapa = new Map<number, number>();
+    for (const item of sorted) {
+      acumulado += item.pontosGanhos;
+      mapa.set(item.nivel, acumulado);
     }
-    return invalidos;
+    return mapa;
   });
 
-  /** Lacunas na sequência de níveis (ex: tem 1, 3, 5 — faltam 2 e 4) */
+  /** Detecta lacunas na sequência de níveis cadastrados */
   protected lacunasNaSequencia = computed(() => {
     const niveis = new Set(this.items().map(n => n.nivel));
     if (niveis.size < 2) return [];
@@ -259,21 +227,17 @@ export class NiveisConfigComponent extends BaseConfigComponent<
     return lacunas;
   });
 
-  protected getEntityName(): string { return 'Nível'; }
-  protected getEntityNamePlural(): string { return 'Níveis'; }
+  protected getEntityName(): string { return 'Configuração de Pontos'; }
+  protected getEntityNamePlural(): string { return 'Configurações de Pontos de Vantagem'; }
 
   protected buildForm(): FormGroup {
     return this.fb.group({
-      nivel:                [1,    [Validators.required, Validators.min(0), Validators.max(35)]],
-      xpNecessaria:         [0,    [Validators.required, Validators.min(0)]],
-      pontosAtributo:       [3,    [Validators.required, Validators.min(0)]],
-      pontosAptidao:        [3,    [Validators.required, Validators.min(0)]],
-      limitadorAtributo:    [10,   [Validators.required, Validators.min(0)]],
-      permitirRenascimento: [false],
+      nivel:        [1,  [Validators.required, Validators.min(1), Validators.max(35)]],
+      pontosGanhos: [1,  [Validators.required, Validators.min(0)]],
     });
   }
 
-  openDrawer(item?: NivelConfig): void {
+  openDrawer(item?: PontosVantagemConfig): void {
     this.openDialog(item);
     this.drawerVisible.set(true);
   }
@@ -300,8 +264,8 @@ export class NiveisConfigComponent extends BaseConfigComponent<
     this.loading.set(true);
     operation$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        const action = this.editMode() ? 'atualizado' : 'criado';
-        this.toastService.success(`Nível ${action} com sucesso`, 'Sucesso');
+        const action = this.editMode() ? 'atualizada' : 'criada';
+        this.toastService.success(`Configuração ${action} com sucesso`, 'Sucesso');
         this.closeDrawer();
         this.loadData();
         this.loading.set(false);
@@ -312,7 +276,7 @@ export class NiveisConfigComponent extends BaseConfigComponent<
 
   override confirmDelete(id: number): void {
     this.confirmationService.confirm({
-      message: 'Tem certeza que deseja excluir este Nível? Esta ação não pode ser desfeita.',
+      message: 'Tem certeza que deseja excluir esta configuração de pontos? Fichas já criadas não são afetadas.',
       header: 'Confirmar Exclusão',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',

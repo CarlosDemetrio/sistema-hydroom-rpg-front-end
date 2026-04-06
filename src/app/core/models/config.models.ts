@@ -1,4 +1,22 @@
 /**
+ * Configuração de Pontos de Vantagem por nível.
+ * Aligned with backend PontosVantagemResponse record.
+ *
+ * Tabela esparsa: apenas níveis com ganhos cadastrados aqui.
+ * Ausência de registro = 0 pontos naquele nível.
+ *
+ * Endpoint: /api/jogos/{jogoId}/config/pontos-vantagem
+ */
+export interface PontosVantagemConfig {
+  id: number;
+  jogoId: number;
+  nivel: number;
+  pontosGanhos: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
+}
+
+/**
  * Categoria de Vantagem.
  * Aligned with backend CategoriaVantagemResponse record.
  */
@@ -21,6 +39,7 @@ export interface ClasseBonusConfig {
   classeId: number;
   bonusConfigId: number;
   bonusNome: string;
+  valorPorNivel: number;
 }
 
 /**
@@ -31,6 +50,7 @@ export interface ClasseAptidaoBonus {
   classeId: number;
   aptidaoConfigId: number;
   aptidaoNome: string;
+  bonus: number;
 }
 
 /**

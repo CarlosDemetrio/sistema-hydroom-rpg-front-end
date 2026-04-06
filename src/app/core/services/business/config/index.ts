@@ -17,5 +17,11 @@ export * from './bonus-config.service';
 // Tipo Aptidao Service
 export * from './tipo-aptidao-config.service';
 
+// Pontos de Vantagem Service
+export * from './pontos-vantagem-config.service';
+
+// Categoria de Vantagem Service
+export * from './categoria-vantagem-config.service';
+
 // Facade Service
 export * from './config-facade.service';

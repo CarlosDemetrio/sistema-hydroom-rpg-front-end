@@ -103,6 +103,14 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/mestre/pages/config/configs/niveis-config/niveis-config.component').then(m => m.NiveisConfigComponent)
               },
               {
+                path: 'pontos-vantagem',
+                loadComponent: () => import('./features/mestre/pages/config/configs/pontos-vantagem-config/pontos-vantagem-config.component').then(m => m.PontosVantagemConfigComponent)
+              },
+              {
+                path: 'categorias-vantagem',
+                loadComponent: () => import('./features/mestre/pages/config/configs/categorias-vantagem-config/categorias-vantagem-config.component').then(m => m.CategoriaVantagemConfigComponent)
+              },
+              {
                 path: 'tipos-aptidao',
                 loadComponent: () => import('./features/mestre/pages/config/configs/tipos-aptidao-config/tipos-aptidao-config.component').then(m => m.TiposAptidaoConfigComponent)
               },
