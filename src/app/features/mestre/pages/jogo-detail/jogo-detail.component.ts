@@ -1,7 +1,8 @@
-import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { TabsModule } from 'primeng/tabs';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -9,6 +10,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
@@ -19,6 +21,8 @@ import { JogosStore } from '@core/stores/jogos.store';
 import { EmptyStateComponent } from '@shared/components/empty-state.component';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
 
+type FiltroStatus = 'TODOS' | 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'BANIDO';
+
 /**
  * Jogo Detail Component
  *
@@ -28,8 +32,10 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
 @Component({
   selector: 'app-jogo-detail',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    FormsModule,
     TabsModule,
     CardModule,
     ButtonModule,
@@ -37,6 +43,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
     TagModule,
     TooltipModule,
     ConfirmDialogModule,
+    SelectButtonModule,
     ToastModule,
     EmptyStateComponent,
     LoadingSpinnerComponent
@@ -151,18 +158,28 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
             <!-- Tab 2: Participantes -->
             <p-tabpanel value="1">
               <p-card>
-                @if (participantes().length === 0) {
+                <!-- Filtro por status -->
+                <div class="mb-3">
+                  <p-selectbutton
+                    [options]="opcoesFiltroBotao"
+                    [(ngModel)]="filtroStatusModel"
+                    optionLabel="label"
+                    optionValue="value"
+                    aria-label="Filtrar participantes por status"
+                  ></p-selectbutton>
+                </div>
+
+                @if (participantesFiltrados().length === 0) {
                   <app-empty-state
                     icon="pi-users"
                     message="Nenhum participante"
                     description="Aguarde jogadores solicitarem participação neste jogo"
                   ></app-empty-state>
                 } @else {
-                  <p-table [value]="participantes()" [rowHover]="true">
+                  <p-table [value]="participantesFiltrados()" [rowHover]="true">
                     <ng-template #header>
                       <tr>
                         <th>Jogador</th>
-                        <th>Ficha</th>
                         <th>Status</th>
                         <th>Data</th>
                         <th class="text-center">Ações</th>
@@ -172,14 +189,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                     <ng-template #body let-participante>
                       <tr>
                         <td>
-                          <div class="font-semibold">{{ participante.jogador?.name || 'Jogador #' + participante.jogadorId }}</div>
-                        </td>
-                        <td>
-                          @if (participante.ficha) {
-                            {{ participante.ficha.nome }}
-                          } @else {
-                            <span class="text-color-secondary">Sem ficha</span>
-                          }
+                          <div class="font-semibold">{{ participante.nomeUsuario || 'Jogador #' + participante.usuarioId }}</div>
                         </td>
                         <td>
                           <p-tag
@@ -187,7 +197,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                             [severity]="getParticipanteStatusSeverity(participante.status)"
                           ></p-tag>
                         </td>
-                        <td>{{ participante.dataParticipacao | date:'dd/MM/yyyy' }}</td>
+                        <td>{{ participante.dataCriacao | date:'dd/MM/yyyy' }}</td>
                         <td class="text-center">
                           <div class="flex gap-2 justify-content-center">
                             @if (participante.status === 'PENDENTE') {
@@ -208,14 +218,35 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                                 (onClick)="rejeitarParticipante(participante.id)"
                               ></p-button>
                             }
-                            <p-button
-                              icon="pi pi-trash"
-                              [rounded]="true"
-                              [text]="true"
-                              [severity]="'danger'"
-                              pTooltip="Remover"
-                              (onClick)="removerParticipante(participante.id)"
-                            ></p-button>
+                            @if (participante.status === 'APROVADO') {
+                              <p-button
+                                icon="pi pi-ban"
+                                [rounded]="true"
+                                [text]="true"
+                                [severity]="'danger'"
+                                [outlined]="true"
+                                pTooltip="Banir"
+                                (onClick)="banirParticipante(participante.id)"
+                              ></p-button>
+                              <p-button
+                                icon="pi pi-trash"
+                                [rounded]="true"
+                                [text]="true"
+                                [severity]="'danger'"
+                                pTooltip="Remover (provisório)"
+                                (onClick)="removerParticipante(participante.id)"
+                              ></p-button>
+                            }
+                            @if (participante.status === 'BANIDO') {
+                              <p-button
+                                icon="pi pi-check-circle"
+                                [rounded]="true"
+                                [text]="true"
+                                severity="warn"
+                                pTooltip="Desbanir"
+                                (onClick)="desbanirParticipante(participante.id)"
+                              ></p-button>
+                            }
                           </div>
                         </td>
                       </tr>
@@ -277,8 +308,25 @@ export class JogoDetailComponent implements OnInit {
   private messageService = inject(MessageService);
   private destroyRef = inject(DestroyRef);
 
+  readonly opcoesFiltroBotao: { label: string; value: FiltroStatus }[] = [
+    { label: 'Todos', value: 'TODOS' },
+    { label: 'Aprovados', value: 'APROVADO' },
+    { label: 'Pendentes', value: 'PENDENTE' },
+    { label: 'Rejeitados', value: 'REJEITADO' },
+    { label: 'Banidos', value: 'BANIDO' },
+  ];
+
   jogoId = signal<number | null>(null);
   activeTabIndex = signal<string>('0');
+  filtroStatus = signal<FiltroStatus>('TODOS');
+
+  /** Two-way binding helper para o SelectButton via ngModel */
+  get filtroStatusModel(): FiltroStatus {
+    return this.filtroStatus();
+  }
+  set filtroStatusModel(value: FiltroStatus) {
+    this.filtroStatus.set(value);
+  }
 
   jogo = computed(() => {
     const id = this.jogoId();
@@ -290,6 +338,13 @@ export class JogoDetailComponent implements OnInit {
     const id = this.jogoId();
     if (!id) return [];
     return this.jogosStore.getParticipantes(id);
+  });
+
+  participantesFiltrados = computed<Participante[]>(() => {
+    const todos = this.participantes();
+    const filtro = this.filtroStatus();
+    if (filtro === 'TODOS') return todos;
+    return todos.filter(p => p.status === filtro);
   });
 
   participantesAprovados = computed(() =>
@@ -405,11 +460,13 @@ export class JogoDetailComponent implements OnInit {
 
   removerParticipante(participanteId: number) {
     this.confirmationService.confirm({
-      message: 'Tem certeza que deseja remover este participante?',
+      message: 'Tem certeza que deseja remover este participante? Ele poderá solicitar participação novamente depois.',
       header: 'Confirmar Remoção',
       icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sim, Remover',
+      rejectLabel: 'Cancelar',
       accept: () => {
-        this.participanteService.banirParticipante(this.jogoId()!, participanteId).pipe(
+        this.participanteService.removerParticipante(this.jogoId()!, participanteId).pipe(
           takeUntilDestroyed(this.destroyRef)
         ).subscribe({
           next: () => {
@@ -426,6 +483,58 @@ export class JogoDetailComponent implements OnInit {
               detail: 'Erro ao remover participante'
             });
           }
+        });
+      }
+    });
+  }
+
+  banirParticipante(participanteId: number) {
+    this.confirmationService.confirm({
+      message: 'Tem certeza que deseja banir este participante? O ban pode ser revertido depois.',
+      header: 'Confirmar Banimento',
+      icon: 'pi pi-ban',
+      acceptLabel: 'Sim, Banir',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.participanteService.banirParticipante(this.jogoId()!, participanteId).pipe(
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'warn',
+              summary: 'Banido',
+              detail: 'Participante banido do jogo'
+            });
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: 'Erro ao banir participante'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  desbanirParticipante(participanteId: number) {
+    this.participanteService.desbanirParticipante(this.jogoId()!, participanteId).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Participante desbanido'
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao desbanir participante'
         });
       }
     });
