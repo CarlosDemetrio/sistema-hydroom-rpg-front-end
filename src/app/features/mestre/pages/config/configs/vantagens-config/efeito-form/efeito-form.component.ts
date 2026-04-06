@@ -231,7 +231,7 @@ interface EfeitoFormState {
                 [(ngModel)]="nivelPreviewModel"
                 [min]="1"
                 [max]="nivelMaximoVantagem()"
-                (onChange)="onNivelPreviewChange($event.value)"
+                (onChange)="onNivelPreviewChange($event.value ?? 0)"
               />
               <small class="text-color-secondary">
                 Arraste para simular o bônus em diferentes níveis.
@@ -278,7 +278,7 @@ interface EfeitoFormState {
                       [(ngModel)]="nivelPreviewModel"
                       [min]="1"
                       [max]="nivelMaximoVantagem()"
-                      (onChange)="onNivelPreviewChange($event.value)"
+                      (onChange)="onNivelPreviewChange($event.value ?? 0)"
                     />
                   </div>
 
