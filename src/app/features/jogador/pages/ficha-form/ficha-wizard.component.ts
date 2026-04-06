@@ -27,12 +27,21 @@ import {
   PresencaConfig,
   Raca,
 } from '@core/models/config.models';
-import { AtualizarAtributoDto, Ficha } from '@core/models/ficha.model';
+import { AtualizarAptidaoDto, AtualizarAtributoDto, Ficha } from '@core/models/ficha.model';
 import { CreateFichaDto, UpdateFichaDto } from '@core/models/dtos/ficha.dto';
 import { StepIdentificacaoComponent } from './steps/step-identificacao/step-identificacao.component';
 import { StepDescricaoComponent } from './steps/step-descricao/step-descricao.component';
 import { StepAtributosComponent } from './steps/step-atributos/step-atributos.component';
-import { EstadoSalvamento, FichaAtributoEditavel, FormPasso1, FormPasso2 } from './ficha-wizard.types';
+import { StepAptidoesComponent } from './steps/step-aptidoes/step-aptidoes.component';
+import { StepVantagensComponent } from './steps/step-vantagens/step-vantagens.component';
+import {
+  EstadoSalvamento,
+  FichaAptidaoEditavel,
+  FichaAtributoEditavel,
+  FormPasso1,
+  FormPasso2,
+  TipoAptidaoComAptidoes,
+} from './ficha-wizard.types';
 import { forkJoin, Observable } from 'rxjs';
 
 /**
@@ -60,6 +69,8 @@ import { forkJoin, Observable } from 'rxjs';
     StepIdentificacaoComponent,
     StepDescricaoComponent,
     StepAtributosComponent,
+    StepAptidoesComponent,
+    StepVantagensComponent,
   ],
   providers: [MessageService],
   template: `
@@ -138,19 +149,26 @@ import { forkJoin, Observable } from 'rxjs';
         }
 
         @if (passoAtual() === 4) {
-          <div class="surface-100 border-round p-5 text-center">
-            <i class="pi pi-chart-bar text-primary text-4xl mb-3 block"></i>
-            <p class="text-xl font-semibold m-0">Passo 4 — Aptidoes</p>
-            <p class="text-color-secondary mt-2">Em breve (T9)</p>
-          </div>
+          @if (carregandoAptidoes()) {
+            <div class="flex justify-content-center p-5">
+              <p-progress-spinner strokeWidth="4" animationDuration=".8s"></p-progress-spinner>
+            </div>
+          } @else {
+            <app-step-aptidoes
+              [aptidoesAgrupadas]="aptidoesAgrupadas()"
+              [pontosDisponiveis]="pontosAptidaoDisponiveis()"
+              (aptidoesChanged)="onFormPasso4Changed($event)"
+            ></app-step-aptidoes>
+          }
         }
 
         @if (passoAtual() === 5) {
-          <div class="surface-100 border-round p-5 text-center">
-            <i class="pi pi-eye text-primary text-4xl mb-3 block"></i>
-            <p class="text-xl font-semibold m-0">Passo 5 — Revisao</p>
-            <p class="text-color-secondary mt-2">Em breve (T10)</p>
-          </div>
+          <app-step-vantagens
+            [fichaId]="fichaId()!"
+            [jogoId]="jogoId()"
+            [pontosDisponiveis]="pontosVantagemDisponiveis()"
+            (pontosAtualizados)="onPontosVantagemAtualizados($event)"
+          ></app-step-vantagens>
         }
 
         @if (passoAtual() === 6) {
@@ -261,6 +279,28 @@ export class FichaWizardComponent implements OnInit {
         this.carregarDadosPasso3();
       }
     });
+
+    // Carrega os dados do passo 4 quando o jogador entra nele pela primeira vez
+    effect(() => {
+      if (
+        this.passoAtual() === 4 &&
+        this.fichaId() !== null &&
+        this.formPasso4().length === 0 &&
+        !this.carregandoAptidoes()
+      ) {
+        this.carregarDadosPasso4();
+      }
+    });
+
+    // Carrega saldo de pontos de vantagem ao entrar no passo 5
+    effect(() => {
+      if (this.passoAtual() === 5 && this.fichaId() !== null) {
+        this.fichasApi.getFichaResumo(this.fichaId()!)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe(r => this.pontosVantagemDisponiveis.set(r.pontosVantagemDisponiveis ?? 0));
+      }
+    });
+
   }
 
   // ============================================================
@@ -346,6 +386,35 @@ export class FichaWizardComponent implements OnInit {
   readonly pontosAtributoDisponiveis = signal<number>(0);
   readonly limitadorAtributo = signal<number>(20);
   readonly carregandoAtributos = signal<boolean>(false);
+
+  // ============================================================
+  // Dados do formulario Passo 4 — Aptidoes
+  // ============================================================
+
+  readonly formPasso4 = signal<FichaAptidaoEditavel[]>([]);
+  readonly pontosAptidaoDisponiveis = signal<number>(0);
+  readonly carregandoAptidoes = signal<boolean>(false);
+
+  // ============================================================
+  // Dados do formulario Passo 5 — Vantagens
+  // ============================================================
+
+  readonly pontosVantagemDisponiveis = signal<number>(0);
+
+  /**
+   * Aptidoes agrupadas por tipo para o StepAptidoesComponent.
+   * Recomputa sempre que formPasso4 muda.
+   */
+  readonly aptidoesAgrupadas = computed<TipoAptidaoComAptidoes[]>(() => {
+    const grupos = new Map<string, FichaAptidaoEditavel[]>();
+    for (const a of this.formPasso4()) {
+      if (!grupos.has(a.tipoAptidaoNome)) {
+        grupos.set(a.tipoAptidaoNome, []);
+      }
+      grupos.get(a.tipoAptidaoNome)!.push(a);
+    }
+    return Array.from(grupos.entries()).map(([tipoNome, aptidoes]) => ({ tipoNome, aptidoes }));
+  });
 
   // ============================================================
   // Computed: validacao do passo atual
@@ -531,6 +600,11 @@ export class FichaWizardComponent implements OnInit {
       this.salvarPasso2();
     } else if (this.passoAtual() === 3) {
       this.salvarPasso3();
+    } else if (this.passoAtual() === 4) {
+      this.salvarPasso4();
+    } else if (this.passoAtual() === 5) {
+      // Passo 5 (Vantagens) e opcional — compras ja foram persistidas individualmente
+      this.passoAtual.set(6);
     } else {
       this.passoAtual.update((p) => p + 1);
     }
@@ -680,6 +754,79 @@ export class FichaWizardComponent implements OnInit {
       });
   }
 
+  private carregarDadosPasso4(): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) return;
+
+    this.carregandoAptidoes.set(true);
+
+    forkJoin({
+      aptidoes: this.fichasApi.getAptidoes(fichaId),
+      resumo: this.fichasApi.getFichaResumo(fichaId),
+      aptidoesConfig: this.configApi.listAptidoes(this.jogoId()),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ aptidoes, resumo, aptidoesConfig }) => {
+          this.pontosAptidaoDisponiveis.set(resumo.pontosAptidaoDisponiveis ?? 0);
+          const configMap = new Map(aptidoesConfig.map((c) => [c.id, c]));
+          this.formPasso4.set(
+            aptidoes.map((a) => ({
+              aptidaoConfigId: a.aptidaoConfigId,
+              aptidaoNome: a.aptidaoNome,
+              tipoAptidaoNome: configMap.get(a.aptidaoConfigId)?.tipoAptidaoNome ?? 'Sem tipo',
+              base: a.base,
+              sorte: a.sorte,
+              classe: a.classe,
+            }))
+          );
+          this.carregandoAptidoes.set(false);
+        },
+        error: () => {
+          this.carregandoAptidoes.set(false);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: 'Nao foi possivel carregar as aptidoes.',
+          });
+        },
+      });
+  }
+
+  private salvarPasso4(): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) {
+      this.passoAtual.set(5);
+      return;
+    }
+
+    this.estadoSalvamento.set('salvando');
+
+    const dtos: AtualizarAptidaoDto[] = this.formPasso4().map((a) => ({
+      aptidaoConfigId: a.aptidaoConfigId,
+      base: a.base,
+    }));
+
+    this.fichasApi
+      .atualizarAptidoes(fichaId, dtos)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.estadoSalvamento.set('salvo');
+          this.passoAtual.set(5);
+          setTimeout(() => this.estadoSalvamento.set('idle'), 3000);
+        },
+        error: () => {
+          this.estadoSalvamento.set('erro');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro ao salvar',
+            detail: 'Nao foi possivel salvar as aptidoes.',
+          });
+        },
+      });
+  }
+
   private criarFicha(): Observable<Ficha> {
     const f = this.formPasso1();
     const dto: CreateFichaDto = {
@@ -722,6 +869,14 @@ export class FichaWizardComponent implements OnInit {
 
   onFormPasso3Changed(atributos: FichaAtributoEditavel[]): void {
     this.formPasso3.set(atributos);
+  }
+
+  onFormPasso4Changed(aptidoes: FichaAptidaoEditavel[]): void {
+    this.formPasso4.set(aptidoes);
+  }
+
+  onPontosVantagemAtualizados(pontos: number): void {
+    this.pontosVantagemDisponiveis.set(pontos);
   }
 
   onRacaSelecionada(racaId: number | null): void {

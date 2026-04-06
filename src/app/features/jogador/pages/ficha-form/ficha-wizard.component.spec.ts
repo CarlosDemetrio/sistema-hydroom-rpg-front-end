@@ -31,9 +31,10 @@ import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { AuthService } from '@services/auth.service';
-import { Ficha, FichaAtributoResponse } from '@core/models/ficha.model';
+import { Ficha, FichaAtributoResponse, FichaAptidaoResponse } from '@core/models/ficha.model';
+import { AptidaoConfig } from '@core/models/aptidao-config.model';
 import { ClassePersonagem, GeneroConfig, IndoleConfig, NivelConfig, PresencaConfig, Raca } from '@core/models/config.models';
-import { FichaAtributoEditavel } from './ficha-wizard.types';
+import { FichaAptidaoEditavel, FichaAtributoEditavel } from './ficha-wizard.types';
 
 // ============================================================
 // Dados de teste
@@ -182,6 +183,37 @@ const atributoEditavelMock: FichaAtributoEditavel = {
   outros: 0,
 };
 
+const fichaAptidaoResponseMock: FichaAptidaoResponse = {
+  id: 1,
+  aptidaoConfigId: 1,
+  aptidaoNome: 'Espada',
+  base: 0,
+  sorte: 0,
+  classe: 0,
+  total: 0,
+};
+
+const aptidaoConfigMock: AptidaoConfig = {
+  id: 1,
+  jogoId: 10,
+  tipoAptidaoId: 1,
+  tipoAptidaoNome: 'Combate',
+  nome: 'Espada',
+  descricao: null,
+  ordemExibicao: 1,
+  dataCriacao: '2024-01-01T00:00:00',
+  dataUltimaAtualizacao: '2024-01-01T00:00:00',
+};
+
+const aptidaoEditavelMock: FichaAptidaoEditavel = {
+  aptidaoConfigId: 1,
+  aptidaoNome: 'Espada',
+  tipoAptidaoNome: 'Combate',
+  base: 2,
+  sorte: 0,
+  classe: 0,
+};
+
 // ============================================================
 // Factories de mocks
 // ============================================================
@@ -192,8 +224,10 @@ function criarFichasApiMock(fichaRetornada: Ficha = fichaNovaRetornadaMock) {
     createFicha:        vi.fn().mockReturnValue(of(fichaRetornada)),
     updateFicha:        vi.fn().mockReturnValue(of(fichaRetornada)),
     getAtributos:       vi.fn().mockReturnValue(of([fichaAtributoResponseMock])),
-    getFichaResumo:     vi.fn().mockReturnValue(of({ pontosAtributoDisponiveis: 10 })),
+    getFichaResumo:     vi.fn().mockReturnValue(of({ pontosAtributoDisponiveis: 10, pontosAptidaoDisponiveis: 5 })),
     atualizarAtributos: vi.fn().mockReturnValue(of([fichaAtributoResponseMock])),
+    getAptidoes:        vi.fn().mockReturnValue(of([fichaAptidaoResponseMock])),
+    atualizarAptidoes:  vi.fn().mockReturnValue(of([fichaAptidaoResponseMock])),
   };
 }
 
@@ -205,6 +239,7 @@ function criarConfigApiMock() {
     listIndoles:   vi.fn().mockReturnValue(of([indoleMock])),
     listPresencas: vi.fn().mockReturnValue(of([presencaMock])),
     listNiveis:    vi.fn().mockReturnValue(of([nivelConfigMock])),
+    listAptidoes:  vi.fn().mockReturnValue(of([aptidaoConfigMock])),
   };
 }
 
@@ -1054,6 +1089,231 @@ describe('FichaWizardComponent', () => {
 
       expect(comp.estadoSalvamento()).toBe('erro');
       expect(comp.passoAtual()).toBe(3);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 11. onFormPasso4Changed
+  // ----------------------------------------------------------
+
+  describe('onFormPasso4Changed', () => {
+    it('atualiza formPasso4 quando step emite aptidoesChanged', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      const novasAptidoes: FichaAptidaoEditavel[] = [aptidaoEditavelMock];
+      comp.onFormPasso4Changed(novasAptidoes);
+      fixture.detectChanges();
+
+      expect(comp.formPasso4()).toEqual(novasAptidoes);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 12. Carregamento de aptidoes ao entrar no passo 4
+  // ----------------------------------------------------------
+
+  describe('carregamento de aptidoes ao entrar no passo 4', () => {
+    it('chama getAptidoes, getFichaResumo e listAptidoes com fichaId definido', async () => {
+      const { fixture, fichasApi, configApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.fichaId.set(42);
+      comp.passoAtual.set(4);
+      fixture.detectChanges();
+
+      expect(fichasApi.getAptidoes).toHaveBeenCalledWith(42);
+      expect(fichasApi.getFichaResumo).toHaveBeenCalledWith(42);
+      expect(configApi.listAptidoes).toHaveBeenCalledWith(10);
+    });
+
+    it('popula formPasso4 e pontosAptidaoDisponiveis apos carregamento', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.fichaId.set(42);
+      comp.passoAtual.set(4);
+      fixture.detectChanges();
+
+      expect(comp.pontosAptidaoDisponiveis()).toBe(5);
+      expect(comp.formPasso4().length).toBe(1);
+      expect(comp.formPasso4()[0].aptidaoNome).toBe('Espada');
+      expect(comp.formPasso4()[0].tipoAptidaoNome).toBe('Combate');
+    });
+
+    it('nao carrega aptidoes quando fichaId e null', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(4);
+      fixture.detectChanges();
+
+      expect(fichasApi.getAptidoes).not.toHaveBeenCalled();
+    });
+
+    it('nao recarrega aptidoes se formPasso4 ja tem dados', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.formPasso4.set([aptidaoEditavelMock]);
+      comp.fichaId.set(42);
+      comp.passoAtual.set(4);
+      fixture.detectChanges();
+
+      expect(fichasApi.getAptidoes).not.toHaveBeenCalled();
+    });
+
+    it('muda carregandoAptidoes para false quando getAptidoes falha', async () => {
+      const { fixture } = await renderWizard({
+        fichasApiOverride: {
+          getAptidoes: vi.fn().mockReturnValue(throwError(() => new Error('Server error'))),
+        },
+      });
+      const comp = fixture.componentInstance;
+
+      comp.fichaId.set(42);
+      comp.passoAtual.set(4);
+      fixture.detectChanges();
+
+      expect(comp.carregandoAptidoes()).toBe(false);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 13. Auto-save: avanco do passo 4
+  // ----------------------------------------------------------
+
+  describe('auto-save ao avancar do passo 4', () => {
+    it('avanca para passo 5 sem chamar API quando fichaId e null', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(4);
+      comp.fichaId.set(null);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.passoAtual()).toBe(5);
+      expect(fichasApi.atualizarAptidoes).not.toHaveBeenCalled();
+    });
+
+    it('chama atualizarAptidoes (PUT) com formPasso4 ao avancar do passo 4', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(4);
+      comp.fichaId.set(42);
+      comp.formPasso4.set([aptidaoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(fichasApi.atualizarAptidoes).toHaveBeenCalledWith(42, [
+        { aptidaoConfigId: 1, base: 2 },
+      ]);
+    });
+
+    it('avanca para passo 5 apos atualizarAptidoes com sucesso', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(4);
+      comp.fichaId.set(42);
+      comp.formPasso4.set([aptidaoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.passoAtual()).toBe(5);
+    });
+
+    it('muda estadoSalvamento para "salvando" durante atualizarAptidoes', async () => {
+      const { Subject } = await import('rxjs');
+      const subject = new Subject<FichaAptidaoResponse[]>();
+
+      const { fixture } = await renderWizard({
+        fichasApiOverride: {
+          atualizarAptidoes: vi.fn().mockReturnValue(subject.asObservable()),
+        },
+      });
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(4);
+      comp.fichaId.set(42);
+      comp.formPasso4.set([aptidaoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.estadoSalvamento()).toBe('salvando');
+
+      subject.next([fichaAptidaoResponseMock]);
+      subject.complete();
+    });
+
+    it('muda estadoSalvamento para "erro" e nao avanca quando atualizarAptidoes falha', async () => {
+      const { fixture } = await renderWizard({
+        fichasApiOverride: {
+          atualizarAptidoes: vi.fn().mockReturnValue(throwError(() => new Error('Server error'))),
+        },
+      });
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(4);
+      comp.fichaId.set(42);
+      comp.formPasso4.set([aptidaoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.estadoSalvamento()).toBe('erro');
+      expect(comp.passoAtual()).toBe(4);
+    });
+
+    it('passo 4 sempre pode avancar (passoAtualValido retorna true)', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(4);
+      fixture.detectChanges();
+
+      expect(comp.passoAtualValido()).toBe(true);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 14. Computed aptidoesAgrupadas
+  // ----------------------------------------------------------
+
+  describe('computed aptidoesAgrupadas', () => {
+    it('agrupa aptidoes por tipoAptidaoNome', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.formPasso4.set([
+        { aptidaoConfigId: 1, aptidaoNome: 'Espada', tipoAptidaoNome: 'Combate', base: 2, sorte: 0, classe: 0 },
+        { aptidaoConfigId: 2, aptidaoNome: 'Arco', tipoAptidaoNome: 'Combate', base: 0, sorte: 0, classe: 0 },
+        { aptidaoConfigId: 3, aptidaoNome: 'Persuasao', tipoAptidaoNome: 'Social', base: 1, sorte: 0, classe: 0 },
+      ]);
+      fixture.detectChanges();
+
+      const grupos = comp.aptidoesAgrupadas();
+      expect(grupos.length).toBe(2);
+      expect(grupos.find((g) => g.tipoNome === 'Combate')?.aptidoes.length).toBe(2);
+      expect(grupos.find((g) => g.tipoNome === 'Social')?.aptidoes.length).toBe(1);
+    });
+
+    it('retorna array vazio quando formPasso4 esta vazio', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      expect(comp.aptidoesAgrupadas()).toEqual([]);
     });
   });
 
