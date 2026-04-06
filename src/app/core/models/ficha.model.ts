@@ -113,6 +113,8 @@ export interface FichaVantagemResponse {
   nivelAtual: number;
   nivelMaximo: number;
   custoPago: number;
+  /** Tipo da vantagem: VANTAGEM (normal) ou INSOLITUS (concedida gratuitamente pelo Mestre). */
+  tipoVantagem?: 'VANTAGEM' | 'INSOLITUS';
 }
 
 /**

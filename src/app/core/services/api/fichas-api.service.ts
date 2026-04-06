@@ -166,6 +166,27 @@ export class FichasApiService {
     return this.http.put<FichaVantagemResponse>(`${this.baseUrl}/fichas/${id}/vantagens/${vid}`, {});
   }
 
+  /**
+   * POST /api/v1/fichas/{id}/vantagens/insolitus/{vantagemConfigId}
+   * Concede um Insolitus a uma ficha (Mestre only). Sem custo de pontos.
+   */
+  concederInsolitus(fichaId: number, vantagemConfigId: number): Observable<FichaVantagemResponse> {
+    return this.http.post<FichaVantagemResponse>(
+      `${this.baseUrl}/fichas/${fichaId}/vantagens/insolitus/${vantagemConfigId}`,
+      {}
+    );
+  }
+
+  /**
+   * DELETE /api/v1/fichas/{fichaId}/vantagens/{fichaVantagemId}
+   * Revoga uma vantagem (inclusive Insolitus) de uma ficha (Mestre only).
+   */
+  revogarVantagem(fichaId: number, fichaVantagemId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/fichas/${fichaId}/vantagens/${fichaVantagemId}`
+    );
+  }
+
   // ==================== ATRIBUTOS DIRETOS ====================
 
   /**

@@ -174,6 +174,14 @@ export class FichaBusinessService {
     return this.fichasApi.aumentarNivelVantagem(fichaId, vantagemId);
   }
 
+  concederInsolitus(fichaId: number, vantagemConfigId: number): Observable<FichaVantagemResponse> {
+    return this.fichasApi.concederInsolitus(fichaId, vantagemConfigId);
+  }
+
+  revogarVantagem(fichaId: number, fichaVantagemId: number): Observable<void> {
+    return this.fichasApi.revogarVantagem(fichaId, fichaVantagemId);
+  }
+
   // ============================================
   // ANOTAÇÕES
   // ============================================

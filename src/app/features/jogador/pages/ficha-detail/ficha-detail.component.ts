@@ -6,6 +6,7 @@ import {
   inject,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -27,7 +28,9 @@ import {
   FichaResumo,
   FichaVantagemResponse,
 } from '@models/ficha.model';
+import { VantagemConfig } from '@models/vantagem-config.model';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { DuplicarFichaDto } from '@models/dtos/ficha.dto';
@@ -195,7 +198,11 @@ import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/fic
                   [vantagens]="vantagens()"
                   [pontosVantagemRestantes]="resumo()!.pontosVantagemDisponiveis ?? 0"
                   [podeAumentarNivel]="podeEditar()"
+                  [isMestre]="isMestre()"
+                  [vantagensInsolitusConfig]="vantagensInsolitusConfig()"
                   (aumentarNivelVantagem)="onAumentarNivelVantagem($event)"
+                  (revogarVantagem)="onRevogarVantagem($event)"
+                  (concederInsolitusConfirmado)="onConcederInsolitus($event)"
                 />
               }
             </p-tabpanel>
@@ -273,9 +280,13 @@ export class FichaDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private fichaBusinessService = inject(FichaBusinessService);
+  private configApiService = inject(ConfigApiService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
   private confirmationService = inject(ConfirmationService);
+
+  // ViewChild para acessar o metodo resetarConcedendo do dumb component
+  private vantagensTabRef = viewChild(FichaVantagensTabComponent);
 
   // Route param
   protected fichaId = signal<number | null>(null);
@@ -286,6 +297,8 @@ export class FichaDetailComponent implements OnInit {
   protected atributos = signal<FichaAtributoResponse[]>([]);
   protected aptidoes = signal<FichaAptidaoResponse[]>([]);
   protected vantagens = signal<FichaVantagemResponse[]>([]);
+  /** Config de vantagens do tipo INSOLITUS disponíveis para conceder (carregado quando Mestre abre a aba). */
+  protected vantagensInsolitusConfig = signal<VantagemConfig[]>([]);
 
   // UI state
   protected loading = signal(true);
@@ -302,6 +315,7 @@ export class FichaDetailComponent implements OnInit {
 
   // Auth shortcuts
   protected userInfo = computed(() => this.authService.currentUser());
+  protected isMestre = computed(() => this.authService.isMestre());
   protected userIdNumber = computed(() => {
     const id = this.authService.currentUser()?.id;
     return id ? Number(id) : 0;
@@ -438,10 +452,29 @@ export class FichaDetailComponent implements OnInit {
       next: (vantagens) => {
         this.vantagens.set(vantagens);
         this.loadingVantagens.set(false);
+        // Se for Mestre e ainda não carregou as configs INSOLITUS, carrega agora
+        if (this.isMestre() && this.vantagensInsolitusConfig().length === 0) {
+          const jogoId = this.ficha()?.jogoId;
+          if (jogoId) {
+            this.carregarVantagensInsolitusConfig(jogoId);
+          }
+        }
       },
       error: () => {
         this.toastService.error('Erro ao carregar vantagens.');
         this.loadingVantagens.set(false);
+      },
+    });
+  }
+
+  private carregarVantagensInsolitusConfig(jogoId: number): void {
+    this.configApiService.listVantagens(jogoId).subscribe({
+      next: (configs) => {
+        const insolitus = configs.filter(v => v.tipoVantagem === 'INSOLITUS');
+        this.vantagensInsolitusConfig.set(insolitus);
+      },
+      error: () => {
+        // Falha silenciosa — o Mestre verá lista vazia no dialog, mas nao bloqueia a UI
       },
     });
   }
@@ -459,6 +492,38 @@ export class FichaDetailComponent implements OnInit {
       },
       error: () => {
         this.toastService.error('Erro ao aumentar nivel da vantagem.');
+      },
+    });
+  }
+
+  protected onConcederInsolitus(vantagemConfigId: number): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) return;
+
+    this.fichaBusinessService.concederInsolitus(fichaId, vantagemConfigId).subscribe({
+      next: (novaVantagem) => {
+        this.vantagens.update(list => [...list, novaVantagem]);
+        this.toastService.success('Insolitus concedido com sucesso!');
+        this.vantagensTabRef()?.resetarConcedendo(true);
+      },
+      error: () => {
+        this.toastService.error('Erro ao conceder Insolitus. Verifique se ja foi concedido.');
+        this.vantagensTabRef()?.resetarConcedendo(false);
+      },
+    });
+  }
+
+  protected onRevogarVantagem(fichaVantagemId: number): void {
+    const fichaId = this.fichaId();
+    if (!fichaId) return;
+
+    this.fichaBusinessService.revogarVantagem(fichaId, fichaVantagemId).subscribe({
+      next: () => {
+        this.vantagens.update(list => list.filter(v => v.id !== fichaVantagemId));
+        this.toastService.success('Vantagem revogada com sucesso.');
+      },
+      error: () => {
+        this.toastService.error('Erro ao revogar vantagem.');
       },
     });
   }

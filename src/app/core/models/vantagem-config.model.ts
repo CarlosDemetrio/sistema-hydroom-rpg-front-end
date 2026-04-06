@@ -27,6 +27,8 @@ export interface VantagemConfig {
   formulaCusto: string | null;
   descricaoEfeito: string | null;
   ordemExibicao: number;
+  /** Tipo da vantagem: VANTAGEM (custa pontos) ou INSOLITUS (concedida gratuitamente pelo Mestre). */
+  tipoVantagem?: 'VANTAGEM' | 'INSOLITUS';
   preRequisitos: VantagemPreRequisito[];
   efeitos: VantagemEfeito[];
   dataCriacao: string;
