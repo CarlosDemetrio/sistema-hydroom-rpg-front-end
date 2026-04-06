@@ -135,6 +135,15 @@ export class FichasApiService {
   }
 
   /**
+   * PUT /api/v1/fichas/{id}/completar
+   * Finaliza a criacao da ficha (saindo do estado rascunho).
+   * Chamado ao concluir o wizard (Passo 6 — Revisao).
+   */
+  completar(fichaId: number): Observable<Ficha> {
+    return this.http.put<Ficha>(`${this.baseUrl}/fichas/${fichaId}/completar`, {});
+  }
+
+  /**
    * POST /api/v1/fichas/{id}/preview
    * Simula mudanças de atributos/XP e retorna valores recalculados sem salvar.
    */

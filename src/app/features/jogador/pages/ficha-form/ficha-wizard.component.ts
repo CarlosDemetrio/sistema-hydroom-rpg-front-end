@@ -27,13 +27,15 @@ import {
   PresencaConfig,
   Raca,
 } from '@core/models/config.models';
-import { AtualizarAptidaoDto, AtualizarAtributoDto, Ficha } from '@core/models/ficha.model';
+import { AtualizarAptidaoDto, AtualizarAtributoDto, Ficha, FichaVantagemResponse } from '@core/models/ficha.model';
 import { CreateFichaDto, UpdateFichaDto } from '@core/models/dtos/ficha.dto';
 import { StepIdentificacaoComponent } from './steps/step-identificacao/step-identificacao.component';
 import { StepDescricaoComponent } from './steps/step-descricao/step-descricao.component';
 import { StepAtributosComponent } from './steps/step-atributos/step-atributos.component';
 import { StepAptidoesComponent } from './steps/step-aptidoes/step-aptidoes.component';
 import { StepVantagensComponent } from './steps/step-vantagens/step-vantagens.component';
+import { StepRevisaoComponent, FormPasso1Revisao } from './steps/step-revisao/step-revisao.component';
+import { WizardRodapeComponent } from '@shared/components/wizard-rodape/wizard-rodape.component';
 import {
   EstadoSalvamento,
   FichaAptidaoEditavel,
@@ -71,6 +73,8 @@ import { forkJoin, Observable } from 'rxjs';
     StepAtributosComponent,
     StepAptidoesComponent,
     StepVantagensComponent,
+    StepRevisaoComponent,
+    WizardRodapeComponent,
   ],
   providers: [MessageService],
   template: `
@@ -172,83 +176,33 @@ import { forkJoin, Observable } from 'rxjs';
         }
 
         @if (passoAtual() === 6) {
-          <div class="surface-100 border-round p-5 text-center">
-            <i class="pi pi-check-circle text-primary text-4xl mb-3 block"></i>
-            <p class="text-xl font-semibold m-0">Passo 6 — Conclusao</p>
-            <p class="text-color-secondary mt-2">Em breve (T11)</p>
-          </div>
+          <app-step-revisao
+            [formPasso1]="formPasso1Revisao()"
+            [formPasso2]="{ descricao: formPasso2().descricao }"
+            [atributos]="formPasso3()"
+            [aptidoesAgrupadas]="aptidoesAgrupadas()"
+            [vantagensCompradas]="vantagensCompradasList()"
+            [pontosAtributoNaoUsados]="pontosAtributoDisponiveis()"
+            [pontosAptidaoNaoUsados]="pontosAptidaoDisponiveis()"
+            [pontosVantagemNaoUsados]="pontosVantagemDisponiveis()"
+            [criando]="criando()"
+            (editarPasso)="irParaPasso($event)"
+            (confirmar)="confirmarCriacao()"
+          ></app-step-revisao>
         }
 
         <!-- Rodape de navegacao -->
-        <div class="flex justify-content-between align-items-center mt-5 pt-4 border-top-1 border-200">
-
-          <!-- Botao Voltar / Cancelar -->
-          <div>
-            @if (passoAtual() > 1) {
-              <p-button
-                label="Voltar"
-                icon="pi pi-arrow-left"
-                [text]="true"
-                severity="secondary"
-                (onClick)="voltarPasso()"
-                [disabled]="estadoSalvamento() === 'salvando'"
-              ></p-button>
-            } @else {
-              <p-button
-                label="Cancelar"
-                icon="pi pi-times"
-                [text]="true"
-                severity="secondary"
-                (onClick)="cancelar()"
-              ></p-button>
-            }
-          </div>
-
-          <!-- Indicador de estado de salvamento + Botao Proximo -->
-          <div class="flex align-items-center gap-3">
-
-            <!-- Estado: salvando -->
-            @if (estadoSalvamento() === 'salvando') {
-              <div class="flex align-items-center gap-2 text-color-secondary">
-                <p-progress-spinner
-                  strokeWidth="4"
-                  animationDuration=".5s"
-                  [style]="{ width: '20px', height: '20px' }"
-                ></p-progress-spinner>
-                <span class="text-sm">Salvando...</span>
-              </div>
-            }
-
-            <!-- Estado: salvo -->
-            @if (estadoSalvamento() === 'salvo') {
-              <div class="flex align-items-center gap-2 text-green-500">
-                <i class="pi pi-check-circle"></i>
-                <span class="text-sm">Salvo</span>
-              </div>
-            }
-
-            <!-- Estado: erro -->
-            @if (estadoSalvamento() === 'erro') {
-              <div class="flex align-items-center gap-2 text-red-500">
-                <i class="pi pi-exclamation-triangle"></i>
-                <span class="text-sm">Erro ao salvar</span>
-              </div>
-            }
-
-            <!-- Botao Proximo -->
-            @if (passoAtual() < 6) {
-              <p-button
-                label="Proximo"
-                icon="pi pi-arrow-right"
-                iconPos="right"
-                (onClick)="avancarPasso()"
-                [disabled]="!passoAtualValido() || estadoSalvamento() === 'salvando'"
-                [loading]="estadoSalvamento() === 'salvando'"
-              ></p-button>
-            }
-
-          </div>
-        </div>
+        <app-wizard-rodape
+          [estadoSalvamento]="estadoSalvamento()"
+          [passoAtual]="passoAtual()"
+          [totalPassos]="6"
+          [podeAvancar]="passoAtualValido()"
+          [podeCriar]="passoAtual() === 6"
+          [criando]="criando()"
+          (avancar)="avancarPasso()"
+          (voltar)="voltarPasso()"
+          (criar)="confirmarCriacao()"
+        ></app-wizard-rodape>
 
       }
 
@@ -298,6 +252,18 @@ export class FichaWizardComponent implements OnInit {
         this.fichasApi.getFichaResumo(this.fichaId()!)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(r => this.pontosVantagemDisponiveis.set(r.pontosVantagemDisponiveis ?? 0));
+      }
+    });
+
+    // Carrega vantagens compradas ao entrar no passo 6 (revisao)
+    effect(() => {
+      if (this.passoAtual() === 6 && this.fichaId() !== null) {
+        this.fichasApi.listVantagens(this.fichaId()!)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (vantagens) => this.vantagensCompradasList.set(vantagens),
+            error: () => this.vantagensCompradasList.set([]),
+          });
       }
     });
 
@@ -400,6 +366,33 @@ export class FichaWizardComponent implements OnInit {
   // ============================================================
 
   readonly pontosVantagemDisponiveis = signal<number>(0);
+
+  // ============================================================
+  // Dados do Passo 6 — Revisao
+  // ============================================================
+
+  /** Vantagens compradas carregadas para exibicao na revisao */
+  readonly vantagensCompradasList = signal<FichaVantagemResponse[]>([]);
+
+  /** Flag para o estado de criacao final (chamada ao completar()) */
+  readonly criando = signal<boolean>(false);
+
+  /**
+   * FormPasso1 com os nomes resolvidos para exibicao na revisao (Passo 6).
+   * Recomputa sempre que formPasso1, generos, racas, classes, indoles ou presencas mudam.
+   */
+  readonly formPasso1Revisao = computed<FormPasso1Revisao>(() => {
+    const f = this.formPasso1();
+    return {
+      nome: f.nome,
+      generoNome: this.generos().find((g) => g.id === f.generoId)?.nome ?? null,
+      racaNome: this.racas().find((r) => r.id === f.racaId)?.nome ?? null,
+      classeNome: this.classes().find((c) => c.id === f.classeId)?.nome ?? null,
+      indoleNome: this.indoles().find((i) => i.id === f.indoleId)?.nome ?? null,
+      presencaNome: this.presencas().find((p) => p.id === f.presencaId)?.nome ?? null,
+      isNpc: f.isNpc,
+    };
+  });
 
   /**
    * Aptidoes agrupadas por tipo para o StepAptidoesComponent.
@@ -621,6 +614,47 @@ export class FichaWizardComponent implements OnInit {
       ? '/mestre/npcs'
       : '/jogador/fichas';
     this.router.navigate([destino]);
+  }
+
+  /**
+   * Navega diretamente para um passo especifico.
+   * Usado pelo StepRevisaoComponent para permitir edicao de passos anteriores.
+   */
+  irParaPasso(passo: number): void {
+    this.passoAtual.set(passo);
+  }
+
+  /**
+   * Finaliza a criacao da ficha chamando PUT /fichas/{id}/completar.
+   * Navega para a pagina de detalhes da ficha em caso de sucesso.
+   */
+  confirmarCriacao(): void {
+    if (this.criando()) return;
+
+    const fichaId = this.fichaId();
+    if (!fichaId) return;
+
+    this.criando.set(true);
+    this.estadoSalvamento.set('salvando');
+
+    this.fichasApi.completar(fichaId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (ficha: Ficha) => {
+          this.criando.set(false);
+          this.estadoSalvamento.set('salvo');
+          this.router.navigate(['/fichas', ficha.id]);
+        },
+        error: (err: { error?: { message?: string } }) => {
+          this.criando.set(false);
+          this.estadoSalvamento.set('erro');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro ao criar personagem',
+            detail: err.error?.message ?? 'Verifique os dados e tente novamente.',
+          });
+        },
+      });
   }
 
   private salvarPasso1(): void {
