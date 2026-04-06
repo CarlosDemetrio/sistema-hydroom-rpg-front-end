@@ -1,4 +1,13 @@
 /**
+ * Status de uma ficha. Alinhado com backend FichaStatus enum.
+ * - RASCUNHO: wizard nao concluido, campos obrigatorios podem estar incompletos
+ * - ATIVA: ficha completa e em uso
+ * - MORTA: personagem morto em jogo (nao pode ser deletada)
+ * - ABANDONADA: personagem abandonado pelo jogador (nao pode ser deletada)
+ */
+export type FichaStatus = 'RASCUNHO' | 'ATIVA' | 'MORTA' | 'ABANDONADA';
+
+/**
  * Character Sheet (Ficha) model
  * Aligned with backend FichaResponse record.
  */
@@ -22,6 +31,8 @@ export interface Ficha {
   renascimentos: number;
   isNpc: boolean;
   descricao: string | null;
+  /** Status da ficha. RASCUNHO indica wizard nao concluido. */
+  status: FichaStatus;
   dataCriacao: string;
   dataUltimaAtualizacao: string;
 }

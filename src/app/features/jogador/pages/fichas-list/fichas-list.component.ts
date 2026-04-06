@@ -190,6 +190,19 @@ import { Ficha } from '@core/models';
                     <h3 class="font-bold text-xl m-0 mb-1" style="font-family: var(--rpg-font-display)">
                       {{ ficha.nome }}
                     </h3>
+                    @if (ficha.status === 'RASCUNHO') {
+                      <p-tag
+                        value="Incompleta"
+                        severity="warn"
+                        [rounded]="true"
+                        styleClass="cursor-pointer"
+                        pTooltip="Clique para continuar criando este personagem"
+                        tooltipPosition="top"
+                        (click)="$event.stopPropagation(); retomar(ficha)"
+                        role="button"
+                        [attr.aria-label]="'Continuar criando ' + ficha.nome"
+                      />
+                    }
                   </div>
                   @if (ficha.nivel != null) {
                     <p-tag
@@ -309,6 +322,13 @@ export class FichasListComponent {
 
   criarFicha(): void {
     this.router.navigate(['/jogador/fichas/nova']);
+  }
+
+  retomar(ficha: Ficha): void {
+    this.router.navigate(
+      ['/jogador/fichas/criar'],
+      { queryParams: { fichaId: ficha.id } },
+    );
   }
 
   verFicha(id: number): void {
