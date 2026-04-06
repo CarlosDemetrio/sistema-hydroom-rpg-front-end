@@ -31,8 +31,9 @@ import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { AuthService } from '@services/auth.service';
-import { Ficha } from '@core/models/ficha.model';
-import { ClassePersonagem, GeneroConfig, IndoleConfig, PresencaConfig, Raca } from '@core/models/config.models';
+import { Ficha, FichaAtributoResponse } from '@core/models/ficha.model';
+import { ClassePersonagem, GeneroConfig, IndoleConfig, NivelConfig, PresencaConfig, Raca } from '@core/models/config.models';
+import { FichaAtributoEditavel } from './ficha-wizard.types';
 
 // ============================================================
 // Dados de teste
@@ -148,25 +149,62 @@ const fichaNovaRetornadaMock: Ficha = {
   nome: 'Novo Personagem',
 };
 
+const nivelConfigMock: NivelConfig = {
+  id: 1,
+  jogoId: 10,
+  nivel: 1,
+  xpNecessaria: 0,
+  pontosAtributo: 10,
+  pontosAptidao: 5,
+  limitadorAtributo: 20,
+  permitirRenascimento: false,
+  dataCriacao: '2024-01-01T00:00:00',
+  dataUltimaAtualizacao: '2024-01-01T00:00:00',
+};
+
+const fichaAtributoResponseMock: FichaAtributoResponse = {
+  id: 1,
+  atributoConfigId: 1,
+  atributoNome: 'Forca',
+  atributoAbreviacao: 'FOR',
+  base: 0,
+  nivel: 0,
+  outros: 0,
+  total: 0,
+  impeto: 0,
+};
+
+const atributoEditavelMock: FichaAtributoEditavel = {
+  atributoConfigId: 1,
+  atributoNome: 'Forca',
+  atributoAbreviacao: 'FOR',
+  base: 3,
+  outros: 0,
+};
+
 // ============================================================
 // Factories de mocks
 // ============================================================
 
 function criarFichasApiMock(fichaRetornada: Ficha = fichaNovaRetornadaMock) {
   return {
-    getFicha:     vi.fn().mockReturnValue(of(fichaRascunhoMock)),
-    createFicha:  vi.fn().mockReturnValue(of(fichaRetornada)),
-    updateFicha:  vi.fn().mockReturnValue(of(fichaRetornada)),
+    getFicha:           vi.fn().mockReturnValue(of(fichaRascunhoMock)),
+    createFicha:        vi.fn().mockReturnValue(of(fichaRetornada)),
+    updateFicha:        vi.fn().mockReturnValue(of(fichaRetornada)),
+    getAtributos:       vi.fn().mockReturnValue(of([fichaAtributoResponseMock])),
+    getFichaResumo:     vi.fn().mockReturnValue(of({ pontosAtributoDisponiveis: 10 })),
+    atualizarAtributos: vi.fn().mockReturnValue(of([fichaAtributoResponseMock])),
   };
 }
 
 function criarConfigApiMock() {
   return {
-    listGeneros:  vi.fn().mockReturnValue(of([generoMock])),
-    listRacas:    vi.fn().mockReturnValue(of([racaMock, racaComRestricao])),
-    listClasses:  vi.fn().mockReturnValue(of([classeMock, classeRestririta])),
-    listIndoles:  vi.fn().mockReturnValue(of([indoleMock])),
+    listGeneros:   vi.fn().mockReturnValue(of([generoMock])),
+    listRacas:     vi.fn().mockReturnValue(of([racaMock, racaComRestricao])),
+    listClasses:   vi.fn().mockReturnValue(of([classeMock, classeRestririta])),
+    listIndoles:   vi.fn().mockReturnValue(of([indoleMock])),
     listPresencas: vi.fn().mockReturnValue(of([presencaMock])),
+    listNiveis:    vi.fn().mockReturnValue(of([nivelConfigMock])),
   };
 }
 
@@ -723,10 +761,11 @@ describe('FichaWizardComponent', () => {
       expect(comp.passoAtual()).toBe(1);
     });
 
-    it('nos passos 3-6, avancarPasso incrementa sem chamar a API', async () => {
+    it('no passo 3 com fichaId null, avancarPasso incrementa sem chamar nenhuma API', async () => {
       const { fixture, fichasApi } = await renderWizard();
       const comp = fixture.componentInstance;
 
+      // fichaId null: salvarPasso3 apenas avanca sem API
       comp.passoAtual.set(3);
       fixture.detectChanges();
 
@@ -736,6 +775,7 @@ describe('FichaWizardComponent', () => {
       expect(comp.passoAtual()).toBe(4);
       expect(fichasApi.createFicha).not.toHaveBeenCalled();
       expect(fichasApi.updateFicha).not.toHaveBeenCalled();
+      expect(fichasApi.atualizarAtributos).not.toHaveBeenCalled();
     });
   });
 
@@ -899,6 +939,121 @@ describe('FichaWizardComponent', () => {
       fixture.detectChanges();
 
       expect(comp.formPasso1().nome).toBe('Legolas');
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 9. onFormPasso3Changed
+  // ----------------------------------------------------------
+
+  describe('onFormPasso3Changed', () => {
+    it('atualiza formPasso3 quando step emite atributosChanged', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      const novosAtributos: FichaAtributoEditavel[] = [atributoEditavelMock];
+      comp.onFormPasso3Changed(novosAtributos);
+      fixture.detectChanges();
+
+      expect(comp.formPasso3()).toEqual(novosAtributos);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 10. Auto-save: avanco do passo 3
+  // ----------------------------------------------------------
+
+  describe('auto-save ao avancar do passo 3', () => {
+    it('avanca para passo 4 sem chamar API quando fichaId e null', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(3);
+      comp.fichaId.set(null);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.passoAtual()).toBe(4);
+      expect(fichasApi.atualizarAtributos).not.toHaveBeenCalled();
+    });
+
+    it('chama atualizarAtributos (PUT) com formPasso3 ao avancar do passo 3', async () => {
+      const { fixture, fichasApi } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(3);
+      comp.fichaId.set(42);
+      comp.formPasso3.set([atributoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(fichasApi.atualizarAtributos).toHaveBeenCalledWith(42, [
+        { atributoConfigId: 1, base: 3 },
+      ]);
+    });
+
+    it('avanca para passo 4 apos atualizarAtributos com sucesso', async () => {
+      const { fixture } = await renderWizard();
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(3);
+      comp.fichaId.set(42);
+      comp.formPasso3.set([atributoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.passoAtual()).toBe(4);
+    });
+
+    it('muda estadoSalvamento para "salvando" durante atualizarAtributos', async () => {
+      const { Subject } = await import('rxjs');
+      const subject = new Subject<FichaAtributoResponse[]>();
+
+      const { fixture } = await renderWizard({
+        fichasApiOverride: {
+          atualizarAtributos: vi.fn().mockReturnValue(subject.asObservable()),
+        },
+      });
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(3);
+      comp.fichaId.set(42);
+      comp.formPasso3.set([atributoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.estadoSalvamento()).toBe('salvando');
+
+      subject.next([fichaAtributoResponseMock]);
+      subject.complete();
+    });
+
+    it('muda estadoSalvamento para "erro" e nao avanca quando atualizarAtributos falha', async () => {
+      const { fixture } = await renderWizard({
+        fichasApiOverride: {
+          atualizarAtributos: vi.fn().mockReturnValue(throwError(() => new Error('Server error'))),
+        },
+      });
+      const comp = fixture.componentInstance;
+
+      comp.passoAtual.set(3);
+      comp.fichaId.set(42);
+      comp.formPasso3.set([atributoEditavelMock]);
+      fixture.detectChanges();
+
+      comp.avancarPasso();
+      fixture.detectChanges();
+
+      expect(comp.estadoSalvamento()).toBe('erro');
+      expect(comp.passoAtual()).toBe(3);
     });
   });
 

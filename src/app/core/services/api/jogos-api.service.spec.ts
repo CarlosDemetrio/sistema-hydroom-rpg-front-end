@@ -262,7 +262,7 @@ describe('JogosApiService', () => {
   // ============================================================
 
   describe('listParticipantes', () => {
-    it('deve fazer GET em /api/v1/jogos/{jogoId}/participantes', () => {
+    it('deve fazer GET em /api/v1/jogos/{jogoId}/participantes sem filtro', () => {
       service.listParticipantes(1).subscribe();
 
       const req = httpMock.expectOne(`${BASE_URL}/jogos/1/participantes`);
@@ -278,6 +278,16 @@ describe('JogosApiService', () => {
 
       expect(resultado).toHaveLength(1);
       expect(resultado[0].nomeUsuario).toBe('Jogador Teste');
+    });
+
+    it('deve enviar query param status quando fornecido', () => {
+      service.listParticipantes(1, 'PENDENTE').subscribe();
+
+      const req = httpMock.expectOne(r =>
+        r.url === `${BASE_URL}/jogos/1/participantes` && r.params.get('status') === 'PENDENTE'
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
     });
   });
 
@@ -326,16 +336,118 @@ describe('JogosApiService', () => {
   });
 
   // ============================================================
-  // banirParticipante
+  // banirParticipante — PUT /{pid}/banir
   // ============================================================
 
   describe('banirParticipante', () => {
-    it('deve fazer DELETE em /api/v1/jogos/{jogoId}/participantes/{id}', () => {
+    it('deve fazer PUT em /api/v1/jogos/{jogoId}/participantes/{id}/banir', () => {
       service.banirParticipante(1, 10).subscribe();
+
+      const req = httpMock.expectOne(`${BASE_URL}/jogos/1/participantes/10/banir`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...participanteStub, status: 'BANIDO' });
+    });
+
+    it('deve retornar participante com status BANIDO', () => {
+      let resultado: Participante | undefined;
+      service.banirParticipante(1, 10).subscribe(p => (resultado = p));
+
+      httpMock
+        .expectOne(`${BASE_URL}/jogos/1/participantes/10/banir`)
+        .flush({ ...participanteStub, status: 'BANIDO' });
+
+      expect(resultado?.status).toBe('BANIDO');
+    });
+  });
+
+  // ============================================================
+  // desbanirParticipante — PUT /{pid}/desbanir
+  // ============================================================
+
+  describe('desbanirParticipante', () => {
+    it('deve fazer PUT em /api/v1/jogos/{jogoId}/participantes/{id}/desbanir', () => {
+      service.desbanirParticipante(1, 10).subscribe();
+
+      const req = httpMock.expectOne(`${BASE_URL}/jogos/1/participantes/10/desbanir`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...participanteStub, status: 'APROVADO' });
+    });
+
+    it('deve retornar participante com status APROVADO após desbanir', () => {
+      let resultado: Participante | undefined;
+      service.desbanirParticipante(1, 10).subscribe(p => (resultado = p));
+
+      httpMock
+        .expectOne(`${BASE_URL}/jogos/1/participantes/10/desbanir`)
+        .flush({ ...participanteStub, status: 'APROVADO' });
+
+      expect(resultado?.status).toBe('APROVADO');
+    });
+  });
+
+  // ============================================================
+  // removerParticipante — DELETE /{pid} (remoção provisória)
+  // ============================================================
+
+  describe('removerParticipante', () => {
+    it('deve fazer DELETE em /api/v1/jogos/{jogoId}/participantes/{id}', () => {
+      service.removerParticipante(1, 10).subscribe();
 
       const req = httpMock.expectOne(`${BASE_URL}/jogos/1/participantes/10`);
       expect(req.request.method).toBe('DELETE');
-      req.flush({ ...participanteStub, status: 'BANIDO' });
+      req.flush(null);
+    });
+  });
+
+  // ============================================================
+  // meuStatusParticipacao — GET /meu-status
+  // ============================================================
+
+  describe('meuStatusParticipacao', () => {
+    it('deve fazer GET em /api/v1/jogos/{jogoId}/participantes/meu-status', () => {
+      service.meuStatusParticipacao(1).subscribe();
+
+      const req = httpMock.expectOne(`${BASE_URL}/jogos/1/participantes/meu-status`);
+      expect(req.request.method).toBe('GET');
+      req.flush(participanteStub);
+    });
+
+    it('deve retornar o participante quando existe', () => {
+      let resultado: Participante | null | undefined;
+      service.meuStatusParticipacao(1).subscribe(p => (resultado = p));
+
+      httpMock
+        .expectOne(`${BASE_URL}/jogos/1/participantes/meu-status`)
+        .flush(participanteStub);
+
+      expect(resultado?.id).toBe(10);
+    });
+
+    it('deve retornar null quando o backend responde 404', () => {
+      let resultado: Participante | null | undefined;
+      service.meuStatusParticipacao(1).subscribe(p => (resultado = p));
+
+      httpMock
+        .expectOne(`${BASE_URL}/jogos/1/participantes/meu-status`)
+        .flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(resultado).toBeNull();
+    });
+  });
+
+  // ============================================================
+  // cancelarSolicitacao — DELETE /minha-solicitacao
+  // ============================================================
+
+  describe('cancelarSolicitacao', () => {
+    it('deve fazer DELETE em /api/v1/jogos/{jogoId}/participantes/minha-solicitacao', () => {
+      service.cancelarSolicitacao(1).subscribe();
+
+      const req = httpMock.expectOne(`${BASE_URL}/jogos/1/participantes/minha-solicitacao`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
     });
   });
 });
