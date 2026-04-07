@@ -15,7 +15,6 @@ import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
-import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -61,7 +60,6 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
     ConfirmDialogModule,
     DialogModule,
     DividerModule,
-    DrawerModule,
     InputTextModule,
     MessageModule,
     SkeletonModule,
@@ -218,7 +216,7 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
                   } @else {
                     <app-ficha-vantagens-tab
                       [vantagens]="vantagens()"
-                      [pontosVantagemRestantes]="resumo()!.pontosVantagemDisponiveis ?? 0"
+                      [pontosVantagemRestantes]="resumo()!.pontosVantagemDisponiveis"
                       [podeAumentarNivel]="podeEditar()"
                       [isMestre]="isMestre()"
                       [vantagensInsolitusConfig]="vantagensInsolitusConfig()"
@@ -271,15 +269,16 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
       </div>
     }
 
-    <!-- Drawer mobile: Painel de Visibilidade NPC -->
+    <!-- Dialog mobile: Painel de Visibilidade NPC -->
     @if (mostrarPainelNpc() && ficha()) {
-      <p-drawer
+      <p-dialog
         [visible]="drawerVisibilidadeAberto()"
         (visibleChange)="drawerVisibilidadeAberto.set($event)"
         header="Visibilidade do NPC"
-        position="bottom"
+        [modal]="true"
+        [draggable]="false"
+        [resizable]="false"
         styleClass="lg:hidden"
-        [style]="{height: '70vh'}"
       >
         <app-npc-visibilidade
           [fichaId]="fichaId()!"
@@ -288,7 +287,7 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
           [jogadoresComAcesso]="jogadoresComAcessoDetalhado()"
           (visibilidadeAtualizada)="onVisibilidadeAtualizada($event)"
         />
-      </p-drawer>
+      </p-dialog>
     }
 
     <!-- Dialog: Duplicar Ficha -->
@@ -297,7 +296,6 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
       [visible]="showDuplicarDialog()"
       (visibleChange)="showDuplicarDialog.set($event)"
       [modal]="true"
-      [style]="{width: '400px'}"
       [draggable]="false"
       [resizable]="false"
     >
@@ -603,6 +601,10 @@ export class FichaDetailComponent implements OnInit {
           list.map(v => v.id === vantagemId ? vantagemAtualizada : v)
         );
         this.toastService.success('Nivel da vantagem aumentado!');
+        // Reload resumo to reflect updated pontosVantagemDisponiveis
+        this.fichasApiService.getFichaResumo(fichaId).subscribe({
+          next: (novoResumo) => this.resumo.set(novoResumo),
+        });
       },
       error: () => {
         this.toastService.error('Erro ao aumentar nivel da vantagem.');

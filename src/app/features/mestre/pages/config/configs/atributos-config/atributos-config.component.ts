@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -37,7 +37,7 @@ import {
  *   2. Implementar buildForm(), getEntityName(), getEntityNamePlural()
  *   3. Sobrescrever confirmDelete() para usar ConfirmationService
  *   4. Incluir <app-base-config-table> no template com bindings
- *   5. Incluir <p-drawer> para o formulário lateral
+ *   5. Incluir <p-dialog> para o formulário modal
  */
 @Component({
   selector: 'app-atributos-config',
@@ -48,7 +48,7 @@ import {
     CardModule,
     CheckboxModule,
     ConfirmDialogModule,
-    DrawerModule,
+    DialogModule,
     InputNumberModule,
     InputTextModule,
     TextareaModule,
@@ -105,12 +105,13 @@ import {
     <!-- ============================================================
          DRAWER LATERAL — Formulário criar/editar
     ============================================================ -->
-    <p-drawer
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Atributo' : 'Novo Atributo'"
-      position="right"
-      class="w-full md:w-30rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -260,7 +261,7 @@ import {
           />
         </div>
       </form>
-    </p-drawer>
+    </p-dialog>
 
     <p-confirmDialog />
   `,

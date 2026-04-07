@@ -766,7 +766,6 @@ Criar um template HTML reutilizável que serve de base para TODOS os componentes
     [(visible)]="dialogVisible"
     [header]="editMode() ? 'Editar ' + getEntityName() : 'Novo ' + getEntityName()"
     [modal]="true"
-    [style]="{ width: '600px' }"
   >
     <form [formGroup]="form" (ngSubmit)="save()">
       

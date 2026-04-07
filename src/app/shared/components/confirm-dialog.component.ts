@@ -32,7 +32,6 @@ import { DialogModule } from 'primeng/dialog';
       [header]="header()"
       [modal]="true"
       [closable]="false"
-      [style]="{ width: '28rem' }"
     >
       <div class="flex flex-column gap-3">
         <p class="m-0 text-color">{{ message() }}</p>

@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
@@ -36,7 +36,7 @@ function formatPorcentagem(v: number | null): string {
     CardModule,
     CheckboxModule,
     ConfirmDialogModule,
-    DrawerModule,
+    DialogModule,
     InputNumberModule,
     InputTextModule,
     TooltipModule,
@@ -81,12 +81,14 @@ function formatPorcentagem(v: number | null): string {
 
     </p-card>
 
-    <p-drawer
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Membro' : 'Novo Membro do Corpo'"
-      position="right"
-      class="w-full md:w-30rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '30rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -148,7 +150,7 @@ function formatPorcentagem(v: number | null): string {
           <p-button [label]="editMode() ? 'Salvar Alterações' : 'Criar Membro'" icon="pi pi-check" type="submit" />
         </div>
       </form>
-    </p-drawer>
+    </p-dialog>
 
     <p-confirmDialog />
   `,

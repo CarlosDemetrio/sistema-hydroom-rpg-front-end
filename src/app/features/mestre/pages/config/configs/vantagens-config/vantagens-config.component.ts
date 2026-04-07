@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -42,7 +42,7 @@ import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
     CardModule,
     CheckboxModule,
     ConfirmDialogModule,
-    DrawerModule,
+    DialogModule,
     InputNumberModule,
     InputTextModule,
     SelectModule,
@@ -97,13 +97,14 @@ import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
 
     </p-card>
 
-    <!-- DRAWER -->
-    <p-drawer
+    <!-- DIALOG -->
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Vantagem' : 'Nova Vantagem'"
-      position="right"
-      class="w-full md:w-35rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
     >
       <p-tabs [value]="activeTab()">
         <p-tablist>
@@ -431,7 +432,7 @@ import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
 
         </p-tabpanels>
       </p-tabs>
-    </p-drawer>
+    </p-dialog>
 
     <p-confirmDialog />
   `,

@@ -1,11 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
@@ -22,13 +22,13 @@ import { PontosVantagemConfigService } from '@core/services/business/config';
 @Component({
   selector: 'app-pontos-vantagem-config',
   standalone: true,
-  changeDetection: 0, // OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
     ButtonModule,
     CardModule,
     ConfirmDialogModule,
-    DrawerModule,
+    DialogModule,
     InputNumberModule,
     MessageModule,
     TagModule,
@@ -108,13 +108,15 @@ import { PontosVantagemConfigService } from '@core/services/business/config';
 
     </p-card>
 
-    <!-- DRAWER -->
-    <p-drawer
+    <!-- DIALOG -->
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Configuração' : 'Novo Nível com Pontos'"
-      position="right"
-      class="w-full md:w-30rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '30rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -171,7 +173,7 @@ import { PontosVantagemConfigService } from '@core/services/business/config';
           />
         </div>
       </form>
-    </p-drawer>
+    </p-dialog>
 
     <p-confirmDialog />
   `,

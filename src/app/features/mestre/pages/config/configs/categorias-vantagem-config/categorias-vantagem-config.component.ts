@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { SlicePipe } from '@angular/common';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
@@ -6,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ColorPickerModule } from 'primeng/colorpicker';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
@@ -25,14 +26,15 @@ import { ConfigStore } from '@core/stores/config.store';
 @Component({
   selector: 'app-categorias-vantagem-config',
   standalone: true,
-  changeDetection: 0, // OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    SlicePipe,
     ButtonModule,
     CardModule,
     ColorPickerModule,
     ConfirmDialogModule,
-    DrawerModule,
+    DialogModule,
     InputNumberModule,
     InputTextModule,
     TagModule,
@@ -110,13 +112,14 @@ import { ConfigStore } from '@core/stores/config.store';
 
     </p-card>
 
-    <!-- DRAWER -->
-    <p-drawer
+    <!-- DIALOG -->
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Categoria' : 'Nova Categoria de Vantagem'"
-      position="right"
-      class="w-full md:w-30rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -154,7 +157,7 @@ import { ConfigStore } from '@core/stores/config.store';
           <div class="flex flex-column gap-2">
             <label class="font-semibold">Cor da Categoria</label>
             <div class="flex align-items-center gap-3">
-              <p-colorpicker
+              <p-colorPicker
                 formControlName="cor"
                 [inline]="false"
                 format="hex"
@@ -214,7 +217,7 @@ import { ConfigStore } from '@core/stores/config.store';
           />
         </div>
       </form>
-    </p-drawer>
+    </p-dialog>
 
     <p-confirmDialog />
   `,
@@ -295,8 +298,8 @@ export class CategoriaVantagemConfigComponent extends BaseConfigComponent<
   }
 
   /** Callback do p-colorpicker (retorna hex sem # em alguns modos) */
-  protected onColorChange(value: string | null | undefined): void {
-    if (!value) return;
+  protected onColorChange(value: string | object | null | undefined): void {
+    if (!value || typeof value !== 'string') return;
     const normalized = value.startsWith('#') ? value : `#${value}`;
     this.corValue.set(normalized);
     this.form.patchValue({ cor: normalized });

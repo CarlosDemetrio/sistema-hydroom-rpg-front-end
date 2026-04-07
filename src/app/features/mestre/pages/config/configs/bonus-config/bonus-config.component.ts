@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -34,7 +34,7 @@ import {
     CardModule,
     CheckboxModule,
     ConfirmDialogModule,
-    DrawerModule,
+    DialogModule,
     InputNumberModule,
     InputTextModule,
     TextareaModule,
@@ -84,13 +84,14 @@ import {
 
     </p-card>
 
-    <!-- DRAWER -->
-    <p-drawer
+    <!-- DIALOG -->
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Bônus' : 'Novo Bônus'"
-      position="right"
-      class="w-full md:w-30rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -198,7 +199,7 @@ import {
           />
         </div>
       </form>
-    </p-drawer>
+    </p-dialog>
 
     <p-confirmDialog />
   `,

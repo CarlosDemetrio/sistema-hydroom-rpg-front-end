@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -37,7 +37,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
     ReactiveFormsModule,
     ButtonModule,
     CardModule,
-    DrawerModule,
+    DialogModule,
     InputTextModule,
     SelectModule,
     TableModule,
@@ -164,13 +164,15 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
 
     </div>
 
-    <!-- Drawer: Criar NPC -->
-    <p-drawer
+    <!-- Dialog: Criar NPC -->
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       header="Novo NPC"
-      position="right"
-      class="w-full md:w-30rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '30rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="salvar()">
         <div class="flex flex-column gap-4 p-2">
@@ -295,7 +297,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
           ></p-button>
         </div>
       </form>
-    </p-drawer>
+    </p-dialog>
   `,
 })
 export class NpcsComponent implements OnInit {
