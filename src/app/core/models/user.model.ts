@@ -22,6 +22,5 @@ export function hasRole(user: User | null, role: 'MESTRE' | 'JOGADOR'): boolean 
  * Check if user has both roles
  */
 export function hasBothRoles(user: User | null): boolean {
-  // @ts-ignore
-  return user?.roles.length === 2 ?? false;
+  return (user?.roles?.includes('MESTRE') ?? false) && (user?.roles?.includes('JOGADOR') ?? false);
 }

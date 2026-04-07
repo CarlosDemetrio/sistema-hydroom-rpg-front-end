@@ -134,8 +134,9 @@ export class HeaderComponent implements OnInit {
   }
 
   hasBothRoles(): boolean {
-    const user = this.authService.currentUser();
-    return user?.role === 'MESTRE' || user?.role === 'JOGADOR';
+    // MVP: UserInfo.role é string única — usuário não pode ter ambas as roles simultaneamente
+    // O seletor "Visualizar como" fica desabilitado até suporte a multi-role (Spec 010)
+    return false;
   }
 
   getInitials(): string {
