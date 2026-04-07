@@ -20,7 +20,7 @@
  */
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { render, screen, fireEvent } from '@testing-library/angular';
+import { render } from '@testing-library/angular';
 import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { vi } from 'vitest';
 

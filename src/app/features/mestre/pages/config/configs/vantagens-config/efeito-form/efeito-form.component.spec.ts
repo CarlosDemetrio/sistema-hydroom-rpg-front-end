@@ -9,7 +9,7 @@
  * depois setSignalInput + detectChanges + whenStable.
  */
 
-import { TestBed, waitForAsync } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { render } from '@testing-library/angular';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';

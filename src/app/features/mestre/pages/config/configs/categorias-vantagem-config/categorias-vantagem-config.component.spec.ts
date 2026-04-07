@@ -193,7 +193,7 @@ describe('CategoriaVantagemConfigComponent', () => {
 
   describe('getContrastColor', () => {
     it('deve retornar #000 para cor clara', () => {
-      const { fixture } = renderComponent() as any;
+      renderComponent();
       // Acessa como any para testar método protegido
       // Testamos diretamente a instância depois de render síncrono
       // (sem await pois só precisamos da instância)

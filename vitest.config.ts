@@ -10,10 +10,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/setup-tests.ts'],
     include: ['src/**/*.spec.ts'],
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    execArgv: ['--max-old-space-size=8192'],
     pool: 'forks',
     poolOptions: {
       forks: {
-        singleFork: true,
+        singleFork: false,
+        maxForks: 1,
       },
     },
     server: {

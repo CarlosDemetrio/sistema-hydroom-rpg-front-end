@@ -8,7 +8,7 @@
  */
 import { TestBed } from '@angular/core/testing';
 import { render } from '@testing-library/angular';
-import { signal } from '@angular/core';
+import { signal, provideZonelessChangeDetection } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { provideRouter, Routes } from '@angular/router';
@@ -71,6 +71,8 @@ const classeMock: ClassePersonagem = {
   ordemExibicao: 1,
   bonusConfig: [],
   aptidaoBonus: [],
+  pontosConfig: [],
+  vantagensPreDefinidas: [],
   dataCriacao: '2024-01-01T00:00:00',
   dataUltimaAtualizacao: '2024-01-01T00:00:00',
 };
@@ -131,6 +133,7 @@ const fichaRascunhoMock: Ficha = {
   renascimentos: 0,
   isNpc: false,
   descricao: null,
+  status: 'RASCUNHO' as const,
   dataCriacao: '2024-01-01T00:00:00',
   dataUltimaAtualizacao: '2024-01-01T00:00:00',
 };
@@ -327,6 +330,7 @@ async function renderWizard(opts: RenderOptions = {}) {
       tb.overrideTemplate(FichaWizardComponent, TEMPLATE_STUB);
     },
     providers: [
+      provideZonelessChangeDetection(),
       provideRouter(ROTAS_TESTE),
       { provide: FichasApiService,    useValue: fichasApi },
       { provide: ConfigApiService,    useValue: configApi },

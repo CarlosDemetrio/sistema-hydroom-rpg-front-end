@@ -22,7 +22,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { ActivatedRoute } from '@angular/router';
-import { ChangeDetectionStrategy, Component, NO_ERRORS_SCHEMA } from '@angular/core';
+import { ChangeDetectionStrategy, NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { FichaDetailComponent } from './ficha-detail.component';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
@@ -412,11 +412,6 @@ describe('FichaDetailComponent', () => {
         fichaId: '7',
       });
 
-      const comp = component as unknown as {
-        executarResetarEstado: () => void;
-        fichaId: () => number | null;
-      };
-
       // Acesso direto ao metodo privado via cast
       (component as unknown as { executarResetarEstado: () => void }).executarResetarEstado?.();
 
@@ -425,7 +420,7 @@ describe('FichaDetailComponent', () => {
 
     it('atualiza signal resumo com o retorno do backend apos reset', async () => {
       const resumoReset = { vidaAtual: 80, vidaTotal: 80, essenciaAtual: 50, essenciaTotal: 50 };
-      const { component, fichasApi } = await criarComponente({
+      const { component } = await criarComponente({
         isMestre: true,
         fichaId: '1',
         resumoReset,

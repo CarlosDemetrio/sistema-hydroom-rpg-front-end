@@ -8,8 +8,7 @@
  */
 import { TestBed } from '@angular/core/testing';
 import { render } from '@testing-library/angular';
-import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { provideRouter, Routes } from '@angular/router';
 import { Component } from '@angular/core';

@@ -22,7 +22,7 @@
  */
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { render, screen } from '@testing-library/angular';
+import { render } from '@testing-library/angular';
 import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { vi } from 'vitest';
 
@@ -57,9 +57,6 @@ const formPasso1Mock: FormPasso1Revisao = {
   presencaNome: 'Imponente',
   isNpc: false,
 };
-
-const formPasso2ComDescricao = { descricao: 'Alto, cabelos escuros, cicatriz no rosto.' };
-const formPasso2SemDescricao = { descricao: null };
 
 const atributosMock: FichaAtributoEditavel[] = [
   { atributoConfigId: 1, atributoNome: 'Forca', atributoAbreviacao: 'FOR', base: 8, outros: 0 },

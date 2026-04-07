@@ -22,7 +22,7 @@
  */
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { render, screen } from '@testing-library/angular';
+import { render } from '@testing-library/angular';
 import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { of, throwError, Subject } from 'rxjs';
 import { vi } from 'vitest';
@@ -96,13 +96,6 @@ const vantagemComPreRequisitoMock: VantagemConfig = {
   preRequisitos: [
     { id: 1, vantagemId: 3, preRequisitoId: 1, preRequisitoNome: 'Furia Berserker' },
   ],
-};
-
-const vantagemCaraMock: VantagemConfig = {
-  ...vantagemCombateMock,
-  id: 4,
-  nome: 'Vantagem Cara',
-  formulaCusto: '10',
 };
 
 const fichaVantagemCompradaMock: FichaVantagemResponse = {

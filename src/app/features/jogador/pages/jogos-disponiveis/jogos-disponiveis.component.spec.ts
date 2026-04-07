@@ -183,7 +183,8 @@ async function renderComponente(opts: RenderOptions = {}) {
     ],
   });
 
-  const comp = result.fixture.componentInstance;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const comp = result.fixture.componentInstance as any;
   result.fixture.detectChanges();
   await result.fixture.whenStable();
 
@@ -236,7 +237,7 @@ describe('JogosDisponiveisComponent', () => {
 
     it('deve exibir loading durante carregamento', async () => {
       // Simula carregamento em andamento — listJogos não resolve imediatamente
-      const { comp, fixture } = await renderComponente();
+      const { comp } = await renderComponente();
       // Após ngOnInit, loading volta para false pois o observable já emitiu
       // Verificamos via signal
       expect(comp.loading()).toBe(false);
@@ -448,7 +449,7 @@ describe('JogosDisponiveisComponent', () => {
       });
 
       const toastServiceMock = result.fixture.debugElement.injector.get(ToastService);
-      const comp = result.fixture.componentInstance;
+      const comp = result.fixture.componentInstance as any;
       result.fixture.detectChanges();
       await result.fixture.whenStable();
 
@@ -483,7 +484,7 @@ describe('JogosDisponiveisComponent', () => {
       });
 
       const toastServiceMock = result.fixture.debugElement.injector.get(ToastService);
-      const comp = result.fixture.componentInstance;
+      const comp = result.fixture.componentInstance as any;
       result.fixture.detectChanges();
       await result.fixture.whenStable();
 
@@ -513,7 +514,7 @@ describe('JogosDisponiveisComponent', () => {
         ],
       });
 
-      const comp = result.fixture.componentInstance;
+      const comp = result.fixture.componentInstance as any;
       result.fixture.detectChanges();
       await result.fixture.whenStable();
 
@@ -583,7 +584,7 @@ describe('JogosDisponiveisComponent', () => {
       });
 
       const toastServiceMock = result.fixture.debugElement.injector.get(ToastService);
-      const comp = result.fixture.componentInstance;
+      const comp = result.fixture.componentInstance as any;
       result.fixture.detectChanges();
       await result.fixture.whenStable();
 
@@ -653,7 +654,7 @@ describe('JogosDisponiveisComponent', () => {
         ],
       });
 
-      const comp = result.fixture.componentInstance;
+      const comp = result.fixture.componentInstance as any;
       result.fixture.detectChanges();
       await result.fixture.whenStable();
 
@@ -713,7 +714,7 @@ describe('JogosDisponiveisComponent', () => {
         ],
       });
 
-      const comp = result.fixture.componentInstance;
+      const comp = result.fixture.componentInstance as any;
       result.fixture.detectChanges();
       await result.fixture.whenStable();
 

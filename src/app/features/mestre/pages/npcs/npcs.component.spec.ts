@@ -33,6 +33,8 @@ const npcMock: Ficha = {
   xp: 0,
   renascimentos: 0,
   isNpc: true,
+  descricao: null,
+  status: 'RASCUNHO' as const,
   dataCriacao: '2024-01-01T00:00:00',
   dataUltimaAtualizacao: '2024-01-01T00:00:00',
 };
