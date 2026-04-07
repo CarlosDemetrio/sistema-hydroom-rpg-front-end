@@ -16,7 +16,7 @@ COPY angular.json tsconfig.json tsconfig.app.json tsconfig.spec.json proxy.conf.
 COPY src ./src
 
 # Expose ports
-EXPOSE 4200 49153
+EXPOSE 4201 49153
 
 # Start development server with hot-reload
 CMD ["npm", "start"]
