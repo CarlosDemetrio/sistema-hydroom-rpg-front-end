@@ -10,7 +10,7 @@
     "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "NODE_OPTIONS=--max-old-space-size=8192 ng test",
-    "test:coverage": "NODE_OPTIONS=--max-old-space-size=8192 ng test --coverage --watch=false",
+    "test:coverage": "vitest run --coverage",
     "lint": "ng lint"
   },
   "prettier": {

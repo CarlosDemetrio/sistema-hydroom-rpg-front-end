@@ -33,6 +33,9 @@ yarn-error.log
 /.angular/cache
 .sass-cache/
 /connect.lock
+
+# Vitest coverage reports
+coverage/
 /coverage
 /libpeerconnection.log
 testem.log

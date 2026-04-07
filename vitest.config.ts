@@ -14,16 +14,30 @@ export default defineConfig({
     hookTimeout: 30000,
     execArgv: ['--max-old-space-size=8192'],
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: false,
-        maxForks: 1,
-      },
+    forks: {
+      singleFork: false,
+      maxForks: 1,
     },
     server: {
       deps: {
         inline: [/@angular/, /primeng/, /@primeng/, /@testing-library/],
       },
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      reportOnFailure: true,
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.spec.ts',
+        'src/**/*.test.ts',
+        'src/**/index.ts',
+        'src/main.ts',
+        'src/environments/**',
+        'src/**/*.module.ts',
+        'src/**/*.routes.ts',
+      ],
     },
   },
   resolve: {
