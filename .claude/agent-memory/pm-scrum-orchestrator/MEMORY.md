@@ -1,0 +1,2 @@
+- [BA Gaps 2026-04-02](project_ba_gaps_2026_04_02.md) -- 4 bloqueadores + 4 alta prioridade que redefiniram Sprint 2
+- [Sprint 1 Closing](project_sprint1_closing.md) -- 94% concluido, 457 testes, Spec 009 ~100% backend

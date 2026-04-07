@@ -1,0 +1,3 @@
+- [Feature NPCs (Mestre)](project_npcs_feature.md) — tela NPC: onde fica, como obter currentGameId, qual service usar, rota, navegação
+- [Padrões de Arquitetura Frontend](project_arch_patterns.md) — stores, services, layout Mestre, roteamento, testes
+- [Armadilhas JIT em testes Vitest](feedback_jit_test_patterns.md) — templateUrl invalido em JIT; input.required() NG0950; Promise vs Observable; rotas stub; Subject para controlar observables
