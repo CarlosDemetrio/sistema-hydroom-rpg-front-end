@@ -1,3 +1,10 @@
+> ⚠️ **DESCONTINUADO** — Este documento descreve o deploy na OCI (Oracle Cloud),
+> que foi abandonado por falta de máquinas disponíveis no free tier.
+> O deploy atual usa **Firebase Hosting (CDN Global)**.
+> Veja: [Spec 019](../specs/019-deploy-frontend-firebase/) e o workflow `.github/workflows/deploy-firebase.yml`
+
+---
+
 # Deploy Frontend — OCI Free Tier
 
 > Guia específico do deploy do **frontend** (Angular SPA) no OCI.

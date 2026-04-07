@@ -57,3 +57,28 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Deploy
+
+O frontend é deployado no **Firebase Hosting (CDN Global)** via GitHub Actions.
+
+| Recurso | Detalhes |
+|---------|----------|
+| Plataforma | Firebase Hosting |
+| URL | https://ficha-controlador-rpg.web.app |
+| CI/CD | `.github/workflows/deploy-firebase.yml` |
+| Trigger | Push na branch `main` (mudanças em `src/`) |
+
+**Deploy manual:**
+```bash
+npm run build:prod
+firebase deploy --only hosting
+```
+
+**Rollback:**
+```bash
+firebase hosting:rollback
+```
+
+Guia completo: [`docs/DEPLOY-FIREBASE-DNS.md`](docs/DEPLOY-FIREBASE-DNS.md) | Spec 019: [`docs/specs/019-deploy-frontend-firebase/`](docs/specs/019-deploy-frontend-firebase/)
+

@@ -1,0 +1,108 @@
+name: Deploy Frontend to Firebase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'firebase.json'
+      - 'tsconfig*.json'
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests?'
+        type: boolean
+        default: false
+
+jobs:
+  # -----------------------------------------------
+  # Job 1: Testes
+  # -----------------------------------------------
+  test:
+    name: 🧪 Testes
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || !inputs.skip_tests }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Executar testes
+        run: npm test -- --watch=false
+
+  # -----------------------------------------------
+  # Job 2: Build + Deploy Firebase
+  # -----------------------------------------------
+  build-and-deploy:
+    name: 🏗️ Build & Deploy Firebase
+    needs: [test]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build producao
+        run: npm run build:prod
+
+      - name: Verificar build output
+        run: |
+          echo "=== Build output ==="
+          ls -la dist/ficha-controlador-front-end/browser/
+          test -f dist/ficha-controlador-front-end/browser/index.html || { echo "ERRO: index.html nao encontrado!"; exit 1; }
+          echo "=== Tamanho dos bundles ==="
+          du -sh dist/ficha-controlador-front-end/browser/
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: ficha-controlador-rpg
+
+      - name: Verificacao pos-deploy
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://ficha-controlador-rpg.web.app")
+          echo "Frontend status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "WARNING: Frontend pode ainda estar inicializando"
+          fi
+
+      - name: Resumo do Deploy
+        if: success()
+        run: |
+          echo "### ✅ Deploy Firebase Realizado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ambiente**: Firebase Hosting (CDN Global)" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: https://ficha-controlador-rpg.web.app" >> $GITHUB_STEP_SUMMARY
+          echo "- **Quando**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Por**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notificar falha
+        if: failure()
+        run: |
+          echo "### ❌ Deploy Firebase Falhou!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Verifique os logs acima para detalhes." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Rollback**: \`firebase hosting:rollback\`" >> $GITHUB_STEP_SUMMARY
