@@ -1,15 +1,6 @@
 name: Deploy Frontend to Firebase
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'angular.json'
-      - 'firebase.json'
-      - 'tsconfig*.json'
   workflow_dispatch:
     inputs:
       skip_tests:
