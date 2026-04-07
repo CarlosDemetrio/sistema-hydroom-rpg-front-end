@@ -38,7 +38,10 @@ export const appConfig: ApplicationConfig = {
         }
       },
       ripple: true,
-      inputStyle: 'outlined'
+      inputStyle: 'outlined',
+      overlayOptions: {
+        appendTo: 'body'
+      }
     }),
     MessageService
   ]
