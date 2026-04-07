@@ -5,19 +5,26 @@
  * input.required() (BaseConfigTableComponent) em modo JIT no Vitest.
  *
  * Foco: indicador de penalidade, coluna de restrição de classes (restricaoLabel),
- * filtros, abertura de drawer.
+ * filtros, abertura de drawer, pontos por nível (T7), vantagens pré-definidas (T7).
  */
 import { TestBed } from '@angular/core/testing';
 import { render, screen } from '@testing-library/angular';
 import { signal } from '@angular/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { ConfirmationService } from 'primeng/api';
 
 import { RacasConfigComponent } from './racas-config.component';
 import { RacaConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
-import { Raca, RacaBonusAtributo, RacaClassePermitida } from '@core/models';
+import {
+  Raca,
+  RacaBonusAtributo,
+  RacaClassePermitida,
+  RacaPontosConfig,
+  RacaVantagemPreDefinida,
+  VantagemConfig,
+} from '@core/models';
 import { ToastService } from '@services/toast.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 
@@ -79,6 +86,56 @@ const racaComRestricao: Raca = {
   dataUltimaAtualizacao: '2024-01-01',
 };
 
+// ─── Dados T7 ──────────────────────────────────────────────────────────────────
+
+const pontosNivel1: RacaPontosConfig = {
+  id: 100,
+  racaId: 1,
+  nivel: 1,
+  pontosAtributo: 2,
+  pontosVantagem: 1,
+  dataCriacao: '2024-01-01',
+  dataUltimaAtualizacao: '2024-01-01',
+};
+
+const pontosNivel5: RacaPontosConfig = {
+  id: 101,
+  racaId: 1,
+  nivel: 5,
+  pontosAtributo: 3,
+  pontosVantagem: 2,
+  dataCriacao: '2024-01-01',
+  dataUltimaAtualizacao: '2024-01-01',
+};
+
+const vantagemVisaoNoturna: VantagemConfig = {
+  id: 50,
+  jogoId: 10,
+  nome: 'Visão Noturna',
+  sigla: null,
+  descricao: 'Enxerga no escuro',
+  categoriaVantagemId: 1,
+  categoriaNome: 'Racial',
+  nivelMaximo: 1,
+  formulaCusto: null,
+  descricaoEfeito: null,
+  ordemExibicao: 1,
+  preRequisitos: [],
+  efeitos: [],
+  dataCriacao: '2024-01-01',
+  dataUltimaAtualizacao: '2024-01-01',
+};
+
+const vantagemPreDefinida: RacaVantagemPreDefinida = {
+  id: 200,
+  racaId: 1,
+  nivel: 1,
+  vantagemConfigId: 50,
+  vantagemConfigNome: 'Visão Noturna',
+  dataCriacao: '2024-01-01',
+  dataUltimaAtualizacao: '2024-01-01',
+};
+
 // ============================================================
 // Helpers de mock
 // ============================================================
@@ -118,16 +175,29 @@ function criarToastServiceMock() {
   };
 }
 
-function criarConfigApiMock() {
+function criarConfigApiMock(
+  pontosConfigList: RacaPontosConfig[] = [],
+  vantagensPreDefList: RacaVantagemPreDefinida[] = [],
+) {
   return {
-    listAtributos:            vi.fn().mockReturnValue(of([])),
-    listClasses:              vi.fn().mockReturnValue(of([])),
-    addRacaBonusAtributo:     vi.fn().mockReturnValue(of(bonusPositivo)),
-    removeRacaBonusAtributo:  vi.fn().mockReturnValue(of(void 0)),
-    addRacaClassePermitida:   vi.fn().mockReturnValue(of(classePermitida)),
-    removeRacaClassePermitida: vi.fn().mockReturnValue(of(void 0)),
-    getRaca:                  vi.fn().mockReturnValue(of(racaSemRestricao)),
-    reordenarRacas:           vi.fn().mockReturnValue(of(void 0)),
+    listAtributos:                  vi.fn().mockReturnValue(of([])),
+    listClasses:                    vi.fn().mockReturnValue(of([])),
+    listVantagens:                  vi.fn().mockReturnValue(of([vantagemVisaoNoturna])),
+    addRacaBonusAtributo:           vi.fn().mockReturnValue(of(bonusPositivo)),
+    removeRacaBonusAtributo:        vi.fn().mockReturnValue(of(void 0)),
+    addRacaClassePermitida:         vi.fn().mockReturnValue(of(classePermitida)),
+    removeRacaClassePermitida:      vi.fn().mockReturnValue(of(void 0)),
+    getRaca:                        vi.fn().mockReturnValue(of(racaSemRestricao)),
+    reordenarRacas:                 vi.fn().mockReturnValue(of(void 0)),
+    // T7 — Pontos por Nível
+    listRacaPontosConfig:           vi.fn().mockReturnValue(of(pontosConfigList)),
+    createRacaPontosConfig:         vi.fn().mockReturnValue(of(pontosNivel1)),
+    updateRacaPontosConfig:         vi.fn().mockReturnValue(of(pontosNivel1)),
+    deleteRacaPontosConfig:         vi.fn().mockReturnValue(of(void 0)),
+    // T7 — Vantagens Pré-definidas
+    listRacaVantagensPreDefinidas:  vi.fn().mockReturnValue(of(vantagensPreDefList)),
+    createRacaVantagemPreDefinida:  vi.fn().mockReturnValue(of(vantagemPreDefinida)),
+    deleteRacaVantagemPreDefinida:  vi.fn().mockReturnValue(of(void 0)),
   };
 }
 
@@ -156,17 +226,37 @@ const TEMPLATE_STUB = `
     @if (selectedRaca()?.classesPermitidas?.length === 0) {
       <span id="sem-restricao">Todas as classes são permitidas</span>
     }
+    <!-- T7: pontos por nível -->
+    @for (p of pontosConfig(); track p.id) {
+      <span class="pontos-row" [attr.data-nivel]="p.nivel">
+        Nível {{ p.nivel }}: Atributo={{ p.pontosAtributo }}, Vantagem={{ p.pontosVantagem }}
+      </span>
+    }
+    @if (!pontosConfig().length) {
+      <span id="sem-pontos">Nenhum nível configurado</span>
+    }
+    <!-- T7: vantagens pré-definidas -->
+    @for (v of vantagensPreDefinidas(); track v.id) {
+      <span class="vantagem-predefinida-row" [attr.data-id]="v.id">
+        {{ v.vantagemConfigNome }}
+      </span>
+    }
+    @if (!vantagensPreDefinidas().length) {
+      <span id="sem-vantagens-predefinidas">Nenhuma vantagem pré-definida</span>
+    }
   </div>
 `;
 
 async function renderRacas(
   racas: Raca[] = [racaSemRestricao, racaComRestricao],
   temJogo = true,
+  pontosConfigList: RacaPontosConfig[] = [],
+  vantagensPreDefList: RacaVantagemPreDefinida[] = [],
 ) {
   const racaServiceMock        = criarRacaServiceMock(racas, temJogo);
   const currentGameServiceMock = criarCurrentGameServiceMock(temJogo);
   const toastServiceMock       = criarToastServiceMock();
-  const configApiMock          = criarConfigApiMock();
+  const configApiMock          = criarConfigApiMock(pontosConfigList, vantagensPreDefList);
 
   const result = await render(RacasConfigComponent, {
     configureTestBed: (tb) => {
@@ -404,6 +494,254 @@ describe('RacasConfigComponent', () => {
       expect(racasInfo.length).toBe(1);
       expect(racasInfo[0].nome).toBe('Elfo');
       expect(racasInfo[0].restricaoLabel).toBe('2 classe(s)');
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 7. T7 — Cenário T7-01: Listar Pontos por Nível da Raça
+  // ----------------------------------------------------------
+
+  describe('T7 — Pontos por Nível', () => {
+    it('deve exibir pontos config quando openDrawer é chamado com raça existente', async () => {
+      const { fixture, configApiMock } = await renderRacas(
+        [racaSemRestricao],
+        true,
+        [pontosNivel1],
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(racaSemRestricao);
+      fixture.detectChanges();
+
+      expect(configApiMock.listRacaPontosConfig).toHaveBeenCalledWith(racaSemRestricao.id);
+    });
+
+    it('deve carregar e exibir linhas de pontos config na aba', async () => {
+      const { fixture } = await renderRacas(
+        [racaSemRestricao],
+        true,
+        [pontosNivel1],
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(racaSemRestricao);
+      fixture.detectChanges();
+
+      // O sinal pontosConfig deve estar populado após o load
+      const lista = comp.pontosConfig();
+      expect(lista.length).toBe(1);
+      expect(lista[0].nivel).toBe(1);
+      expect(lista[0].pontosAtributo).toBe(2);
+      expect(lista[0].pontosVantagem).toBe(1);
+    });
+
+    it('deve exibir "Nenhum nível configurado" quando pontos config está vazio', async () => {
+      const { fixture } = await renderRacas([racaSemRestricao], true, []);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(racaSemRestricao);
+      fixture.detectChanges();
+
+      expect(screen.getByText('Nenhum nível configurado')).toBeTruthy();
+    });
+
+    it('deve chamar createRacaPontosConfig ao salvar formulário de novo nível', async () => {
+      const { fixture, configApiMock } = await renderRacas([racaSemRestricao], true, []);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      comp.pontosFormNivel.set(3);
+      comp.pontosFormAtributo.set(2);
+      comp.pontosFormVantagem.set(1);
+      comp.editingPontosConfigId.set(null);
+
+      comp.salvarPontosConfig();
+      fixture.detectChanges();
+
+      expect(configApiMock.createRacaPontosConfig).toHaveBeenCalledWith(
+        racaSemRestricao.id,
+        { nivel: 3, pontosAtributo: 2, pontosVantagem: 1 },
+      );
+    });
+
+    it('deve chamar updateRacaPontosConfig ao salvar edição de nível existente', async () => {
+      const { fixture, configApiMock } = await renderRacas(
+        [racaSemRestricao], true, [pontosNivel1],
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      comp.editarPontosConfig(pontosNivel1);
+      comp.pontosFormAtributo.set(5);
+      comp.salvarPontosConfig();
+      fixture.detectChanges();
+
+      expect(configApiMock.updateRacaPontosConfig).toHaveBeenCalledWith(
+        racaSemRestricao.id,
+        pontosNivel1.id,
+        { nivel: pontosNivel1.nivel, pontosAtributo: 5, pontosVantagem: pontosNivel1.pontosVantagem },
+      );
+    });
+
+    it('deve exibir erro quando createRacaPontosConfig retorna 409 (nível duplicado)', async () => {
+      const { fixture, configApiMock, toastServiceMock } = await renderRacas(
+        [racaSemRestricao], true, [],
+      );
+      configApiMock.createRacaPontosConfig.mockReturnValue(
+        throwError(() => ({ status: 409 })),
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      comp.pontosFormNivel.set(1);
+      comp.salvarPontosConfig();
+      fixture.detectChanges();
+
+      expect(toastServiceMock.error).toHaveBeenCalledWith(
+        'Já existe uma configuração para este nível.',
+        'Erro',
+      );
+    });
+
+    it('deve chamar deleteRacaPontosConfig e recarregar após confirmação', async () => {
+      const { fixture, configApiMock } = await renderRacas(
+        [racaSemRestricao], true, [pontosNivel5],
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      // Simula deletar diretamente (sem confirmação)
+      comp['deletePontosConfig'](pontosNivel5.id);
+      fixture.detectChanges();
+
+      expect(configApiMock.deleteRacaPontosConfig).toHaveBeenCalledWith(
+        racaSemRestricao.id,
+        pontosNivel5.id,
+      );
+      expect(configApiMock.listRacaPontosConfig).toHaveBeenCalled();
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 8. T7 — Cenário T7-02: Adicionar Vantagem Pré-definida
+  // ----------------------------------------------------------
+
+  describe('T7 — Vantagens Pré-definidas', () => {
+    it('deve carregar vantagens pré-definidas ao abrir drawer com raça existente', async () => {
+      const { fixture, configApiMock } = await renderRacas(
+        [racaSemRestricao], true, [], [vantagemPreDefinida],
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(racaSemRestricao);
+      fixture.detectChanges();
+
+      expect(configApiMock.listRacaVantagensPreDefinidas).toHaveBeenCalledWith(racaSemRestricao.id);
+    });
+
+    it('deve exibir vantagem pré-definida carregada', async () => {
+      const { fixture } = await renderRacas(
+        [racaSemRestricao], true, [], [vantagemPreDefinida],
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(racaSemRestricao);
+      fixture.detectChanges();
+
+      const lista = comp.vantagensPreDefinidas();
+      expect(lista.length).toBe(1);
+      expect(lista[0].vantagemConfigNome).toBe('Visão Noturna');
+    });
+
+    it('deve exibir "Nenhuma vantagem pré-definida" quando lista está vazia', async () => {
+      const { fixture } = await renderRacas([racaSemRestricao], true, [], []);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(racaSemRestricao);
+      fixture.detectChanges();
+
+      expect(screen.getByText('Nenhuma vantagem pré-definida')).toBeTruthy();
+    });
+
+    it('deve chamar createRacaVantagemPreDefinida ao adicionar vantagem', async () => {
+      const { fixture, configApiMock } = await renderRacas([racaSemRestricao], true, [], []);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      comp.vantagemFormNivel.set(1);
+      comp.selectedVantagemId.set(vantagemVisaoNoturna.id);
+      comp.addVantagemPreDefinida();
+      fixture.detectChanges();
+
+      expect(configApiMock.createRacaVantagemPreDefinida).toHaveBeenCalledWith(
+        racaSemRestricao.id,
+        { nivel: 1, vantagemConfigId: vantagemVisaoNoturna.id },
+      );
+    });
+
+    it('deve resetar formulário após adicionar vantagem com sucesso', async () => {
+      const { fixture } = await renderRacas([racaSemRestricao], true, [], []);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      comp.vantagemFormNivel.set(3);
+      comp.selectedVantagemId.set(vantagemVisaoNoturna.id);
+      comp.addVantagemPreDefinida();
+      fixture.detectChanges();
+
+      expect(comp.selectedVantagemId()).toBeNull();
+      expect(comp.vantagemFormNivel()).toBe(1);
+    });
+
+    it('deve chamar deleteRacaVantagemPreDefinida ao deletar vantagem pré-definida', async () => {
+      const { fixture, configApiMock } = await renderRacas(
+        [racaSemRestricao], true, [], [vantagemPreDefinida],
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      comp['deleteVantagemPreDefinida'](vantagemPreDefinida.id);
+      fixture.detectChanges();
+
+      expect(configApiMock.deleteRacaVantagemPreDefinida).toHaveBeenCalledWith(
+        racaSemRestricao.id,
+        vantagemPreDefinida.id,
+      );
+    });
+
+    it('deve exibir erro toast quando addVantagemPreDefinida falha', async () => {
+      const { fixture, configApiMock, toastServiceMock } = await renderRacas(
+        [racaSemRestricao], true, [], [],
+      );
+      configApiMock.createRacaVantagemPreDefinida.mockReturnValue(
+        throwError(() => ({ status: 500 })),
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.selectedRaca.set(racaSemRestricao);
+      comp.vantagemFormNivel.set(1);
+      comp.selectedVantagemId.set(vantagemVisaoNoturna.id);
+      comp.addVantagemPreDefinida();
+      fixture.detectChanges();
+
+      expect(toastServiceMock.error).toHaveBeenCalledWith(
+        'Erro ao adicionar vantagem pré-definida.',
+        'Erro',
+      );
     });
   });
 });

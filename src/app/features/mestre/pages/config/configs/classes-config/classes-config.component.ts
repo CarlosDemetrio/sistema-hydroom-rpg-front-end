@@ -7,9 +7,10 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DrawerModule } from 'primeng/drawer';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
@@ -22,6 +23,9 @@ import {
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
 import { ClassePersonagem, BonusConfig, AptidaoConfig } from '@core/models';
+import { ClassePontosConfig, ClassePontosConfigRequest } from '@core/models/classe-pontos-config.model';
+import { ClasseVantagemPreDefinida, ClasseVantagemPreDefinidaRequest } from '@core/models/classe-vantagem-predefinida.model';
+import { VantagemConfig } from '@core/models/vantagem-config.model';
 import { ClasseConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { uniqueNameValidator } from '@shared/validators/config-validators';
@@ -37,9 +41,10 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
     CardModule,
     CheckboxModule,
     ConfirmDialogModule,
-    DrawerModule,
+    DialogModule,
     InputNumberModule,
     InputTextModule,
+    TableModule,
     TabsModule,
     TagModule,
     TextareaModule,
@@ -90,13 +95,14 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
 
     </p-card>
 
-    <!-- DRAWER -->
-    <p-drawer
+    <!-- DIALOG -->
+    <p-dialog
       [visible]="drawerVisible()"
       (visibleChange)="onDrawerVisibleChange($event)"
       [header]="editMode() ? 'Editar Classe' : 'Nova Classe'"
-      position="right"
-      class="w-full md:w-35rem"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
     >
       <p-tabs [value]="activeTab()">
         <p-tablist>
@@ -121,6 +127,28 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
             Aptidões c/ Bônus
             @if (selectedClasse()?.aptidaoBonus?.length) {
               <span class="ml-1 badge-atributo">{{ selectedClasse()!.aptidaoBonus.length }}</span>
+            }
+          </p-tab>
+          <p-tab
+            value="pontos-nivel"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
+            Pontos por Nível
+            @if (pontosConfig().length) {
+              <span class="ml-1 badge-atributo">{{ pontosConfig().length }}</span>
+            }
+          </p-tab>
+          <p-tab
+            value="vantagens-predefinidas"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
+            Vantagens Pré-definidas
+            @if (vantagensPreDefinidas().length) {
+              <span class="ml-1 badge-atributo">{{ vantagensPreDefinidas().length }}</span>
             }
           </p-tab>
         </p-tablist>
@@ -336,9 +364,135 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
               </div>
             </div>
           </p-tabpanel>
+
+          <!-- Aba: Pontos por Nível -->
+          <p-tabpanel value="pontos-nivel">
+            <div class="flex flex-column gap-3 p-2">
+              <div class="rpg-section-title">Pontos Ganhos por Nível</div>
+
+              @if (pontosConfig().length) {
+                <p-table [value]="pontosConfigOrdenado()" [tableStyle]="{'min-width': '100%'}">
+                  <ng-template pTemplate="header">
+                    <tr>
+                      <th>Nível</th>
+                      <th>Pts. Atributo</th>
+                      <th>Pts. Vantagem</th>
+                      <th style="width: 5rem"></th>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="body" let-pontos>
+                    <tr>
+                      <td>{{ pontos.nivel }}</td>
+                      <td>{{ pontos.pontosAtributo }}</td>
+                      <td>{{ pontos.pontosVantagem }}</td>
+                      <td>
+                        <p-button
+                          icon="pi pi-trash"
+                          [rounded]="true"
+                          [text]="true"
+                          severity="danger"
+                          (onClick)="confirmRemoveClassePontos(pontos.id)"
+                        />
+                      </td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              } @else {
+                <div class="text-center p-4 text-color-secondary">
+                  <i class="pi pi-inbox text-3xl mb-2 block"></i>
+                  <p class="m-0">Nenhum nível configurado</p>
+                </div>
+              }
+
+              <!-- Add form -->
+              <div class="flex flex-column gap-2 border-top-1 surface-border pt-3 mt-2">
+                <div class="text-sm font-semibold text-color-secondary">Adicionar Nível</div>
+                <div class="flex gap-2 align-items-end flex-wrap">
+                  <div class="flex flex-column gap-1">
+                    <label class="text-xs font-semibold">Nível</label>
+                    <p-input-number [(ngModel)]="novoNivelPontos" [showButtons]="true" [min]="1" style="width: 6rem" />
+                  </div>
+                  <div class="flex flex-column gap-1">
+                    <label class="text-xs font-semibold">Pts. Atributo</label>
+                    <p-input-number [(ngModel)]="novoPontosAtributo" [showButtons]="true" [min]="0" style="width: 8rem" />
+                  </div>
+                  <div class="flex flex-column gap-1">
+                    <label class="text-xs font-semibold">Pts. Vantagem</label>
+                    <p-input-number [(ngModel)]="novoPontosVantagem" [showButtons]="true" [min]="0" style="width: 8rem" />
+                  </div>
+                  <p-button
+                    icon="pi pi-plus"
+                    label="Adicionar"
+                    [disabled]="novoNivelPontos() < 1"
+                    (onClick)="addClassePontos()"
+                  />
+                </div>
+              </div>
+            </div>
+          </p-tabpanel>
+
+          <!-- Aba: Vantagens Pré-definidas -->
+          <p-tabpanel value="vantagens-predefinidas">
+            <div class="flex flex-column gap-3 p-2">
+              <div class="rpg-section-title">Vantagens Concedidas por Nível</div>
+              <small class="text-color-secondary">
+                Vantagens automaticamente atribuídas ao personagem ao atingir o nível configurado.
+              </small>
+
+              @if (vantagensPreDefinidas().length) {
+                <div class="flex flex-column gap-2">
+                  @for (vp of vantagensPreDefinidasOrdenadas(); track vp.id) {
+                    <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
+                      <div class="flex align-items-center gap-2">
+                        <span class="text-xs font-semibold surface-200 border-round px-2 py-1">Nv. {{ vp.nivel }}</span>
+                        <span class="font-semibold">{{ vp.vantagemConfigNome }}</span>
+                      </div>
+                      <p-button
+                        icon="pi pi-trash"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="danger"
+                        (onClick)="confirmRemoveClasseVantagem(vp.id)"
+                        pTooltip="Remover vantagem"
+                      />
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center p-4 text-color-secondary">
+                  <i class="pi pi-inbox text-3xl mb-2 block"></i>
+                  <p class="m-0">Nenhuma vantagem pré-definida</p>
+                </div>
+              }
+
+              <!-- Add form -->
+              <div class="flex gap-2 mt-2 align-items-end flex-wrap">
+                <div class="flex flex-column gap-1">
+                  <label class="text-xs font-semibold">Nível</label>
+                  <p-input-number [(ngModel)]="novoNivelVantagem" [showButtons]="true" [min]="1" style="width: 6rem" />
+                </div>
+                <p-select
+                  [options]="todasVantagens()"
+                  [(ngModel)]="selectedVantagemId"
+                  optionLabel="nome"
+                  optionValue="id"
+                  placeholder="Selecione uma vantagem..."
+                  class="flex-1"
+                  [filter]="true"
+                  filterBy="nome"
+                />
+                <p-button
+                  icon="pi pi-plus"
+                  label="Adicionar"
+                  [disabled]="!selectedVantagemId() || novoNivelVantagem() < 1"
+                  (onClick)="addClasseVantagemPreDefinida()"
+                />
+              </div>
+            </div>
+          </p-tabpanel>
         </p-tabpanels>
       </p-tabs>
-    </p-drawer>
+    </p-dialog>
 
     <p-confirmDialog />
   `,
@@ -365,6 +519,17 @@ export class ClassesConfigComponent extends BaseConfigComponent<
   protected valorPorNivelInput = signal<number>(1.0);
   protected bonusAptidaoInput = signal<number>(0);
 
+  // Sinais para Pontos por Nível e Vantagens Pré-definidas
+  protected pontosConfig = signal<ClassePontosConfig[]>([]);
+  protected vantagensPreDefinidas = signal<ClasseVantagemPreDefinida[]>([]);
+  protected novoNivelPontos = signal<number>(1);
+  protected novoPontosAtributo = signal<number>(0);
+  protected novoPontosVantagem = signal<number>(0);
+  protected editingPontosId = signal<number | null>(null);
+  protected novoNivelVantagem = signal<number>(1);
+  protected selectedVantagemId = signal<number | null>(null);
+  protected todasVantagens = signal<VantagemConfig[]>([]);
+
   readonly columns: ConfigTableColumn[] = [
     { field: 'ordemExibicao', header: 'Ordem', width: '5rem' },
     { field: 'nome',          header: 'Nome' },
@@ -390,6 +555,14 @@ export class ClassesConfigComponent extends BaseConfigComponent<
     const ja = new Set((this.selectedClasse()?.aptidaoBonus ?? []).map((a) => a.aptidaoConfigId));
     return this.todasAptidoes().filter((a) => !ja.has(a.id));
   });
+
+  protected pontosConfigOrdenado = computed(() =>
+    [...this.pontosConfig()].sort((a, b) => a.nivel - b.nivel)
+  );
+
+  protected vantagensPreDefinidasOrdenadas = computed(() =>
+    [...this.vantagensPreDefinidas()].sort((a, b) => a.nivel - b.nivel || a.vantagemConfigNome.localeCompare(b.vantagemConfigNome))
+  );
 
   protected getEntityName(): string { return 'Classe'; }
   protected getEntityNamePlural(): string { return 'Classes'; }
@@ -420,6 +593,8 @@ export class ClassesConfigComponent extends BaseConfigComponent<
       .subscribe({ next: (b) => this.todosBonus.set(b) });
     this.configApi.listAptidoes(jogoId).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (a) => this.todasAptidoes.set(a) });
+    this.configApi.listVantagens(jogoId).pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (v) => this.todasVantagens.set(v) });
   }
 
   openDrawer(item?: ClassePersonagem): void {
@@ -427,6 +602,10 @@ export class ClassesConfigComponent extends BaseConfigComponent<
     this.selectedClasse.set(item ?? null);
     this.activeTab.set('dados');
     this.drawerVisible.set(true);
+    if (item?.id) {
+      this.loadPontosConfig(item.id);
+      this.loadVantagensPreDefinidas(item.id);
+    }
   }
 
   closeDrawer(): void {
@@ -540,6 +719,113 @@ export class ClassesConfigComponent extends BaseConfigComponent<
           this.toastService.success('Aptidão removida da classe', 'Sucesso');
         },
       });
+  }
+
+  private loadPontosConfig(classeId: number): void {
+    this.configApi.listClassePontosConfig(classeId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (p) => this.pontosConfig.set(p) });
+  }
+
+  private loadVantagensPreDefinidas(classeId: number): void {
+    this.configApi.listClasseVantagensPreDefinidas(classeId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (v) => this.vantagensPreDefinidas.set(v) });
+  }
+
+  addClassePontos(): void {
+    const classeId = this.selectedClasse()?.id;
+    if (!classeId || this.novoNivelPontos() < 1) return;
+    const dto: ClassePontosConfigRequest = {
+      nivel: this.novoNivelPontos(),
+      pontosAtributo: this.novoPontosAtributo(),
+      pontosVantagem: this.novoPontosVantagem(),
+    };
+    this.configApi.addClassePontosConfig(classeId, dto)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.novoNivelPontos.set(1);
+          this.novoPontosAtributo.set(0);
+          this.novoPontosVantagem.set(0);
+          this.loadPontosConfig(classeId);
+          this.toastService.success('Pontos do nível adicionados', 'Sucesso');
+        },
+        error: (err) => {
+          const msg = err?.error?.message ?? 'Erro ao adicionar pontos';
+          this.toastService.error(msg, 'Erro');
+        },
+      });
+  }
+
+  confirmRemoveClassePontos(pontosConfigId: number): void {
+    this.confirmationService.confirm({
+      message: 'Remover a configuração de pontos deste nível?',
+      header: 'Confirmar Remoção',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sim, remover',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        const classeId = this.selectedClasse()?.id;
+        if (!classeId) return;
+        this.configApi.removeClassePontosConfig(classeId, pontosConfigId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.loadPontosConfig(classeId);
+              this.toastService.success('Pontos do nível removidos', 'Sucesso');
+            },
+          });
+      },
+    });
+  }
+
+  addClasseVantagemPreDefinida(): void {
+    const classeId = this.selectedClasse()?.id;
+    const vantagemId = this.selectedVantagemId();
+    if (!classeId || !vantagemId || this.novoNivelVantagem() < 1) return;
+    const dto: ClasseVantagemPreDefinidaRequest = {
+      nivel: this.novoNivelVantagem(),
+      vantagemConfigId: vantagemId,
+    };
+    this.configApi.addClasseVantagemPreDefinida(classeId, dto)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.selectedVantagemId.set(null);
+          this.novoNivelVantagem.set(1);
+          this.loadVantagensPreDefinidas(classeId);
+          this.toastService.success('Vantagem pré-definida adicionada', 'Sucesso');
+        },
+        error: (err) => {
+          const msg = err?.error?.message ?? 'Erro ao adicionar vantagem';
+          this.toastService.error(msg, 'Erro');
+        },
+      });
+  }
+
+  confirmRemoveClasseVantagem(predefinidaId: number): void {
+    this.confirmationService.confirm({
+      message: 'Remover esta vantagem pré-definida?',
+      header: 'Confirmar Remoção',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sim, remover',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        const classeId = this.selectedClasse()?.id;
+        if (!classeId) return;
+        this.configApi.removeClasseVantagemPreDefinida(classeId, predefinidaId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              this.loadVantagensPreDefinidas(classeId);
+              this.toastService.success('Vantagem removida', 'Sucesso');
+            },
+          });
+      },
+    });
   }
 
   private refreshSelectedClasse(classeId: number): void {

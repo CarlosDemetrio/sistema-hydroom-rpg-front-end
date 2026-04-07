@@ -69,6 +69,8 @@ const classeStub: ClassePersonagem = {
   ordemExibicao: 1,
   bonusConfig: [],
   aptidaoBonus: [],
+  pontosConfig: [],
+  vantagensPreDefinidas: [],
   dataCriacao: '2024-01-01',
   dataUltimaAtualizacao: '2024-01-01',
 };

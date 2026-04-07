@@ -1,3 +1,5 @@
+import { ClassePontosConfig, ClassePontosConfigRequest } from '@core/models/classe-pontos-config.model';
+import { ClasseVantagemPreDefinida, ClasseVantagemPreDefinidaRequest } from '@core/models/classe-vantagem-predefinida.model';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -15,6 +17,10 @@ import {
   Raca,
   RacaBonusAtributo,
   RacaClassePermitida,
+  RacaPontosConfig,
+  RacaPontosConfigRequest,
+  RacaVantagemPreDefinida,
+  RacaVantagemPreDefinidaRequest,
   NivelConfig,
   DadoProspeccaoConfig,
   PresencaConfig,
@@ -218,6 +224,36 @@ export class ConfigApiService {
     return this.http.delete<void>(`${this.configUrl}/classes/${classeId}/aptidao-bonus/${aptidaoBonusId}`);
   }
 
+  // Sub-recursos de ClassePontosConfig
+  listClassePontosConfig(classeId: number): Observable<ClassePontosConfig[]> {
+    return this.http.get<ClassePontosConfig[]>(`${this.configUrl}/classes/${classeId}/pontos-config`);
+  }
+
+  addClassePontosConfig(classeId: number, dto: ClassePontosConfigRequest): Observable<ClassePontosConfig> {
+    return this.http.post<ClassePontosConfig>(`${this.configUrl}/classes/${classeId}/pontos-config`, dto);
+  }
+
+  updateClassePontosConfig(classeId: number, pontosConfigId: number, dto: ClassePontosConfigRequest): Observable<ClassePontosConfig> {
+    return this.http.put<ClassePontosConfig>(`${this.configUrl}/classes/${classeId}/pontos-config/${pontosConfigId}`, dto);
+  }
+
+  removeClassePontosConfig(classeId: number, pontosConfigId: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/classes/${classeId}/pontos-config/${pontosConfigId}`);
+  }
+
+  // Sub-recursos de ClasseVantagemPreDefinida
+  listClasseVantagensPreDefinidas(classeId: number): Observable<ClasseVantagemPreDefinida[]> {
+    return this.http.get<ClasseVantagemPreDefinida[]>(`${this.configUrl}/classes/${classeId}/vantagens-predefinidas`);
+  }
+
+  addClasseVantagemPreDefinida(classeId: number, dto: ClasseVantagemPreDefinidaRequest): Observable<ClasseVantagemPreDefinida> {
+    return this.http.post<ClasseVantagemPreDefinida>(`${this.configUrl}/classes/${classeId}/vantagens-predefinidas`, dto);
+  }
+
+  removeClasseVantagemPreDefinida(classeId: number, predefinidaId: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/classes/${classeId}/vantagens-predefinidas/${predefinidaId}`);
+  }
+
   // ===== Vantagens =====
   // Base: /api/v1/configuracoes/vantagens
 
@@ -364,6 +400,36 @@ export class ConfigApiService {
 
   removeRacaClassePermitida(racaId: number, classePermitidaId: number): Observable<void> {
     return this.http.delete<void>(`${this.configUrl}/racas/${racaId}/classes-permitidas/${classePermitidaId}`);
+  }
+
+  // Sub-recursos de Raça — Pontos por Nível
+  listRacaPontosConfig(racaId: number): Observable<RacaPontosConfig[]> {
+    return this.http.get<RacaPontosConfig[]>(`${this.configUrl}/racas/${racaId}/pontos-config`);
+  }
+
+  createRacaPontosConfig(racaId: number, dto: RacaPontosConfigRequest): Observable<RacaPontosConfig> {
+    return this.http.post<RacaPontosConfig>(`${this.configUrl}/racas/${racaId}/pontos-config`, dto);
+  }
+
+  updateRacaPontosConfig(racaId: number, pontosConfigId: number, dto: RacaPontosConfigRequest): Observable<RacaPontosConfig> {
+    return this.http.put<RacaPontosConfig>(`${this.configUrl}/racas/${racaId}/pontos-config/${pontosConfigId}`, dto);
+  }
+
+  deleteRacaPontosConfig(racaId: number, pontosConfigId: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/racas/${racaId}/pontos-config/${pontosConfigId}`);
+  }
+
+  // Sub-recursos de Raça — Vantagens Pré-Definidas
+  listRacaVantagensPreDefinidas(racaId: number): Observable<RacaVantagemPreDefinida[]> {
+    return this.http.get<RacaVantagemPreDefinida[]>(`${this.configUrl}/racas/${racaId}/vantagens-predefinidas`);
+  }
+
+  createRacaVantagemPreDefinida(racaId: number, dto: RacaVantagemPreDefinidaRequest): Observable<RacaVantagemPreDefinida> {
+    return this.http.post<RacaVantagemPreDefinida>(`${this.configUrl}/racas/${racaId}/vantagens-predefinidas`, dto);
+  }
+
+  deleteRacaVantagemPreDefinida(racaId: number, predefinidaId: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/racas/${racaId}/vantagens-predefinidas/${predefinidaId}`);
   }
 
   // ===== Dados de Prospecção =====

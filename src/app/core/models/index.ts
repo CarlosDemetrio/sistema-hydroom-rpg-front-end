@@ -18,6 +18,8 @@ export * from './ficha-titulo.model';
 export * from './ficha-runa.model';
 
 // Configuration entities
+export * from './classe-pontos-config.model';
+export * from './classe-vantagem-predefinida.model';
 export * from './atributo-config.model';
 export * from './aptidao-config.model';
 export * from './tipo-aptidao.model';

@@ -18,6 +18,7 @@ import { ClassesConfigComponent } from './classes-config.component';
 import { ClasseConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { ClassePersonagem, ClasseBonusConfig, ClasseAptidaoBonus, BonusConfig } from '@core/models';
+import { ClassePontosConfig, ClasseVantagemPreDefinida } from '@core/models';
 import { ToastService } from '@services/toast.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 
@@ -53,6 +54,26 @@ const classeAptidaoMock: ClasseAptidaoBonus = {
   bonus: 2,
 };
 
+const pontosMock: ClassePontosConfig = {
+  id: 30,
+  classePersonagemId: 1,
+  nivel: 1,
+  pontosAtributo: 3,
+  pontosVantagem: 2,
+  dataCriacao: '2024-01-01',
+  dataUltimaAtualizacao: '2024-01-01',
+};
+
+const vantagemPreDefinidaMock: ClasseVantagemPreDefinida = {
+  id: 40,
+  classePersonagemId: 1,
+  nivel: 1,
+  vantagemConfigId: 5,
+  vantagemConfigNome: 'Visão Noturna',
+  dataCriacao: '2024-01-01',
+  dataUltimaAtualizacao: '2024-01-01',
+};
+
 const classeMock: ClassePersonagem = {
   id: 1,
   jogoId: 10,
@@ -61,6 +82,8 @@ const classeMock: ClassePersonagem = {
   ordemExibicao: 1,
   bonusConfig: [classeBonusMock],
   aptidaoBonus: [classeAptidaoMock],
+  pontosConfig: [pontosMock],
+  vantagensPreDefinidas: [vantagemPreDefinidaMock],
   dataCriacao: '2024-01-01',
   dataUltimaAtualizacao: '2024-01-01',
 };
@@ -71,6 +94,8 @@ const classeVazia: ClassePersonagem = {
   nome: 'Mago',
   bonusConfig: [],
   aptidaoBonus: [],
+  pontosConfig: [],
+  vantagensPreDefinidas: [],
 };
 
 // ============================================================
@@ -116,12 +141,19 @@ function criarConfigApiMock() {
   return {
     listBonus:              vi.fn().mockReturnValue(of([bonusConfigMock])),
     listAptidoes:           vi.fn().mockReturnValue(of([])),
+    listVantagens:          vi.fn().mockReturnValue(of([])),
     addClasseBonus:         vi.fn().mockReturnValue(of(classeBonusMock)),
     removeClasseBonus:      vi.fn().mockReturnValue(of(void 0)),
     addClasseAptidaoBonus:  vi.fn().mockReturnValue(of(classeAptidaoMock)),
     removeClasseAptidaoBonus: vi.fn().mockReturnValue(of(void 0)),
     getClasse:              vi.fn().mockReturnValue(of(classeMock)),
     reordenarClasses:       vi.fn().mockReturnValue(of(void 0)),
+    listClassePontosConfig:          vi.fn().mockReturnValue(of([pontosMock])),
+    addClassePontosConfig:           vi.fn().mockReturnValue(of(pontosMock)),
+    removeClassePontosConfig:        vi.fn().mockReturnValue(of(void 0)),
+    listClasseVantagensPreDefinidas: vi.fn().mockReturnValue(of([vantagemPreDefinidaMock])),
+    addClasseVantagemPreDefinida:    vi.fn().mockReturnValue(of(vantagemPreDefinidaMock)),
+    removeClasseVantagemPreDefinida: vi.fn().mockReturnValue(of(void 0)),
   };
 }
 
@@ -148,6 +180,16 @@ const TEMPLATE_STUB = `
     }
     @if (selectedBonusId() && valorPorNivelInput() > 0) {
       <span id="preview-nivel5">Exemplo no nível 5: +{{ (valorPorNivelInput() * 5).toFixed(2) }}</span>
+    }
+    @if (pontosConfig().length) {
+      @for (p of pontosConfig(); track p.id) {
+        <span class="pontos-nivel">Nv.{{ p.nivel }}: {{ p.pontosAtributo }}atrib / {{ p.pontosVantagem }}vant</span>
+      }
+    }
+    @if (vantagensPreDefinidas().length) {
+      @for (vp of vantagensPreDefinidas(); track vp.id) {
+        <span class="vantagem-predefinida">{{ vp.vantagemConfigNome }} (Nv.{{ vp.nivel }})</span>
+      }
     }
   </div>
 `;
@@ -322,7 +364,7 @@ describe('ClassesConfigComponent', () => {
     });
 
     it('deve resetar valorPorNivelInput para 1.0 após adicionar bônus com sucesso', async () => {
-      const { fixture, configApiMock } = await renderClasses();
+      const { fixture } = await renderClasses();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -404,7 +446,7 @@ describe('ClassesConfigComponent', () => {
     });
 
     it('deve resetar bonusAptidaoInput para 0 após adicionar aptidão com sucesso', async () => {
-      const { fixture, configApiMock } = await renderClasses();
+      const { fixture } = await renderClasses();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -538,6 +580,144 @@ describe('ClassesConfigComponent', () => {
       const filtered = comp.filteredItems();
       expect(filtered.length).toBe(1);
       expect(filtered[0].nome).toBe('Guerreiro');
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 9. Pontos por nível e Vantagens Pré-definidas
+  // ----------------------------------------------------------
+
+  describe('pontos por nível e vantagens pré-definidas', () => {
+    it('deve inicializar pontosConfig como array vazio', async () => {
+      const { fixture } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      expect(comp.pontosConfig()).toEqual([]);
+    });
+
+    it('deve inicializar vantagensPreDefinidas como array vazio', async () => {
+      const { fixture } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      expect(comp.vantagensPreDefinidas()).toEqual([]);
+    });
+
+    it('deve chamar listVantagens ao inicializar quando há jogo selecionado', async () => {
+      const { configApiMock } = await renderClasses();
+      expect(configApiMock.listVantagens).toHaveBeenCalledWith(10);
+    });
+
+    it('deve chamar listClassePontosConfig ao abrir drawer de classe existente', async () => {
+      const { fixture, configApiMock } = await renderClasses();
+      fixture.componentInstance.openDrawer(classeMock);
+      expect(configApiMock.listClassePontosConfig).toHaveBeenCalledWith(classeMock.id);
+    });
+
+    it('deve chamar listClasseVantagensPreDefinidas ao abrir drawer de classe existente', async () => {
+      const { fixture, configApiMock } = await renderClasses();
+      fixture.componentInstance.openDrawer(classeMock);
+      expect(configApiMock.listClasseVantagensPreDefinidas).toHaveBeenCalledWith(classeMock.id);
+    });
+
+    it('deve definir pontosConfig ao carregar sub-recursos', async () => {
+      const { fixture } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.loadPontosConfig(classeMock.id);
+      expect(comp.pontosConfig()).toEqual([pontosMock]);
+    });
+
+    it('deve chamar addClassePontosConfig com valores corretos', async () => {
+      const { fixture, configApiMock } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.selectedClasse.set(classeVazia);
+      comp.novoNivelPontos.set(3);
+      comp.novoPontosAtributo.set(2);
+      comp.novoPontosVantagem.set(1);
+      comp.addClassePontos();
+      expect(configApiMock.addClassePontosConfig).toHaveBeenCalledWith(
+        classeVazia.id,
+        { nivel: 3, pontosAtributo: 2, pontosVantagem: 1 },
+      );
+    });
+
+    it('não deve chamar addClassePontosConfig quando nivel < 1', async () => {
+      const { fixture, configApiMock } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.selectedClasse.set(classeVazia);
+      comp.novoNivelPontos.set(0);
+      comp.addClassePontos();
+      expect(configApiMock.addClassePontosConfig).not.toHaveBeenCalled();
+    });
+
+    it('deve resetar campos após adicionar pontos com sucesso', async () => {
+      const { fixture } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.selectedClasse.set(classeVazia);
+      comp.novoNivelPontos.set(5);
+      comp.novoPontosAtributo.set(3);
+      comp.novoPontosVantagem.set(2);
+      comp.addClassePontos();
+      expect(comp.novoNivelPontos()).toBe(1);
+      expect(comp.novoPontosAtributo()).toBe(0);
+      expect(comp.novoPontosVantagem()).toBe(0);
+    });
+
+    it('deve chamar addClasseVantagemPreDefinida com valores corretos', async () => {
+      const { fixture, configApiMock } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.selectedClasse.set(classeVazia);
+      comp.novoNivelVantagem.set(2);
+      comp.selectedVantagemId.set(5);
+      comp.addClasseVantagemPreDefinida();
+      expect(configApiMock.addClasseVantagemPreDefinida).toHaveBeenCalledWith(
+        classeVazia.id,
+        { nivel: 2, vantagemConfigId: 5 },
+      );
+    });
+
+    it('não deve chamar addClasseVantagemPreDefinida quando selectedVantagemId é null', async () => {
+      const { fixture, configApiMock } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.selectedClasse.set(classeVazia);
+      comp.selectedVantagemId.set(null);
+      comp.addClasseVantagemPreDefinida();
+      expect(configApiMock.addClasseVantagemPreDefinida).not.toHaveBeenCalled();
+    });
+
+    it('deve resetar campos após adicionar vantagem pré-definida com sucesso', async () => {
+      const { fixture } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.selectedClasse.set(classeVazia);
+      comp.novoNivelVantagem.set(3);
+      comp.selectedVantagemId.set(5);
+      comp.addClasseVantagemPreDefinida();
+      expect(comp.selectedVantagemId()).toBeNull();
+      expect(comp.novoNivelVantagem()).toBe(1);
+    });
+
+    it('deve exibir pontos na lista quando pontosConfig tem dados', async () => {
+      const { fixture } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.pontosConfig.set([pontosMock]);
+      fixture.detectChanges();
+      expect(screen.getByText(/3atrib/)).toBeTruthy();
+    });
+
+    it('deve exibir vantagens pré-definidas quando vantagensPreDefinidas tem dados', async () => {
+      const { fixture } = await renderClasses();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      comp.vantagensPreDefinidas.set([vantagemPreDefinidaMock]);
+      fixture.detectChanges();
+      expect(screen.getByText(/Visão Noturna/)).toBeTruthy();
     });
   });
 });

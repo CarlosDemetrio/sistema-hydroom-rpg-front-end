@@ -1,3 +1,6 @@
+import { ClassePontosConfig } from './classe-pontos-config.model';
+import { ClasseVantagemPreDefinida } from './classe-vantagem-predefinida.model';
+
 /**
  * Configuração de Pontos de Vantagem por nível.
  * Aligned with backend PontosVantagemResponse record.
@@ -65,6 +68,8 @@ export interface ClassePersonagem {
   ordemExibicao: number;
   bonusConfig: ClasseBonusConfig[];
   aptidaoBonus: ClasseAptidaoBonus[];
+  pontosConfig: ClassePontosConfig[];
+  vantagensPreDefinidas: ClasseVantagemPreDefinida[];
   dataCriacao: string;
   dataUltimaAtualizacao: string;
 }
@@ -240,4 +245,45 @@ export interface LimitadorConfig {
   jogoId?: number;
   nome: string;
   descricao?: string | null;
+}
+
+/**
+ * Configuração de pontos por nível de uma Raça.
+ * Aligned with backend RacaPontosConfigResponse record.
+ * Endpoint base: /api/v1/configuracoes/racas/{racaId}/pontos-config
+ */
+export interface RacaPontosConfig {
+  id: number;
+  racaId: number;
+  nivel: number;
+  pontosAtributo: number;
+  pontosVantagem: number;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
+}
+
+export interface RacaPontosConfigRequest {
+  nivel: number;
+  pontosAtributo: number;
+  pontosVantagem: number;
+}
+
+/**
+ * Vantagem pré-definida de uma Raça.
+ * Aligned with backend RacaVantagemPreDefinidaResponse record.
+ * Endpoint base: /api/v1/configuracoes/racas/{racaId}/vantagens-predefinidas
+ */
+export interface RacaVantagemPreDefinida {
+  id: number;
+  racaId: number;
+  nivel: number;
+  vantagemConfigId: number;
+  vantagemConfigNome: string;
+  dataCriacao: string;
+  dataUltimaAtualizacao: string;
+}
+
+export interface RacaVantagemPreDefinidaRequest {
+  nivel: number;
+  vantagemConfigId: number;
 }
