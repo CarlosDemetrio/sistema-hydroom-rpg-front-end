@@ -15,6 +15,7 @@ import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { FichaVantagemResponse } from '@models/ficha.model';
 import { VantagemConfig } from '@models/vantagem-config.model';
 
@@ -37,6 +38,7 @@ interface GrupoVantagem {
     InputTextModule,
     ProgressBarModule,
     TagModule,
+    TooltipModule,
   ],
   template: `
     <!-- Cabecalho: pontos + botao conceder insolitus -->
@@ -45,7 +47,7 @@ interface GrupoVantagem {
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-2">
           <span class="text-sm font-medium">Pontos de vantagem disponiveis:</span>
-          <p-badge [value]="pontosVantagemRestantes().toString()" severity="info" />
+          <p-badge [value]="pontosVantagemRestantes().toString()" [severity]="pontosVantagemRestantes() > 0 ? 'success' : 'secondary'" />
         </div>
 
         @if (isMestre()) {
@@ -130,6 +132,8 @@ interface GrupoVantagem {
                       icon="pi pi-arrow-up"
                       text
                       size="small"
+                      [disabled]="vantagem.custoPago > pontosVantagemRestantes()"
+                      [pTooltip]="vantagem.custoPago > pontosVantagemRestantes() ? 'Pontos insuficientes' : ''"
                       [attr.aria-label]="'Subir nivel da vantagem ' + vantagem.nomeVantagem"
                       (onClick)="aumentarNivelVantagem.emit(vantagem.id)"
                     />

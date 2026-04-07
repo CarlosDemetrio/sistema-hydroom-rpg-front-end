@@ -21,10 +21,16 @@
  * 11. Confirmar emite concederInsolitusConfirmado com vantagemConfigId
  * 12. insoliusSelecionadoId inicia null (botao desabilitado)
  * 13. resetarConcedendo(true) fecha o dialog e limpa selecao
+ * --- T11 ---
+ * 14. Badge severity="success" quando pontosVantagemRestantes > 0
+ * 15. Badge severity="secondary" quando pontosVantagemRestantes = 0
+ * 16. Botao "Subir Nivel" desabilitado quando custoPago > saldo
+ * 17. Botao "Subir Nivel" habilitado quando custoPago <= saldo
  */
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { render, screen, fireEvent } from '@testing-library/angular';
 import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { vi } from 'vitest';
@@ -418,6 +424,75 @@ describe('FichaVantagensTabComponent', () => {
       const aberto = (component as unknown as { dialogInsoliusAberto: { (): boolean } })
         .dialogInsoliusAberto();
       expect(aberto).toBe(true);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 14 & 15. Badge severity — T11
+  // ----------------------------------------------------------
+
+  describe('badge de pontos disponiveis (T11)', () => {
+    it('deve exibir badge com severity="success" quando pontosVantagemRestantes > 0', async () => {
+      const { fixture } = await renderComponent({
+        vantagens: [],
+        pontosVantagemRestantes: 5,
+      });
+
+      const badgeDebug = fixture.debugElement.query(By.css('p-badge'));
+      expect(badgeDebug).toBeTruthy();
+      expect(badgeDebug.componentInstance.severity).toBe('success');
+    });
+
+    it('deve exibir badge com severity="secondary" quando pontosVantagemRestantes = 0', async () => {
+      const { fixture } = await renderComponent({
+        vantagens: [],
+        pontosVantagemRestantes: 0,
+      });
+
+      const badgeDebug = fixture.debugElement.query(By.css('p-badge'));
+      expect(badgeDebug).toBeTruthy();
+      expect(badgeDebug.componentInstance.severity).toBe('secondary');
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 16 & 17. Botao "Subir Nivel" bloqueado por saldo — T11
+  // vantagemNormalMock: custoPago=4, nivelAtual=2, nivelMaximo=3, VANTAGEM
+  // ----------------------------------------------------------
+
+  describe('botao Subir Nivel e saldo (T11)', () => {
+    it('deve desabilitar botao "Subir Nivel" quando custoPago > pontosVantagemRestantes', async () => {
+      // custoPago=4 > pontosVantagemRestantes=2 => disabled
+      const { fixture } = await renderComponent({
+        vantagens: [vantagemNormalMock],
+        pontosVantagemRestantes: 2,
+        podeAumentarNivel: true,
+      });
+
+      const pButton = fixture.nativeElement.querySelector(
+        `p-button[aria-label="Subir nivel da vantagem ${vantagemNormalMock.nomeVantagem}"]`
+      ) as HTMLElement;
+      expect(pButton).toBeTruthy();
+
+      const botaoNativo = pButton.querySelector('button') as HTMLButtonElement;
+      expect(botaoNativo.disabled).toBe(true);
+    });
+
+    it('deve habilitar botao "Subir Nivel" quando custoPago <= pontosVantagemRestantes', async () => {
+      // custoPago=4 <= pontosVantagemRestantes=10 => enabled
+      const { fixture } = await renderComponent({
+        vantagens: [vantagemNormalMock],
+        pontosVantagemRestantes: 10,
+        podeAumentarNivel: true,
+      });
+
+      const pButton = fixture.nativeElement.querySelector(
+        `p-button[aria-label="Subir nivel da vantagem ${vantagemNormalMock.nomeVantagem}"]`
+      ) as HTMLElement;
+      expect(pButton).toBeTruthy();
+
+      const botaoNativo = pButton.querySelector('button') as HTMLButtonElement;
+      expect(botaoNativo.disabled).toBe(false);
     });
   });
 });

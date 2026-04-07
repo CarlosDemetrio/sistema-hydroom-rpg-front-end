@@ -26,7 +26,20 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
     TooltipModule,
   ],
   template: `
-    <div class="ficha-header-wrapper">
+    <div class="ficha-header-wrapper" [class.level-up-animating]="animandoLevelUp()">
+      <!-- Badge de pontos pendentes para distribuir -->
+      @if (temPontosPendentes()) {
+        <div class="flex justify-end mb-2">
+          <p-button
+            [label]="labelPontosPendentes()"
+            icon="pi pi-arrow-circle-up"
+            severity="warn"
+            size="small"
+            aria-label="Pontos para distribuir"
+            (onClick)="abrirLevelUpDialog.emit()"
+          />
+        </div>
+      }
       <!-- Identity row -->
       <div class="flex items-start gap-4">
         <!-- Avatar -->
@@ -240,6 +253,16 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
         grid-template-columns: 1fr;
       }
     }
+
+    @keyframes levelUpFlash {
+      0%   { box-shadow: 0 0 0 0 var(--yellow-400); }
+      50%  { box-shadow: 0 0 0 16px rgba(234, 179, 8, 0.3); }
+      100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+    }
+
+    .level-up-animating {
+      animation: levelUpFlash 1.5s ease-out;
+    }
   `],
 })
 export class FichaHeaderComponent {
@@ -254,6 +277,12 @@ export class FichaHeaderComponent {
   podeResetar = input<boolean>(false);
   /** Indica que o reset esta em andamento (exibe loading no botao). */
   resetando = input<boolean>(false);
+  /** Quando true, aplica animação CSS de level-up no wrapper. */
+  animandoLevelUp = input<boolean>(false);
+  /** Pontos de atributo disponíveis para distribuir (exibe badge quando > 0). */
+  pontosAtributoDisponiveis = input<number>(0);
+  /** Pontos de aptidão disponíveis para distribuir (exibe badge quando > 0). */
+  pontosAptidaoDisponiveis = input<number>(0);
 
   editarClick = output<void>();
   deletarClick = output<void>();
@@ -262,6 +291,25 @@ export class FichaHeaderComponent {
   visibilidadeClick = output<void>();
   /** Emitido ao clicar em "Resetar Estado" (Mestre only). */
   resetarClick = output<void>();
+  /** Emitido ao clicar no badge de pontos pendentes. */
+  abrirLevelUpDialog = output<void>();
+
+  /** Indica se há pontos pendentes para distribuir. */
+  protected temPontosPendentes = computed(() =>
+    this.pontosAtributoDisponiveis() > 0 || this.pontosAptidaoDisponiveis() > 0
+  );
+
+  /** Label descritivo para o badge de pontos pendentes. */
+  protected labelPontosPendentes = computed(() => {
+    const partes: string[] = [];
+    if (this.pontosAtributoDisponiveis() > 0) {
+      partes.push(`${this.pontosAtributoDisponiveis()} atrib.`);
+    }
+    if (this.pontosAptidaoDisponiveis() > 0) {
+      partes.push(`${this.pontosAptidaoDisponiveis()} apt.`);
+    }
+    return partes.join(' + ') + ' para distribuir';
+  });
 
   /** Percentual de vida atual em relação ao total. Retorna 0 quando vidaTotal é zero (evita divisão por zero). */
   protected vidaPercent = computed<number>(() => {

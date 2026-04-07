@@ -307,7 +307,7 @@ export class NpcVisibilidadeComponent implements OnInit {
     const removidos = idsOriginais.filter(id => !idsSelecionados.includes(id));
 
     if (adicionados.length === 0 && removidos.length === 0) {
-      this.finalizarSalvamento(fichaId, visivelGlobalmente, idsSelecionados);
+      this.finalizarSalvamento(visivelGlobalmente, idsSelecionados);
       return;
     }
 
@@ -333,7 +333,7 @@ export class NpcVisibilidadeComponent implements OnInit {
 
     Promise.all([...adicionarPromessas, ...removerPromessas])
       .then(() => {
-        this.finalizarSalvamento(fichaId, visivelGlobalmente, idsSelecionados);
+        this.finalizarSalvamento(visivelGlobalmente, idsSelecionados);
       })
       .catch(() => {
         this.salvando.set(false);
@@ -347,7 +347,6 @@ export class NpcVisibilidadeComponent implements OnInit {
   }
 
   private finalizarSalvamento(
-    fichaId: number,
     visivelGlobalmente: boolean,
     jogadoresComAcesso: number[],
   ): void {

@@ -3,10 +3,14 @@ import {
   Component,
   computed,
   input,
+  output,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { ProgressBarModule } from 'primeng/progressbar';
 import { FichaAtributoResponse, FichaResumo } from '@models/ficha.model';
+import { NivelConfig } from '@core/models/config.models';
 
 interface BonusEntry {
   nome: string;
@@ -17,7 +21,7 @@ interface BonusEntry {
   selector: 'app-ficha-resumo-tab',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardModule, DecimalPipe],
+  imports: [ButtonModule, CardModule, DecimalPipe, ProgressBarModule],
   template: `
     <div class="p-3 flex flex-col gap-4">
 
@@ -67,7 +71,46 @@ interface BonusEntry {
         }
       </section>
 
-      <!-- Stats gerais -->
+      <!-- Painel de XP e Progressão -->
+      <section>
+        <div class="xp-panel">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-2">
+              <span class="stat-label">XP</span>
+              <span class="xp-valor">{{ resumo().xp | number:'1.0-0':'pt-BR' }}</span>
+              @if (proximoNivel(); as proximo) {
+                <span class="text-color-secondary text-sm">/ {{ proximo.xpNecessaria | number:'1.0-0':'pt-BR' }}</span>
+              }
+            </div>
+            @if (isMestre()) {
+              <p-button
+                label="+XP"
+                icon="pi pi-plus"
+                severity="secondary"
+                size="small"
+                aria-label="Conceder XP a esta ficha"
+                (onClick)="abrirDialogXp.emit()"
+              />
+            }
+          </div>
+          @if (proximoNivel()) {
+            <p-progressBar
+              [value]="progressoXp()"
+              [showValue]="false"
+              class="xp-bar"
+              [attr.aria-label]="'Progresso de XP: ' + progressoXp() + '%'"
+            />
+          } @else {
+            <p-progressBar
+              [value]="100"
+              [showValue]="false"
+              class="xp-bar xp-bar-max"
+              aria-label="Nivel maximo atingido"
+            />
+          }
+        </div>
+      </section>
+
       <section>
         <h3 class="section-title">Estatisticas</h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -88,8 +131,8 @@ interface BonusEntry {
             <span class="stat-value">{{ resumo().nivel }}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">XP</span>
-            <span class="stat-value">{{ resumo().xp }}</span>
+            <span class="stat-label">XP Total</span>
+            <span class="stat-value">{{ resumo().xp | number:'1.0-0':'pt-BR' }}</span>
           </div>
         </div>
       </section>
@@ -171,14 +214,68 @@ interface BonusEntry {
     .stat-value.text-danger {
       color: var(--red-500);
     }
+
+    .xp-panel {
+      padding: 0.75rem;
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      background: var(--surface-card);
+    }
+
+    .xp-valor {
+      font-family: monospace;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    :host ::ng-deep .xp-bar .p-progressbar {
+      height: 0.5rem;
+      border-radius: 4px;
+    }
+
+    :host ::ng-deep .xp-bar .p-progressbar-value {
+      background: var(--primary-color);
+    }
+
+    :host ::ng-deep .xp-bar-max .p-progressbar-value {
+      background: var(--yellow-500);
+    }
   `],
 })
 export class FichaResumoTabComponent {
   atributos = input.required<FichaAtributoResponse[]>();
   resumo = input.required<FichaResumo>();
+  /** Quando true, exibe o botão [+XP] para conceder XP (apenas Mestre). */
+  isMestre = input<boolean>(false);
+  /** Lista de níveis para calcular o progresso de XP. */
+  niveis = input<NivelConfig[]>([]);
+
+  /** Emitido ao clicar no botão [+XP] (Mestre only). */
+  abrirDialogXp = output<void>();
 
   protected bonusEntries = computed<BonusEntry[]>(() => {
     const totais = this.resumo().bonusTotais;
     return Object.entries(totais).map(([nome, valor]) => ({ nome, valor }));
+  });
+
+  /** Configuração do próximo nível, ou null se já está no nível máximo. */
+  protected proximoNivel = computed<NivelConfig | null>(() => {
+    const nivel = this.resumo().nivel;
+    return this.niveis().find(n => n.nivel === nivel + 1) ?? null;
+  });
+
+  /** Percentual de progresso de XP para o próximo nível (0–100). */
+  protected progressoXp = computed<number>(() => {
+    const resumo = this.resumo();
+    const niveis = this.niveis();
+    const nivelAtual = niveis.find(n => n.nivel === resumo.nivel);
+    const proximoNivel = niveis.find(n => n.nivel === resumo.nivel + 1);
+    if (!nivelAtual || !proximoNivel) return 100;
+    const xpBase = nivelAtual.xpNecessaria;
+    const xpProximo = proximoNivel.xpNecessaria;
+    const diff = xpProximo - xpBase;
+    if (diff <= 0) return 100;
+    return Math.min(100, Math.max(0, Math.round(((resumo.xp - xpBase) / diff) * 100)));
   });
 }
