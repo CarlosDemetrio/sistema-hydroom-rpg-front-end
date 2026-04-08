@@ -8,6 +8,9 @@ on:
         type: boolean
         default: false
 
+env:
+  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
 jobs:
   # -----------------------------------------------
   # Job 1: Testes
@@ -67,12 +70,12 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
-          projectId: ficha-controlador-rpg
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
 
       - name: Verificacao pos-deploy
         run: |
           sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://ficha-controlador-rpg.web.app")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ secrets.FIREBASE_PROJECT_ID }}.web.app")
           echo "Frontend status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "WARNING: Frontend pode ainda estar inicializando"
@@ -84,7 +87,7 @@ jobs:
           echo "### ✅ Deploy Firebase Realizado" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Ambiente**: Firebase Hosting (CDN Global)" >> $GITHUB_STEP_SUMMARY
-          echo "- **URL**: https://ficha-controlador-rpg.web.app" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: https://${{ secrets.FIREBASE_PROJECT_ID }}.web.app" >> $GITHUB_STEP_SUMMARY
           echo "- **Quando**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
           echo "- **Por**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
