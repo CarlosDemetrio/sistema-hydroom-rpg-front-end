@@ -1,10 +1,10 @@
 /**
  * LevelUpDialogComponent — Spec
  *
- * Smart component: injeta FichasApiService, ToastService e ConfirmationService.
+ * Smart component: injeta FichasApiService, ToastService, ConfirmationService e ConfigStore.
  *
  * NOTA JIT (Armadilha 2 — overrideTemplate):
- * LevelUpDialogComponent importa LevelUpAtributosStepComponent.
+ * LevelUpDialogComponent importa LevelUpAtributosStepComponent e LevelUpAptidoesStepComponent.
  * Em JIT, componentes importados são compilados e os bindings validados mesmo com
  * NO_ERRORS_SCHEMA. Solução: usar overrideTemplate para substituir o template
  * por um stub mínimo que não instancia sub-componentes.
@@ -20,6 +20,8 @@
  * 8. salvarAtributos — monta DTO com nivel incrementado corretamente
  * 9. salvarAtributos — mantém nivel original para atributos sem pontos distribuídos
  * 10. salvarAtributos — toast de erro e step 0 quando HTTP falha
+ * 11. Step 2 (aptidões) renderiza quando stepAtivo é 1 (verificado via stub)
+ * 12. salvarAptidoes — avança para step 2 sem HTTP quando distribuição está vazia
  */
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -33,7 +35,9 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { LevelUpDialogComponent } from './level-up-dialog.component';
 import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ToastService } from '@services/toast.service';
+import { ConfigStore } from '@core/stores/config.store';
 import { FichaAtributoResponse, FichaAptidaoResponse } from '@core/models/ficha.model';
+import { AptidaoConfig } from '@core/models/aptidao-config.model';
 
 // ============================================================
 // Helper JIT (Armadilha 1 — input.required())
@@ -53,16 +57,32 @@ function setSignalInput<T>(component: unknown, inputName: string, value: T): voi
 // Template stub (Armadilha 2 — overrideTemplate)
 // Substitui o template real por um stub mínimo sem sub-componentes.
 // Isso isola o componente de seus filhos e evita NG0303 em JIT.
+// O stub expõe stepAtivo para verificar navegação entre steps.
 // ============================================================
 
 const STUB_TEMPLATE = `<div data-testid="level-up-dialog-stub">
   <span data-testid="nivel">{{ nivelNovo() }}</span>
   <span data-testid="nome">{{ fichaNome() }}</span>
+  <span data-testid="step-ativo">{{ stepAtivo() }}</span>
 </div>`;
 
 // ============================================================
 // Dados de teste
 // ============================================================
+
+const configAptidoesMock: AptidaoConfig[] = [
+  {
+    id: 20,
+    jogoId: 1,
+    tipoAptidaoId: 1,
+    tipoAptidaoNome: 'Físico',
+    nome: 'Atletismo',
+    descricao: null,
+    ordemExibicao: 1,
+    dataCriacao: '2025-01-01T00:00:00',
+    dataUltimaAtualizacao: '2025-01-01T00:00:00',
+  },
+];
 
 const atributosMock: FichaAtributoResponse[] = [
   {
@@ -113,7 +133,15 @@ const atributosAtualizadosMock: FichaAtributoResponse[] = atributosMock.map((a) 
 function criarFichasApiMock(overrides: Record<string, unknown> = {}) {
   return {
     atualizarAtributos: vi.fn().mockReturnValue(of(atributosAtualizadosMock)),
+    atualizarAptidoes: vi.fn().mockReturnValue(of(aptidoesMock)),
     ...overrides,
+  };
+}
+
+function criarConfigStoreMock() {
+  return {
+    aptidoes: vi.fn().mockReturnValue(configAptidoesMock),
+    atributos: vi.fn().mockReturnValue([]),
   };
 }
 
@@ -168,6 +196,7 @@ async function renderComponent(opts: RenderOptions = {}) {
   const fichasApi = criarFichasApiMock(fichasApiOverride);
   const toastService = criarToastMock();
   const confirmationService = criarConfirmationServiceMock();
+  const configStore = criarConfigStoreMock();
 
   const result = await render(LevelUpDialogComponent, {
     schemas: [NO_ERRORS_SCHEMA],
@@ -177,6 +206,7 @@ async function renderComponent(opts: RenderOptions = {}) {
       { provide: FichasApiService, useValue: fichasApi },
       { provide: ToastService, useValue: toastService },
       { provide: ConfirmationService, useValue: confirmationService },
+      { provide: ConfigStore, useValue: configStore },
     ],
     // Armadilha 2: overrideTemplate para evitar NG0303 com sub-componentes importados.
     // Armadilha extra: o componente tem providers: [ConfirmationService] local → overrideProvider
@@ -184,6 +214,7 @@ async function renderComponent(opts: RenderOptions = {}) {
     configureTestBed: (tb) => {
       tb.overrideTemplate(LevelUpDialogComponent, STUB_TEMPLATE);
       tb.overrideProvider(ConfirmationService, { useValue: confirmationService });
+      tb.overrideProvider(ConfigStore, { useValue: configStore });
     },
   });
 
@@ -202,16 +233,19 @@ async function renderComponent(opts: RenderOptions = {}) {
   result.fixture.detectChanges();
   await result.fixture.whenStable();
 
-  return { ...result, component, fichasApi, toastService, confirmationService };
+  return { ...result, component, fichasApi, toastService, confirmationService, configStore };
 }
 
 // Cast para acessar membros protegidos nos testes
 type InternalComponent = {
-  stepAtivo: () => number;
+  stepAtivo: { (): number; set: (v: number) => void };
   salvando: () => boolean;
   distribuicaoAtributos: { set: (v: Record<string, number>) => void };
+  distribuicaoAptidoes: { set: (v: Record<number, number>) => void };
   pontosAtributoPendentes: () => number;
+  pontosAptidaoPendentes: () => number;
   salvarAtributos: () => void;
+  salvarAptidoes: () => void;
   tentarFechar: () => void;
   fechar: () => void;
 };
@@ -286,9 +320,10 @@ describe('LevelUpDialogComponent', () => {
   // ----------------------------------------------------------
 
   describe('tentarFechar — sem pontos pendentes', () => {
-    it('deve emitir fechado diretamente quando pontosAtributoDisponiveis = 0', async () => {
+    it('deve emitir fechado diretamente quando ambos os pontos (atributo e aptidão) são zero', async () => {
       const { component, confirmationService } = await renderComponent({
         pontosAtributoDisponiveis: 0,
+        pontosAptidaoDisponiveis: 0,
       });
       const comp = component as unknown as InternalComponent;
       const fechadoSpy = vi.fn();
@@ -300,15 +335,17 @@ describe('LevelUpDialogComponent', () => {
       expect(confirmationService.confirm).not.toHaveBeenCalled();
     });
 
-    it('deve emitir fechado diretamente quando todos os pontos foram distribuídos (pendentes = 0)', async () => {
+    it('deve emitir fechado quando todos os pontos de atributo e aptidão foram distribuídos', async () => {
       const { component, confirmationService } = await renderComponent({
         pontosAtributoDisponiveis: 1,
+        pontosAptidaoDisponiveis: 1,
       });
       const comp = component as unknown as InternalComponent;
       const fechadoSpy = vi.fn();
       component.fechado.subscribe(fechadoSpy);
 
       comp.distribuicaoAtributos.set({ FOR: 1 });
+      comp.distribuicaoAptidoes.set({ 20: 1 });
 
       comp.tentarFechar();
 
@@ -338,6 +375,7 @@ describe('LevelUpDialogComponent', () => {
       };
       expect(callArg.header).toBe('Pontos não distribuídos');
       expect(callArg.acceptLabel).toBe('Sim, fechar');
+      expect(callArg.message).toContain('pontos para distribuir');
     });
 
     it('deve abrir confirmação quando há pontos parcialmente distribuídos', async () => {
@@ -480,6 +518,93 @@ describe('LevelUpDialogComponent', () => {
       );
       expect(comp.stepAtivo()).toBe(0);
       expect(comp.salvando()).toBe(false);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 11. Step 2 (aptidões) renderiza quando stepAtivo é 1
+  // ----------------------------------------------------------
+
+  describe('step 2 — aptidões', () => {
+    it('deve refletir stepAtivo = 1 quando setado diretamente', async () => {
+      const { component } = await renderComponent();
+      const comp = component as unknown as InternalComponent;
+
+      comp.stepAtivo.set(1);
+
+      expect(comp.stepAtivo()).toBe(1);
+    });
+
+    // ----------------------------------------------------------
+    // 12. salvarAptidoes — sem distribuição
+    // ----------------------------------------------------------
+
+    it('deve avançar para step 2 sem chamar HTTP quando distribuição de aptidões está vazia', async () => {
+      const { component, fichasApi } = await renderComponent();
+      const comp = component as unknown as InternalComponent;
+
+      // Garante que está no step 1 antes de chamar salvarAptidoes
+      comp.stepAtivo.set(1);
+
+      comp.salvarAptidoes();
+
+      expect(fichasApi.atualizarAptidoes).not.toHaveBeenCalled();
+      expect(comp.stepAtivo()).toBe(2);
+    });
+
+    it('deve chamar atualizarAptidoes, emitir distribuicaoSalva e avançar para step 2', async () => {
+      const { component, fichasApi } = await renderComponent({
+        fichaId: 42,
+        pontosAptidaoDisponiveis: 2,
+      });
+      const comp = component as unknown as InternalComponent;
+      const distribuicaoSalvaSpy = vi.fn();
+      component.distribuicaoSalva.subscribe(distribuicaoSalvaSpy);
+
+      comp.stepAtivo.set(1);
+      comp.distribuicaoAptidoes.set({ 20: 1 });
+
+      comp.salvarAptidoes();
+
+      expect(fichasApi.atualizarAptidoes).toHaveBeenCalledWith(42, expect.any(Array));
+      expect(distribuicaoSalvaSpy).toHaveBeenCalledTimes(1);
+      expect(comp.stepAtivo()).toBe(2);
+      expect(comp.salvando()).toBe(false);
+    });
+
+    it('deve exibir toast de erro e manter step 1 quando HTTP de aptidões falha', async () => {
+      const { component, toastService } = await renderComponent({
+        fichasApiOverride: {
+          atualizarAptidoes: vi.fn().mockReturnValue(
+            throwError(() => new Error('500 Internal Server Error'))
+          ),
+        },
+      });
+      const comp = component as unknown as InternalComponent;
+
+      comp.stepAtivo.set(1);
+      comp.distribuicaoAptidoes.set({ 20: 1 });
+
+      comp.salvarAptidoes();
+
+      expect(toastService.error).toHaveBeenCalledWith(
+        'Erro ao salvar aptidões. Tente novamente.'
+      );
+      expect(comp.stepAtivo()).toBe(1);
+      expect(comp.salvando()).toBe(false);
+    });
+
+    it('tentarFechar deve abrir confirmação quando há pontos de aptidão pendentes', async () => {
+      const { component, confirmationService } = await renderComponent({
+        pontosAtributoDisponiveis: 0,
+        pontosAptidaoDisponiveis: 2,
+      });
+      const comp = component as unknown as InternalComponent;
+
+      // Sem distribuição de aptidões → pontosAptidaoPendentes = 2
+      comp.tentarFechar();
+
+      expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
     });
   });
 });

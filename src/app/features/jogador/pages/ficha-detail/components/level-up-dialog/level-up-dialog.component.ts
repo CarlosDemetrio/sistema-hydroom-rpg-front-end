@@ -14,12 +14,15 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import {
   AtualizarAtributoDto,
+  AtualizarAptidaoDto,
   FichaAptidaoResponse,
   FichaAtributoResponse,
 } from '@core/models/ficha.model';
 import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ToastService } from '@services/toast.service';
+import { ConfigStore } from '@core/stores/config.store';
 import { LevelUpAtributosStepComponent } from './steps/level-up-atributos-step/level-up-atributos-step.component';
+import { LevelUpAptidoesStepComponent } from './steps/level-up-aptidoes-step/level-up-aptidoes-step.component';
 
 /**
  * LevelUpDialogComponent — Smart Container
@@ -43,6 +46,7 @@ import { LevelUpAtributosStepComponent } from './steps/level-up-atributos-step/l
     DialogModule,
     StepperModule,
     LevelUpAtributosStepComponent,
+    LevelUpAptidoesStepComponent,
   ],
   template: `
     <p-confirmdialog />
@@ -103,28 +107,30 @@ import { LevelUpAtributosStepComponent } from './steps/level-up-atributos-step/l
             </ng-template>
           </p-step-panel>
 
-          <!-- Step 2: Aptidões (TODO T9) -->
+          <!-- Step 2: Aptidões -->
           <p-step-panel [value]="1">
             <ng-template #content>
-              <!-- TODO T9: LevelUpAptidoesStepComponent -->
-              <div class="p-4 text-center text-color-secondary">
-                <i class="pi pi-list text-3xl mb-3 block"></i>
-                <p>Distribuição de pontos de aptidão será implementada em T9.</p>
-              </div>
+              <app-level-up-aptidoes-step
+                [aptidoes]="aptidoes()"
+                [pontosDisponiveis]="pontosAptidaoDisponiveis()"
+                [configAptidoes]="configStore.aptidoes()"
+                (distribuicaoChanged)="distribuicaoAptidoes.set($event)"
+              />
 
-              <div class="flex justify-content-between gap-2 p-3 pt-0">
+              <div class="flex justify-content-between gap-2 p-3">
                 <p-button
-                  label="Voltar"
+                  label="Voltar: Atributos"
                   icon="pi pi-arrow-left"
                   [text]="true"
-                  severity="secondary"
                   (onClick)="stepAtivo.set(0)"
                 />
                 <p-button
                   label="Próximo: Vantagens"
                   icon="pi pi-arrow-right"
                   iconPos="right"
-                  (onClick)="stepAtivo.set(2)"
+                  [loading]="salvando()"
+                  [disabled]="salvando()"
+                  (onClick)="salvarAptidoes()"
                 />
               </div>
             </ng-template>
@@ -181,16 +187,24 @@ export class LevelUpDialogComponent {
   private fichasApiService = inject(FichasApiService);
   private toastService = inject(ToastService);
   private confirmationService = inject(ConfirmationService);
+  protected configStore = inject(ConfigStore);
 
   // ---- Estado interno ----
   protected stepAtivo = signal(0);
   protected salvando = signal(false);
   protected distribuicaoAtributos = signal<Record<string, number>>({});
+  protected distribuicaoAptidoes = signal<Record<number, number>>({});
 
   protected pontosAtributoPendentes = computed(
     () =>
       this.pontosAtributoDisponiveis() -
       Object.values(this.distribuicaoAtributos()).reduce((a, b) => a + b, 0)
+  );
+
+  protected pontosAptidaoPendentes = computed(
+    () =>
+      this.pontosAptidaoDisponiveis() -
+      Object.values(this.distribuicaoAptidoes()).reduce((a, b) => a + b, 0)
   );
 
   // ---- Handlers ----
@@ -220,12 +234,37 @@ export class LevelUpDialogComponent {
     });
   }
 
+  protected salvarAptidoes(): void {
+    if (Object.keys(this.distribuicaoAptidoes()).length === 0) {
+      this.stepAtivo.set(2);
+      return;
+    }
+    this.salvando.set(true);
+    const dto: AtualizarAptidaoDto[] = this.aptidoes().map((a) => ({
+      aptidaoConfigId: a.aptidaoConfigId,
+      base: a.base + (this.distribuicaoAptidoes()[a.aptidaoConfigId] ?? 0),
+      sorte: a.sorte,
+      classe: a.classe,
+    }));
+    this.fichasApiService.atualizarAptidoes(this.fichaId(), dto).subscribe({
+      next: () => {
+        this.salvando.set(false);
+        this.stepAtivo.set(2);
+        this.distribuicaoSalva.emit();
+      },
+      error: () => {
+        this.salvando.set(false);
+        this.toastService.error('Erro ao salvar aptidões. Tente novamente.');
+      },
+    });
+  }
+
   protected tentarFechar(): void {
-    if (this.pontosAtributoPendentes() > 0) {
+    if (this.pontosAtributoPendentes() > 0 || this.pontosAptidaoPendentes() > 0) {
       this.confirmationService.confirm({
         header: 'Pontos não distribuídos',
         message:
-          'Você ainda tem pontos de atributo para distribuir. Fechar agora?',
+          'Você ainda tem pontos para distribuir. Fechar agora?',
         acceptLabel: 'Sim, fechar',
         rejectLabel: 'Continuar',
         accept: () => this.fechado.emit(),
