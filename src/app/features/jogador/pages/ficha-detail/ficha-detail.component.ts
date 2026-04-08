@@ -20,7 +20,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
-import { ToastModule } from 'primeng/toast';
 import { ConfirmationService } from 'primeng/api';
 import {
   Ficha,
@@ -68,7 +67,6 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
     MessageModule,
     SkeletonModule,
     TabsModule,
-    ToastModule,
     // Sub-components
     FichaAnotacoesTabComponent,
     FichaAptidoesTabComponent,
@@ -81,7 +79,6 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
     LevelUpDialogComponent,
   ],
   template: `
-    <p-toast />
     <p-confirmdialog />
 
     <!-- Loading State -->

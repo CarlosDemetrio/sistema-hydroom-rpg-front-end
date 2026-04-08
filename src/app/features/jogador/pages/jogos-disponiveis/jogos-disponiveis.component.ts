@@ -13,7 +13,6 @@ import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { JogosApiService } from '@core/services/api/jogos-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
@@ -33,12 +32,9 @@ import { ToastService } from '@services/toast.service';
     MessageModule,
     SkeletonModule,
     TagModule,
-    ToastModule,
     TooltipModule,
   ],
   template: `
-    <p-toast />
-
     <div class="p-4">
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">

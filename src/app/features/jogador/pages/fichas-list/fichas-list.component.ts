@@ -9,13 +9,13 @@ import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { AuthService } from '@services/auth.service';
+import { ToastService } from '@services/toast.service';
 import { Ficha } from '@core/models';
 
 @Component({
@@ -30,11 +30,10 @@ import { Ficha } from '@core/models';
     SkeletonModule,
     TooltipModule,
     ConfirmDialogModule,
-    ToastModule,
     IconFieldModule,
     InputIconModule,
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService],
   template: `
     <div class="p-4">
 
@@ -317,7 +316,6 @@ import { Ficha } from '@core/models';
     </div>
 
     <p-confirmDialog />
-    <p-toast />
   `,
 })
 export class FichasListComponent {
@@ -326,7 +324,7 @@ export class FichasListComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   private confirmationService = inject(ConfirmationService);
-  private messageService = inject(MessageService);
+  private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   searchTerm = signal('');
@@ -395,10 +393,10 @@ export class FichasListComponent {
   excluirFicha(id: number): void {
     this.fichaService.deleteFicha(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Ficha excluída com sucesso' });
+        this.toastService.success('Ficha excluída com sucesso');
       },
       error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao excluir ficha' });
+        this.toastService.error('Erro ao excluir ficha');
       },
     });
   }
