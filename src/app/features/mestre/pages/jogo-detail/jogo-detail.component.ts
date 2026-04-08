@@ -11,8 +11,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
+import { ConfirmationService } from 'primeng/api';
 import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
 import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
@@ -20,6 +19,8 @@ import { ParticipanteStatus, Participante } from '@core/models';
 import { JogosStore } from '@core/stores/jogos.store';
 import { EmptyStateComponent } from '@shared/components/empty-state.component';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
+import { ToastService } from '@services/toast.service';
 
 type FiltroStatus = 'TODOS' | 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'BANIDO';
 
@@ -44,11 +45,11 @@ type FiltroStatus = 'TODOS' | 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'BANIDO';
     TooltipModule,
     ConfirmDialogModule,
     SelectButtonModule,
-    ToastModule,
     EmptyStateComponent,
-    LoadingSpinnerComponent
+    LoadingSpinnerComponent,
+    PageHeaderComponent,
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService],
   template: `
     <div class="p-4">
       @if (jogoFacade.loading()) {
@@ -61,35 +62,35 @@ type FiltroStatus = 'TODOS' | 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'BANIDO';
         ></app-empty-state>
       } @else {
         <!-- Header -->
-        <div class="flex justify-content-between align-items-center mb-4">
-          <div>
-            <h1 class="text-3xl font-bold m-0 mb-2">{{ jogo()!.nome }}</h1>
-            <div class="flex align-items-center gap-3">
-              <p-tag
-                [value]="getStatusLabel(jogo()!.ativo)"
-                [severity]="getStatusSeverity(jogo()!.ativo)"
-              ></p-tag>
-              <span class="text-color-secondary">
-                {{ participantes().length }} participantes
-              </span>
-            </div>
+        <div class="flex justify-content-between align-items-center">
+          <app-page-header
+            [title]="jogo()!.nome"
+            backRoute="/mestre/jogos"
+          />
+          <div class="flex align-items-center gap-3 mb-4">
+            <p-tag
+              [value]="getStatusLabel(jogo()!.ativo)"
+              [severity]="getStatusSeverity(jogo()!.ativo)"
+            ></p-tag>
+            <span class="text-color-secondary">
+              {{ participantes().length }} participantes
+            </span>
           </div>
-
-          <div class="flex gap-2">
-            <p-button
-              label="Editar"
-              icon="pi pi-pencil"
-              [outlined]="true"
-              (onClick)="editarJogo()"
-            ></p-button>
-            <p-button
-              label="Excluir"
-              icon="pi pi-trash"
-              [severity]="'danger'"
-              [outlined]="true"
-              (onClick)="confirmarExclusao()"
-            ></p-button>
-          </div>
+        </div>
+        <div class="flex gap-2 mb-4">
+          <p-button
+            label="Editar"
+            icon="pi pi-pencil"
+            [outlined]="true"
+            (onClick)="editarJogo()"
+          ></p-button>
+          <p-button
+            label="Excluir"
+            icon="pi pi-trash"
+            [severity]="'danger'"
+            [outlined]="true"
+            (onClick)="confirmarExclusao()"
+          ></p-button>
         </div>
 
         <!-- Tabs -->
@@ -294,7 +295,6 @@ type FiltroStatus = 'TODOS' | 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'BANIDO';
     </div>
 
     <p-confirmDialog></p-confirmDialog>
-    <p-toast></p-toast>
   `
 })
 export class JogoDetailComponent implements OnInit {
@@ -305,7 +305,7 @@ export class JogoDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private confirmationService = inject(ConfirmationService);
-  private messageService = inject(MessageService);
+  private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   readonly opcoesFiltroBotao: { label: string; value: FiltroStatus }[] = [
@@ -397,19 +397,11 @@ export class JogoDetailComponent implements OnInit {
           takeUntilDestroyed(this.destroyRef)
         ).subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Sucesso',
-              detail: 'Jogo excluído com sucesso'
-            });
+            this.toastService.success('Jogo excluído com sucesso');
             this.router.navigate(['/mestre/jogos']);
           },
           error: () => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erro',
-              detail: 'Erro ao excluir jogo'
-            });
+            this.toastService.error('Erro ao excluir jogo');
           }
         });
       }
@@ -421,18 +413,10 @@ export class JogoDetailComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Participante aprovado'
-        });
+        this.toastService.success('Participante aprovado');
       },
       error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao aprovar participante'
-        });
+        this.toastService.error('Erro ao aprovar participante');
       }
     });
   }
@@ -442,18 +426,10 @@ export class JogoDetailComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Participante rejeitado'
-        });
+        this.toastService.success('Participante rejeitado');
       },
       error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao rejeitar participante'
-        });
+        this.toastService.error('Erro ao rejeitar participante');
       }
     });
   }
@@ -470,18 +446,10 @@ export class JogoDetailComponent implements OnInit {
           takeUntilDestroyed(this.destroyRef)
         ).subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Sucesso',
-              detail: 'Participante removido'
-            });
+            this.toastService.success('Participante removido');
           },
           error: () => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erro',
-              detail: 'Erro ao remover participante'
-            });
+            this.toastService.error('Erro ao remover participante');
           }
         });
       }
@@ -501,18 +469,10 @@ export class JogoDetailComponent implements OnInit {
           takeUntilDestroyed(this.destroyRef)
         ).subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'warn',
-              summary: 'Banido',
-              detail: 'Participante banido do jogo'
-            });
+            this.toastService.warning('Participante banido do jogo', 'Banido');
           },
           error: () => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erro',
-              detail: 'Erro ao banir participante'
-            });
+            this.toastService.error('Erro ao banir participante');
           }
         });
       }
@@ -524,18 +484,10 @@ export class JogoDetailComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Participante desbanido'
-        });
+        this.toastService.success('Participante desbanido');
       },
       error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao desbanir participante'
-        });
+        this.toastService.error('Erro ao desbanir participante');
       }
     });
   }

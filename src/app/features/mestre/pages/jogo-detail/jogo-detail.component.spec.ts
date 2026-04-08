@@ -10,6 +10,7 @@ import { FichaBusinessService } from '@core/services/business/ficha-business.ser
 import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
 import { JogosStore } from '@core/stores/jogos.store';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ToastService } from '@services/toast.service';
 import { Participante } from '@core/models/participante.model';
 
 // ============================================================
@@ -115,7 +116,7 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
   const jogoFacadeMock = criarJogoFacadeMock();
   const fichaServiceMock = criarFichaServiceMock();
   const confirmationServiceMock = { confirm: vi.fn() };
-  const messageServiceMock = { add: vi.fn() };
+  const toastServiceMock = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
   const routerMock = { navigate: vi.fn() };
 
   TestBed.configureTestingModule({
@@ -130,16 +131,17 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
         useValue: { snapshot: { paramMap: { get: () => '1' } } },
       },
       { provide: Router, useValue: routerMock },
+      { provide: ToastService, useValue: toastServiceMock },
+      // MessageService ainda é necessário como dep transitiva do ToastService global
+      { provide: MessageService, useValue: { add: vi.fn(), clear: vi.fn() } },
     ],
   });
 
-  // ConfirmationService e MessageService são providers DO COMPONENTE (component-level DI).
-  // Precisam ser sobrescritos via overrideComponent, não via configureTestingModule.
+  // ConfirmationService é provider do componente — sobrescrever via overrideComponent
   TestBed.overrideComponent(JogoDetailComponent, {
     set: {
       providers: [
         { provide: ConfirmationService, useValue: confirmationServiceMock },
-        { provide: MessageService, useValue: messageServiceMock },
       ],
     },
   });
@@ -157,7 +159,7 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
     fixture,
     participanteServiceMock,
     confirmationServiceMock,
-    messageServiceMock,
+    toastServiceMock,
     routerMock,
   };
 }

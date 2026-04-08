@@ -5,11 +5,12 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 import { JogoManagementFacadeService } from '@features/mestre/services/jogo-management-facade.service';
 import { Textarea } from 'primeng/textarea';
 import {InputNumberModule} from 'primeng/inputnumber';
-import {FormFieldErrorComponent, LoadingSpinnerComponent} from '@shared/components';
+import {FormFieldErrorComponent, LoadingSpinnerComponent, PageHeaderComponent} from '@shared/components';
+import { ToastService } from '@services/toast.service';
 
 /**
  * Jogo Form Component (Create/Edit)
@@ -28,18 +29,17 @@ import {FormFieldErrorComponent, LoadingSpinnerComponent} from '@shared/componen
     Textarea,
     InputNumberModule,
     FormFieldErrorComponent,
-    LoadingSpinnerComponent
+    LoadingSpinnerComponent,
+    PageHeaderComponent,
+    ToastModule,
   ],
   template: `
+    <p-toast />
     <div class="p-4">
-      <div class="mb-4">
-        <h1 class="text-3xl font-bold m-0 mb-2">
-          {{ isEditMode() ? 'Editar Jogo' : 'Criar Novo Jogo' }}
-        </h1>
-        <p class="text-color-secondary m-0">
-          {{ isEditMode() ? 'Atualize as informações do jogo' : 'Preencha os dados para criar um novo jogo' }}
-        </p>
-      </div>
+      <app-page-header
+        [title]="isEditMode() ? 'Editar Jogo' : 'Criar Novo Jogo'"
+        backRoute="/mestre/jogos"
+      />
 
       @if (loading() && isEditMode()) {
         <app-loading-spinner message="Carregando jogo..."></app-loading-spinner>
@@ -115,7 +115,7 @@ export class JogoFormComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
-  private messageService = inject(MessageService);
+  private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   isEditMode = signal(false);
@@ -172,19 +172,11 @@ export class JogoFormComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       ).subscribe({
         next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Sucesso',
-            detail: 'Jogo atualizado com sucesso!'
-          });
+          this.toastService.success('Jogo atualizado com sucesso!');
           setTimeout(() => this.router.navigate(['/mestre/jogos']), 1500);
         },
         error: () => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Erro ao atualizar jogo'
-          });
+          this.toastService.error('Erro ao atualizar jogo');
           this.isSaving.set(false);
         }
       });
@@ -197,19 +189,11 @@ export class JogoFormComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       ).subscribe({
         next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Sucesso',
-            detail: 'Jogo criado com sucesso!'
-          });
+          this.toastService.success('Jogo criado com sucesso!');
           setTimeout(() => this.router.navigate(['/mestre/jogos']), 1500);
         },
         error: () => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Erro ao criar jogo'
-          });
+          this.toastService.error('Erro ao criar jogo');
           this.isSaving.set(false);
         }
       });
