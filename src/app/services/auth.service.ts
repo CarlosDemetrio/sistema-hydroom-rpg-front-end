@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { SKIP_ERROR_INTERCEPTOR } from '@core/tokens/skip-error.token';
 import { tap } from 'rxjs/operators';
 import { environment } from '@env/environment';
 
@@ -40,7 +41,10 @@ export class AuthService {
   }
 
   getUserInfo(): Observable<UserInfo> {
-    return this.http.get<UserInfo>(`${this.apiUrl}/auth/me`, { withCredentials: true }).pipe(
+    return this.http.get<UserInfo>(`${this.apiUrl}/auth/me`, {
+      withCredentials: true,
+      context: new HttpContext().set(SKIP_ERROR_INTERCEPTOR, true)
+    }).pipe(
       tap(user => this.setCurrentUser(user))
     );
   }
