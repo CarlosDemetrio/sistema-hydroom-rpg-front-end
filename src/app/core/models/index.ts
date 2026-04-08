@@ -29,6 +29,7 @@ export * from './config.models';
 
 // Anotações
 export * from './anotacao.model';
+export * from './anotacao-pasta.model';
 
 // DTOs
 export * from './dtos/config-base.dto';
