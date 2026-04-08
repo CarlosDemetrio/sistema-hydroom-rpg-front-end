@@ -15,6 +15,7 @@ import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -60,6 +61,7 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
     ConfirmDialogModule,
     DialogModule,
     DividerModule,
+    InputNumberModule,
     InputTextModule,
     MessageModule,
     SkeletonModule,
@@ -133,11 +135,15 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
           [mostrarBotaoVisibilidade]="mostrarPainelNpc()"
           [podeResetar]="podeResetar()"
           [resetando]="resetando()"
+          [animandoLevelUp]="fichaHeaderAnimando()"
+          [pontosAtributoDisponiveis]="resumo()?.pontosAtributoDisponiveis ?? 0"
+          [pontosAptidaoDisponiveis]="resumo()?.pontosAptidaoDisponiveis ?? 0"
           (editarClick)="irParaEdicao()"
           (deletarClick)="abrirConfirmacaoDeletar()"
           (duplicarClick)="showDuplicarDialog.set(true)"
           (visibilidadeClick)="drawerVisibilidadeAberto.set(true)"
           (resetarClick)="abrirConfirmacaoReset()"
+          (abrirLevelUpDialog)="levelUpDialogVisivel.set(true)"
         />
       </div>
 
@@ -175,6 +181,8 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
                   <app-ficha-resumo-tab
                     [atributos]="atributos()"
                     [resumo]="resumo()!"
+                    [isMestre]="isMestre()"
+                    (abrirDialogXp)="dialogXpVisivel.set(true)"
                   />
                 </p-tabpanel>
 
@@ -290,6 +298,43 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
       </p-dialog>
     }
 
+    <!-- Dialog: Conceder XP (Mestre only) -->
+    @if (isMestre()) {
+      <p-dialog
+        header="Conceder XP"
+        [visible]="dialogXpVisivel()"
+        (visibleChange)="dialogXpVisivel.set($event)"
+        [modal]="true"
+        [draggable]="false"
+        [resizable]="false"
+        [style]="{ width: '360px' }"
+      >
+        <div class="flex flex-col gap-3 p-2">
+          <label for="qtdXp" class="font-medium">Quantidade de XP</label>
+          <p-inputnumber
+            inputId="qtdXp"
+            [ngModel]="quantidadeXp()"
+            (ngModelChange)="quantidadeXp.set($event)"
+            [min]="1"
+            [useGrouping]="true"
+            placeholder="Ex: 500"
+            class="w-full"
+            aria-label="Quantidade de XP a conceder"
+          />
+        </div>
+        <ng-template #footer>
+          <p-button label="Cancelar" text (onClick)="dialogXpVisivel.set(false)" />
+          <p-button
+            label="Confirmar"
+            icon="pi pi-check"
+            [loading]="salvandoXp()"
+            [disabled]="!quantidadeXp() || quantidadeXp() < 1"
+            (onClick)="concederXp()"
+          />
+        </ng-template>
+      </p-dialog>
+    }
+
     <!-- Dialog: Duplicar Ficha -->
     <p-dialog
       header="Duplicar Ficha"
@@ -388,6 +433,13 @@ export class FichaDetailComponent implements OnInit {
   protected novoNomeDuplicar = signal('');
   protected duplicando = signal(false);
   protected resetando = signal(false);
+
+  // XP / Level-up state
+  protected fichaHeaderAnimando = signal(false);
+  protected dialogXpVisivel = signal(false);
+  protected levelUpDialogVisivel = signal(false);
+  protected quantidadeXp = signal<number>(0);
+  protected salvandoXp = signal(false);
 
   // Auth shortcuts
   protected userInfo = computed(() => this.authService.currentUser());
@@ -499,6 +551,37 @@ export class FichaDetailComponent implements OnInit {
     if (id) {
       this.carregarFichaCompleta(id);
     }
+  }
+
+  protected concederXp(): void {
+    const fichaId = this.fichaId();
+    const ficha = this.ficha();
+    const qtd = this.quantidadeXp();
+    if (!fichaId || !ficha || qtd < 1) return;
+    const nivelAntes = ficha.nivel;
+    this.salvandoXp.set(true);
+    this.fichasApiService.updateFicha(fichaId, { xp: ficha.xp + qtd }).subscribe({
+      next: (fichaAtualizada) => {
+        this.dialogXpVisivel.set(false);
+        this.quantidadeXp.set(0);
+        this.salvandoXp.set(false);
+        if (fichaAtualizada.nivel > nivelAntes) {
+          this.onLevelUp(nivelAntes, fichaAtualizada.nivel, fichaAtualizada.nome);
+        }
+        this.carregarFichaCompleta(fichaId);
+      },
+      error: () => {
+        this.salvandoXp.set(false);
+        this.toastService.error('Erro ao conceder XP. Tente novamente.');
+      },
+    });
+  }
+
+  private onLevelUp(_nivelAntes: number, nivelNovo: number, nome: string): void {
+    this.toastService.levelUp(nivelNovo, nome);
+    this.fichaHeaderAnimando.set(true);
+    setTimeout(() => this.fichaHeaderAnimando.set(false), 1500);
+    this.levelUpDialogVisivel.set(true);
   }
 
   protected onTabChange(value: number | string): void {

@@ -703,3 +703,15 @@ p {
   100% { background-position: -200% 0; }
 }
 
+/* ---- .level-up-toast ------------------------------------------- */
+.level-up-toast .p-toast-message {
+  border-left: 4px solid var(--yellow-500);
+  background: linear-gradient(135deg, var(--surface-card) 0%, var(--yellow-50) 100%);
+}
+.level-up-toast .p-toast-summary {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--yellow-700);
+  letter-spacing: 0.05em;
+}
+

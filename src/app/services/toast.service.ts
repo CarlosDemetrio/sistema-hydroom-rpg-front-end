@@ -114,6 +114,19 @@ export class ToastService {
   }
 
   /**
+   * Exibe toast especial de level up com estilo dourado
+   */
+  levelUp(nivelNovo: number, nomeFicha: string): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: `NÍVEL ${nivelNovo}!`,
+      detail: `${nomeFicha} subiu para o Nível ${nivelNovo}! Distribua os pontos ganhos.`,
+      life: 8000,
+      styleClass: 'level-up-toast',
+    });
+  }
+
+  /**
    * Limpa todas as mensagens
    */
   clear(): void {
