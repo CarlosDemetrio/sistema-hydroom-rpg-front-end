@@ -12,9 +12,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { StepsModule } from 'primeng/steps';
-import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { MenuItem, MessageService } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
@@ -45,6 +44,8 @@ import {
   TipoAptidaoComAptidoes,
 } from './ficha-wizard.types';
 import { forkJoin, Observable } from 'rxjs';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
+import { ToastService } from '@services/toast.service';
 
 /**
  * FichaWizardComponent (SMART — Orquestrador)
@@ -66,7 +67,6 @@ import { forkJoin, Observable } from 'rxjs';
   imports: [
     ButtonModule,
     StepsModule,
-    ToastModule,
     ProgressSpinnerModule,
     StepIdentificacaoComponent,
     StepDescricaoComponent,
@@ -75,20 +75,17 @@ import { forkJoin, Observable } from 'rxjs';
     StepVantagensComponent,
     StepRevisaoComponent,
     WizardRodapeComponent,
+    PageHeaderComponent,
   ],
-  providers: [MessageService],
   template: `
     <div class="p-4">
 
       <!-- Header -->
       <div class="mb-4">
-        <h1 class="text-3xl font-bold m-0 mb-2">
-          @if (isNpcRota()) {
-            Criar NPC
-          } @else {
-            Criar Personagem
-          }
-        </h1>
+        <app-page-header
+          [title]="isNpcRota() ? 'Criar NPC' : 'Criar Personagem'"
+          backRoute="/jogador/fichas"
+        />
         @if (currentGame()) {
           <p class="text-color-secondary m-0">
             Campanha: <span class="font-semibold text-primary">{{ currentGame()!.nome }}</span>
@@ -208,7 +205,6 @@ import { forkJoin, Observable } from 'rxjs';
 
     </div>
 
-    <p-toast></p-toast>
   `,
 })
 export class FichaWizardComponent implements OnInit {
@@ -218,7 +214,7 @@ export class FichaWizardComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private messageService = inject(MessageService);
+  private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -465,11 +461,7 @@ export class FichaWizardComponent implements OnInit {
 
     // Verificar se ha jogo selecionado
     if (!this.currentGameService.hasCurrentGame()) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Atencao',
-        detail: 'Selecione um jogo antes de criar uma ficha',
-      });
+      this.toastService.warning('Selecione um jogo antes de criar uma ficha', 'Atenção');
       const destino = this.isMestre()
         ? '/mestre/jogos'
         : '/jogador/fichas';
@@ -554,11 +546,7 @@ export class FichaWizardComponent implements OnInit {
           this.carregandoRascunho.set(false);
         },
         error: () => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Nao foi possivel carregar o rascunho da ficha',
-          });
+          this.toastService.error('Não foi possível carregar o rascunho da ficha');
           this.carregandoRascunho.set(false);
         },
       });
@@ -648,11 +636,7 @@ export class FichaWizardComponent implements OnInit {
         error: (err: { error?: { message?: string } }) => {
           this.criando.set(false);
           this.estadoSalvamento.set('erro');
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao criar personagem',
-            detail: err.error?.message ?? 'Verifique os dados e tente novamente.',
-          });
+          this.toastService.error(err.error?.message ?? 'Verifique os dados e tente novamente.', 'Erro ao criar personagem');
         },
       });
   }
@@ -673,11 +657,7 @@ export class FichaWizardComponent implements OnInit {
       },
       error: () => {
         this.estadoSalvamento.set('erro');
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro ao salvar',
-          detail: 'Nao foi possivel salvar os dados. Tente novamente.',
-        });
+        this.toastService.error('Não foi possível salvar os dados. Tente novamente.', 'Erro ao salvar');
       },
     });
   }
@@ -706,11 +686,7 @@ export class FichaWizardComponent implements OnInit {
         },
         error: () => {
           this.estadoSalvamento.set('erro');
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao salvar',
-            detail: 'Nao foi possivel salvar a descricao. Tente novamente.',
-          });
+          this.toastService.error('Não foi possível salvar a descrição. Tente novamente.', 'Erro ao salvar');
         },
       });
   }
@@ -745,11 +721,7 @@ export class FichaWizardComponent implements OnInit {
         },
         error: () => {
           this.carregandoAtributos.set(false);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Nao foi possivel carregar os atributos.',
-          });
+          this.toastService.error('Não foi possível carregar os atributos.');
         },
       });
   }
@@ -779,11 +751,7 @@ export class FichaWizardComponent implements OnInit {
         },
         error: () => {
           this.estadoSalvamento.set('erro');
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao salvar',
-            detail: 'Nao foi possivel salvar os atributos. Tente novamente.',
-          });
+          this.toastService.error('Não foi possível salvar os atributos. Tente novamente.', 'Erro ao salvar');
         },
       });
   }
@@ -818,11 +786,7 @@ export class FichaWizardComponent implements OnInit {
         },
         error: () => {
           this.carregandoAptidoes.set(false);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: 'Nao foi possivel carregar as aptidoes.',
-          });
+          this.toastService.error('Não foi possível carregar as aptidões.');
         },
       });
   }
@@ -852,11 +816,7 @@ export class FichaWizardComponent implements OnInit {
         },
         error: () => {
           this.estadoSalvamento.set('erro');
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao salvar',
-            detail: 'Nao foi possivel salvar as aptidoes.',
-          });
+          this.toastService.error('Não foi possível salvar as aptidões.', 'Erro ao salvar');
         },
       });
   }
