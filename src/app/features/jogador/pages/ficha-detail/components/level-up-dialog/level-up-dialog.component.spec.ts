@@ -248,6 +248,8 @@ type InternalComponent = {
   salvarAptidoes: () => void;
   tentarFechar: () => void;
   fechar: () => void;
+  irParaVantagens: () => void;
+  fecharDialog: () => void;
 };
 
 // ============================================================
@@ -605,6 +607,40 @@ describe('LevelUpDialogComponent', () => {
       comp.tentarFechar();
 
       expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 13–14. Step 3 — irParaVantagens e fecharDialog (T10)
+  // ----------------------------------------------------------
+
+  describe('step 3 — vantagens', () => {
+    it('irParaVantagens deve emitir fechado e navegarParaVantagens', async () => {
+      const { component } = await renderComponent();
+      const comp = component as unknown as InternalComponent;
+      const fechadoSpy = vi.fn();
+      const navegarSpy = vi.fn();
+      component.fechado.subscribe(fechadoSpy);
+      component.navegarParaVantagens.subscribe(navegarSpy);
+
+      comp.irParaVantagens();
+
+      expect(fechadoSpy).toHaveBeenCalledTimes(1);
+      expect(navegarSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('fecharDialog deve emitir fechado sem emitir navegarParaVantagens', async () => {
+      const { component } = await renderComponent();
+      const comp = component as unknown as InternalComponent;
+      const fechadoSpy = vi.fn();
+      const navegarSpy = vi.fn();
+      component.fechado.subscribe(fechadoSpy);
+      component.navegarParaVantagens.subscribe(navegarSpy);
+
+      comp.fecharDialog();
+
+      expect(fechadoSpy).toHaveBeenCalledTimes(1);
+      expect(navegarSpy).not.toHaveBeenCalled();
     });
   });
 });

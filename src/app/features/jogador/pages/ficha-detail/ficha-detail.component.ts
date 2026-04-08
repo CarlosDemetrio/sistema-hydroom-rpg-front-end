@@ -352,6 +352,7 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
         [aptidoes]="aptidoes()"
         (fechado)="levelUpDialogVisivel.set(false)"
         (distribuicaoSalva)="recarregar()"
+        (navegarParaVantagens)="abaAtiva.set(3)"
       />
     }
 

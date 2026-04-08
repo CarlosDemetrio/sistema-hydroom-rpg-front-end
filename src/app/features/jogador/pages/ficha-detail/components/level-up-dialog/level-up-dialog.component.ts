@@ -23,6 +23,7 @@ import { ToastService } from '@services/toast.service';
 import { ConfigStore } from '@core/stores/config.store';
 import { LevelUpAtributosStepComponent } from './steps/level-up-atributos-step/level-up-atributos-step.component';
 import { LevelUpAptidoesStepComponent } from './steps/level-up-aptidoes-step/level-up-aptidoes-step.component';
+import { LevelUpVantagensStepComponent } from './steps/level-up-vantagens-step/level-up-vantagens-step.component';
 
 /**
  * LevelUpDialogComponent — Smart Container
@@ -47,6 +48,7 @@ import { LevelUpAptidoesStepComponent } from './steps/level-up-aptidoes-step/lev
     StepperModule,
     LevelUpAtributosStepComponent,
     LevelUpAptidoesStepComponent,
+    LevelUpVantagensStepComponent,
   ],
   template: `
     <p-confirmdialog />
@@ -136,30 +138,13 @@ import { LevelUpAptidoesStepComponent } from './steps/level-up-aptidoes-step/lev
             </ng-template>
           </p-step-panel>
 
-          <!-- Step 3: Vantagens (TODO T10) -->
+          <!-- Step 3: Vantagens -->
           <p-step-panel [value]="2">
             <ng-template #content>
-              <!-- TODO T10: LevelUpVantagensStepComponent -->
-              <div class="p-4 text-center text-color-secondary">
-                <i class="pi pi-star text-3xl mb-3 block"></i>
-                <p>Compra de vantagens será implementada em T10.</p>
-              </div>
-
-              <div class="flex justify-content-between gap-2 p-3 pt-0">
-                <p-button
-                  label="Voltar"
-                  icon="pi pi-arrow-left"
-                  [text]="true"
-                  severity="secondary"
-                  (onClick)="stepAtivo.set(1)"
-                />
-                <p-button
-                  label="Concluir"
-                  icon="pi pi-check"
-                  severity="success"
-                  (onClick)="fechar()"
-                />
-              </div>
+              <app-level-up-vantagens-step
+                [pontosVantagemDisponiveis]="pontosVantagemDisponiveis()"
+                (irParaVantagens)="irParaVantagens()"
+                (fechar)="fecharDialog()" />
             </ng-template>
           </p-step-panel>
         </p-step-panels>
@@ -182,6 +167,7 @@ export class LevelUpDialogComponent {
   // ---- Outputs ----
   fechado = output<void>();
   distribuicaoSalva = output<void>();
+  navegarParaVantagens = output<void>();
 
   // ---- Services ----
   private fichasApiService = inject(FichasApiService);
@@ -275,6 +261,15 @@ export class LevelUpDialogComponent {
   }
 
   protected fechar(): void {
+    this.fechado.emit();
+  }
+
+  protected irParaVantagens(): void {
+    this.fechado.emit();
+    this.navegarParaVantagens.emit();
+  }
+
+  protected fecharDialog(): void {
     this.fechado.emit();
   }
 
