@@ -11,13 +11,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
-import { MessageService } from 'primeng/api';
+import { ToastService } from '@services/toast.service';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -54,11 +53,9 @@ import { FichaVantagemResponse } from '@core/models/ficha.model';
     InputTextModule,
     SelectModule,
     TagModule,
-    ToastModule,
     ProgressSpinnerModule,
     SkeletonModule,
   ],
-  providers: [MessageService],
   template: `
     <div class="flex flex-column gap-4">
 
@@ -238,13 +235,12 @@ import { FichaVantagemResponse } from '@core/models/ficha.model';
 
     </div>
 
-    <p-toast></p-toast>
   `,
 })
 export class StepVantagensComponent implements OnInit {
   private configApi = inject(ConfigApiService);
   private fichasApi = inject(FichasApiService);
-  private messageService = inject(MessageService);
+  private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   // ============================================================
@@ -331,11 +327,7 @@ export class StepVantagensComponent implements OnInit {
         },
         error: () => {
           this.carregando.set(false);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao carregar',
-            detail: 'Nao foi possivel carregar as vantagens. Tente novamente.',
-          });
+          this.toastService.error('Não foi possível carregar as vantagens. Tente novamente.', 'Erro ao carregar');
         },
       });
   }
@@ -382,11 +374,7 @@ export class StepVantagensComponent implements OnInit {
             });
         },
         error: (err: { error?: { message?: string } }) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Erro ao comprar vantagem',
-            detail: err?.error?.message ?? 'Tente novamente.',
-          });
+          this.toastService.error(err?.error?.message ?? 'Tente novamente.', 'Erro ao comprar vantagem');
           this.comprando.set(null);
         },
       });

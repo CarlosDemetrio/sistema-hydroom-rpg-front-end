@@ -27,6 +27,7 @@ import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { of, throwError, Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { MessageService } from 'primeng/api';
+import { ToastService } from '@services/toast.service';
 
 import { StepVantagensComponent } from './step-vantagens.component';
 import { ConfigApiService } from '@core/services/api/config-api.service';
@@ -168,13 +169,16 @@ async function renderStep(opts: RenderOptions = {}) {
   const configApi = criarConfigApiMock(configApiOverride);
   const fichasApi = criarFichasApiMock(fichasApiOverride);
 
+  const toastServiceMock = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
+
   const result = await render(StepVantagensComponent, {
     schemas: [NO_ERRORS_SCHEMA],
     detectChangesOnRender: false,
     providers: [
       { provide: ConfigApiService, useValue: configApi },
       { provide: FichasApiService, useValue: fichasApi },
-      MessageService,
+      { provide: ToastService, useValue: toastServiceMock },
+      { provide: MessageService, useValue: { add: vi.fn(), clear: vi.fn() } },
     ],
   });
 
@@ -188,7 +192,7 @@ async function renderStep(opts: RenderOptions = {}) {
   await result.fixture.whenStable();
   result.fixture.detectChanges();
 
-  return { ...result, comp, configApi, fichasApi };
+  return { ...result, comp, configApi, fichasApi, toastServiceMock };
 }
 
 // ============================================================
@@ -508,7 +512,7 @@ describe('StepVantagensComponent', () => {
 
   describe('tratamento de erros', () => {
     it('exibe toast de erro quando comprarVantagem falha', async () => {
-      const { comp } = await renderStep({
+      const { comp, toastServiceMock } = await renderStep({
         fichasApiOverride: {
           comprarVantagem: vi.fn().mockReturnValue(
             throwError(() => ({ error: { message: 'Pontos insuficientes' } }))
@@ -516,37 +520,26 @@ describe('StepVantagensComponent', () => {
         },
       });
 
-      const messageService = comp['messageService'];
-      const addSpy = vi.spyOn(messageService, 'add');
-
       comp.comprar(1);
 
-      expect(addSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          severity: 'error',
-          summary: 'Erro ao comprar vantagem',
-          detail: 'Pontos insuficientes',
-        })
+      expect(toastServiceMock.error).toHaveBeenCalledWith(
+        'Pontos insuficientes',
+        'Erro ao comprar vantagem'
       );
     });
 
     it('exibe mensagem generica quando erro nao tem detail', async () => {
-      const { comp } = await renderStep({
+      const { comp, toastServiceMock } = await renderStep({
         fichasApiOverride: {
           comprarVantagem: vi.fn().mockReturnValue(throwError(() => ({}))),
         },
       });
 
-      const messageService = comp['messageService'];
-      const addSpy = vi.spyOn(messageService, 'add');
-
       comp.comprar(1);
 
-      expect(addSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          severity: 'error',
-          detail: 'Tente novamente.',
-        })
+      expect(toastServiceMock.error).toHaveBeenCalledWith(
+        'Tente novamente.',
+        'Erro ao comprar vantagem'
       );
     });
 
@@ -563,25 +556,16 @@ describe('StepVantagensComponent', () => {
     });
 
     it('exibe toast de erro quando carregamento inicial falha', async () => {
-      const { fixture } = await renderStep({
+      const { comp, toastServiceMock } = await renderStep({
         configApiOverride: {
           listVantagens: vi.fn().mockReturnValue(throwError(() => new Error('Network error'))),
         },
       });
 
-      const comp = fixture.componentInstance;
-      const messageService = comp['messageService'];
-      const addSpy = vi.spyOn(messageService, 'add');
-
-      // Re-chamar ngOnInit para disparar o erro
-      comp.ngOnInit();
-      fixture.detectChanges();
-
-      expect(addSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          severity: 'error',
-          summary: 'Erro ao carregar',
-        })
+      // carregamento já foi disparado no renderStep — toastService.error deve ter sido chamado
+      expect(toastServiceMock.error).toHaveBeenCalledWith(
+        expect.stringContaining('possível carregar'),
+        'Erro ao carregar'
       );
     });
   });
