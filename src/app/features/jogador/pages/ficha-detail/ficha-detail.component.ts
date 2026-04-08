@@ -36,6 +36,7 @@ import { FichaBusinessService } from '@core/services/business/ficha-business.ser
 import { FichaVisibilidadeApiService } from '@core/services/api/ficha-visibilidade.api.service';
 import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
+import { ConfigStore } from '@core/stores/config.store';
 import { AuthService } from '@services/auth.service';
 import { ToastService } from '@services/toast.service';
 import { DuplicarFichaDto } from '@models/dtos/ficha.dto';
@@ -47,6 +48,7 @@ import { FichaResumoTabComponent } from './components/ficha-resumo-tab/ficha-res
 import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/ficha-vantagens-tab.component';
 import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visibilidade.component';
 import { ProspeccaoComponent } from './components/prospeccao/prospeccao.component';
+import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-dialog.component';
 
 @Component({
   selector: 'app-ficha-detail',
@@ -76,6 +78,7 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
     FichaVantagensTabComponent,
     NpcVisibilidadeComponent,
     ProspeccaoComponent,
+    LevelUpDialogComponent,
   ],
   template: `
     <p-toast />
@@ -335,6 +338,23 @@ import { ProspeccaoComponent } from './components/prospeccao/prospeccao.componen
       </p-dialog>
     }
 
+    <!-- Dialog: Level Up — distribuição de pontos -->
+    @if (levelUpDialogVisivel() && resumo() && atributos().length > 0) {
+      <app-level-up-dialog
+        [fichaId]="fichaId()!"
+        [nivelNovo]="ficha()!.nivel"
+        [fichaNome]="ficha()!.nome"
+        [limitadorAtributo]="nivelAtual()?.limitadorAtributo ?? 999"
+        [pontosAtributoDisponiveis]="resumo()!.pontosAtributoDisponiveis"
+        [pontosAptidaoDisponiveis]="resumo()!.pontosAptidaoDisponiveis"
+        [pontosVantagemDisponiveis]="resumo()!.pontosVantagemDisponiveis"
+        [atributos]="atributos()"
+        [aptidoes]="aptidoes()"
+        (fechado)="levelUpDialogVisivel.set(false)"
+        (distribuicaoSalva)="recarregar()"
+      />
+    }
+
     <!-- Dialog: Duplicar Ficha -->
     <p-dialog
       header="Duplicar Ficha"
@@ -395,6 +415,7 @@ export class FichaDetailComponent implements OnInit {
   private fichaVisibilidadeApiService = inject(FichaVisibilidadeApiService);
   private fichasApiService = inject(FichasApiService);
   private configApiService = inject(ConfigApiService);
+  private configStore = inject(ConfigStore);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
   private confirmationService = inject(ConfirmationService);
@@ -475,6 +496,13 @@ export class FichaDetailComponent implements OnInit {
 
   /** Exibe o botao "Resetar Estado" apenas para o Mestre quando há ficha carregada. */
   protected podeResetar = computed(() => this.isMestre() && this.ficha() !== null);
+
+  /** Configuração de nível correspondente ao nível atual da ficha (para limitadorAtributo). */
+  protected nivelAtual = computed(() => {
+    const nivel = this.ficha()?.nivel;
+    if (nivel == null) return null;
+    return this.configStore.niveis().find((n) => n.nivel === nivel) ?? null;
+  });
 
   constructor() {
     effect(() => {
@@ -581,6 +609,11 @@ export class FichaDetailComponent implements OnInit {
     this.toastService.levelUp(nivelNovo, nome);
     this.fichaHeaderAnimando.set(true);
     setTimeout(() => this.fichaHeaderAnimando.set(false), 1500);
+    // Garantir que atributos estejam carregados antes de abrir o dialog de level-up
+    const fichaId = this.fichaId();
+    if (fichaId && this.atributos().length === 0) {
+      this.carregarAtributos(fichaId);
+    }
     this.levelUpDialogVisivel.set(true);
   }
 
