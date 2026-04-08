@@ -31,6 +31,9 @@ export * from './config.models';
 export * from './anotacao.model';
 export * from './anotacao-pasta.model';
 
+// Galeria de imagens
+export * from './ficha-imagem.model';
+
 // DTOs
 export * from './dtos/config-base.dto';
 export * from './dtos/jogo.dto';

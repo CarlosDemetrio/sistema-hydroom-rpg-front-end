@@ -15,6 +15,7 @@ import {
 import { CreateFichaDto, UpdateFichaDto, DuplicarFichaDto, NpcCreateDto } from '@core/models/dtos/ficha.dto';
 import { Anotacao, CriarAnotacaoDto, AtualizarAnotacaoDto } from '@core/models/anotacao.model';
 import { AnotacaoPasta, CriarPastaDto, AtualizarPastaDto } from '@core/models/anotacao-pasta.model';
+import { FichaImagem, UploadImagemDto, AtualizarImagemDto } from '@core/models/ficha-imagem.model';
 import { AuthService } from '@services/auth.service';
 
 /**
@@ -229,6 +230,26 @@ export class FichaBusinessService {
 
   deletarPasta(fichaId: number, pastaId: number): Observable<void> {
     return this.fichasApi.deletarPasta(fichaId, pastaId);
+  }
+
+  // ============================================
+  // GALERIA DE IMAGENS
+  // ============================================
+
+  loadImagens(fichaId: number): Observable<FichaImagem[]> {
+    return this.fichasApi.getImagens(fichaId);
+  }
+
+  adicionarImagem(fichaId: number, dto: UploadImagemDto): Observable<FichaImagem> {
+    return this.fichasApi.adicionarImagem(fichaId, dto);
+  }
+
+  atualizarImagem(fichaId: number, imagemId: number, dto: AtualizarImagemDto): Observable<FichaImagem> {
+    return this.fichasApi.atualizarImagem(fichaId, imagemId, dto);
+  }
+
+  deletarImagem(fichaId: number, imagemId: number): Observable<void> {
+    return this.fichasApi.deletarImagem(fichaId, imagemId);
   }
 
   // ============================================

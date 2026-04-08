@@ -20,6 +20,7 @@ import {
 } from '@core/models/dtos/ficha.dto';
 import { Anotacao, CriarAnotacaoDto, AtualizarAnotacaoDto } from '@core/models/anotacao.model';
 import { AnotacaoPasta, CriarPastaDto, AtualizarPastaDto } from '@core/models/anotacao-pasta.model';
+import { FichaImagem, UploadImagemDto, AtualizarImagemDto } from '@core/models/ficha-imagem.model';
 import { environment } from '@env/environment';
 
 export interface FichaFilters {
@@ -381,6 +382,54 @@ export class FichasApiService {
   deletarPasta(fichaId: number, pastaId: number): Observable<void> {
     return this.http.delete<void>(
       `${this.baseUrl}/fichas/${fichaId}/anotacao-pastas/${pastaId}`
+    );
+  }
+
+  // ==================== GALERIA DE IMAGENS ====================
+
+  /**
+   * GET /api/v1/fichas/{fichaId}/imagens
+   * Lista todas as imagens da ficha (avatar + galeria).
+   */
+  getImagens(fichaId: number): Observable<FichaImagem[]> {
+    return this.http.get<FichaImagem[]>(`${this.baseUrl}/fichas/${fichaId}/imagens`);
+  }
+
+  /**
+   * POST /api/v1/fichas/{fichaId}/imagens
+   * Faz upload de nova imagem via multipart/form-data.
+   * O backend envia o arquivo ao Cloudinary e retorna urlCloudinary e publicId.
+   * NAO setar Content-Type manualmente — Angular define automaticamente com boundary correto.
+   */
+  adicionarImagem(fichaId: number, dto: UploadImagemDto): Observable<FichaImagem> {
+    const formData = new FormData();
+    formData.append('arquivo', dto.arquivo);
+    formData.append('tipoImagem', dto.tipoImagem);
+    if (dto.titulo) {
+      formData.append('titulo', dto.titulo);
+    }
+    return this.http.post<FichaImagem>(`${this.baseUrl}/fichas/${fichaId}/imagens`, formData);
+  }
+
+  /**
+   * PUT /api/v1/fichas/{fichaId}/imagens/{imagemId}
+   * Edita apenas metadados da imagem (titulo, ordem).
+   * Nao permite trocar o arquivo — para isso: deletar e fazer novo upload.
+   */
+  atualizarImagem(fichaId: number, imagemId: number, dto: AtualizarImagemDto): Observable<FichaImagem> {
+    return this.http.put<FichaImagem>(
+      `${this.baseUrl}/fichas/${fichaId}/imagens/${imagemId}`,
+      dto
+    );
+  }
+
+  /**
+   * DELETE /api/v1/fichas/{fichaId}/imagens/{imagemId}
+   * Remove imagem da ficha e do Cloudinary.
+   */
+  deletarImagem(fichaId: number, imagemId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/fichas/${fichaId}/imagens/${imagemId}`
     );
   }
 }
