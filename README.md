@@ -164,7 +164,3 @@ hydroon.com.br  →  api.hydroon.com.br
 
 ---
 
-<p align="center">
-  Feito com ❤️ para a comunidade de RPG
-</p>
-
