@@ -541,7 +541,7 @@ export class JogoDetailComponent implements OnInit {
   }
 
   verFicha(fichaId: number) {
-    this.router.navigate(['/jogador/fichas', fichaId]);
+    this.router.navigate(['/mestre/fichas', fichaId]);
   }
 
   getStatusLabel(ativo: boolean): string {

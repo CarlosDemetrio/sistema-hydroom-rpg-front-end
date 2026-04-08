@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -116,6 +116,7 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
   const fichaServiceMock = criarFichaServiceMock();
   const confirmationServiceMock = { confirm: vi.fn() };
   const messageServiceMock = { add: vi.fn() };
+  const routerMock = { navigate: vi.fn() };
 
   TestBed.configureTestingModule({
     imports: [JogoDetailComponent],
@@ -128,6 +129,7 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
         provide: ActivatedRoute,
         useValue: { snapshot: { paramMap: { get: () => '1' } } },
       },
+      { provide: Router, useValue: routerMock },
     ],
   });
 
@@ -156,6 +158,7 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
     participanteServiceMock,
     confirmationServiceMock,
     messageServiceMock,
+    routerMock,
   };
 }
 
@@ -291,6 +294,32 @@ describe('JogoDetailComponent', () => {
       const { component } = configurarTestBed();
 
       expect(component.filtroStatus()).toBe('TODOS');
+    });
+  });
+
+  // ----------------------------------------------------------
+  // verFicha() — Mestre deve navegar para /mestre/fichas/:id
+  // ----------------------------------------------------------
+
+  describe('verFicha()', () => {
+    it('navega para /mestre/fichas/:id (não /jogador/fichas/:id)', () => {
+      const { component, routerMock } = configurarTestBed();
+
+      component.verFicha(42);
+
+      expect(routerMock.navigate).toHaveBeenCalledWith(['/mestre/fichas', 42]);
+    });
+
+    it('não navega para /jogador/fichas quando o Mestre aciona verFicha()', () => {
+      const { component, routerMock } = configurarTestBed();
+
+      component.verFicha(7);
+
+      const chamadas = routerMock.navigate.mock.calls;
+      const navegouParaJogador = chamadas.some(
+        ([rota]: [unknown[]]) => Array.isArray(rota) && rota[0] === '/jogador/fichas'
+      );
+      expect(navegouParaJogador).toBe(false);
     });
   });
 });

@@ -81,6 +81,10 @@ export const routes: Routes = [
             data: { npc: true }
           },
           {
+            path: 'fichas/:id',
+            loadComponent: () => import('./features/jogador/pages/ficha-detail/ficha-detail.component').then(m => m.FichaDetailComponent)
+          },
+          {
             path: 'config',
             loadComponent: () => import('./features/mestre/pages/config/config-layout.component').then(m => m.ConfigLayoutComponent),
             canActivate: [currentGameGuard],
