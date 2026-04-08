@@ -1,11 +1,6 @@
 /* PrimeNG 21 - Theme is configured in app.config.ts */
 /* NO CSS imports needed for PrimeNG components */
-
-/* PrimeIcons */
-@import 'primeicons/primeicons.css';
-
-/* PrimeFlex Utilities */
-@import 'primeflex/primeflex.css';
+/* PrimeIcons and PrimeFlex are bundled via angular.json styles array */
 
 /* ========================================
    GLOBAL STYLES - Following Best Practices
