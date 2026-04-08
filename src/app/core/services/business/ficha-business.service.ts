@@ -13,7 +13,8 @@ import {
   DuplicarFichaResponse,
 } from '@core/models/ficha.model';
 import { CreateFichaDto, UpdateFichaDto, DuplicarFichaDto, NpcCreateDto } from '@core/models/dtos/ficha.dto';
-import { Anotacao, CriarAnotacaoDto } from '@core/models/anotacao.model';
+import { Anotacao, CriarAnotacaoDto, AtualizarAnotacaoDto } from '@core/models/anotacao.model';
+import { AnotacaoPasta, CriarPastaDto, AtualizarPastaDto } from '@core/models/anotacao-pasta.model';
 import { AuthService } from '@services/auth.service';
 
 /**
@@ -190,6 +191,10 @@ export class FichaBusinessService {
     return this.fichasApi.getAnotacoes(fichaId);
   }
 
+  listarAnotacoes(fichaId: number, pastaPaiId?: number): Observable<Anotacao[]> {
+    return this.fichasApi.listarAnotacoes(fichaId, pastaPaiId);
+  }
+
   criarAnotacao(fichaId: number, dto: CriarAnotacaoDto): Observable<Anotacao> {
     return this.fichasApi.criarAnotacao(fichaId, dto);
   }
@@ -198,8 +203,32 @@ export class FichaBusinessService {
     return this.fichasApi.atualizarAnotacao(fichaId, anotacaoId, dto);
   }
 
+  editarAnotacao(fichaId: number, anotacaoId: number, dto: AtualizarAnotacaoDto): Observable<Anotacao> {
+    return this.fichasApi.editarAnotacao(fichaId, anotacaoId, dto);
+  }
+
   deletarAnotacao(fichaId: number, anotacaoId: number): Observable<void> {
     return this.fichasApi.deletarAnotacao(fichaId, anotacaoId);
+  }
+
+  // ============================================
+  // PASTAS DE ANOTAÇÃO
+  // ============================================
+
+  listarPastas(fichaId: number): Observable<AnotacaoPasta[]> {
+    return this.fichasApi.listarPastas(fichaId);
+  }
+
+  criarPasta(fichaId: number, dto: CriarPastaDto): Observable<AnotacaoPasta> {
+    return this.fichasApi.criarPasta(fichaId, dto);
+  }
+
+  atualizarPasta(fichaId: number, pastaId: number, dto: AtualizarPastaDto): Observable<AnotacaoPasta> {
+    return this.fichasApi.atualizarPasta(fichaId, pastaId, dto);
+  }
+
+  deletarPasta(fichaId: number, pastaId: number): Observable<void> {
+    return this.fichasApi.deletarPasta(fichaId, pastaId);
   }
 
   // ============================================

@@ -18,7 +18,8 @@ import {
   UpdateFichaDto,
   DuplicarFichaDto,
 } from '@core/models/dtos/ficha.dto';
-import { Anotacao, CriarAnotacaoDto } from '@core/models/anotacao.model';
+import { Anotacao, CriarAnotacaoDto, AtualizarAnotacaoDto } from '@core/models/anotacao.model';
+import { AnotacaoPasta, CriarPastaDto, AtualizarPastaDto } from '@core/models/anotacao-pasta.model';
 import { environment } from '@env/environment';
 
 export interface FichaFilters {
@@ -308,9 +309,32 @@ export class FichasApiService {
   /**
    * PUT /api/v1/fichas/{fichaId}/anotacoes/{id}
    * Atualiza uma anotação. Mestre pode editar qualquer; Jogador só as próprias.
+   * tipoAnotacao é imutável — não incluído no payload.
    */
   atualizarAnotacao(fichaId: number, anotacaoId: number, dto: CriarAnotacaoDto): Observable<Anotacao> {
     return this.http.put<Anotacao>(`${this.baseUrl}/fichas/${fichaId}/anotacoes/${anotacaoId}`, dto);
+  }
+
+  /**
+   * PUT /api/v1/fichas/{fichaId}/anotacoes/{id}
+   * Edita anotação com DTO parcial tipado (AtualizarAnotacaoDto).
+   * Usa o mesmo endpoint mas com payload mais restrito e tipado.
+   */
+  editarAnotacao(fichaId: number, anotacaoId: number, dto: AtualizarAnotacaoDto): Observable<Anotacao> {
+    return this.http.put<Anotacao>(`${this.baseUrl}/fichas/${fichaId}/anotacoes/${anotacaoId}`, dto);
+  }
+
+  /**
+   * GET /api/v1/fichas/{fichaId}/anotacoes?pastaPaiId=X
+   * Lista anotações com filtro opcional por pasta.
+   * pastaPaiId undefined = sem filtro (retorna todas).
+   */
+  listarAnotacoes(fichaId: number, pastaPaiId?: number): Observable<Anotacao[]> {
+    let params = new HttpParams();
+    if (pastaPaiId != null) {
+      params = params.set('pastaPaiId', pastaPaiId.toString());
+    }
+    return this.http.get<Anotacao[]>(`${this.baseUrl}/fichas/${fichaId}/anotacoes`, { params });
   }
 
   /**
@@ -319,5 +343,44 @@ export class FichasApiService {
    */
   deletarAnotacao(fichaId: number, anotacaoId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/fichas/${fichaId}/anotacoes/${anotacaoId}`);
+  }
+
+  // ==================== PASTAS DE ANOTAÇÃO ====================
+
+  /**
+   * GET /api/v1/fichas/{fichaId}/anotacao-pastas
+   * Lista pastas da ficha em estrutura de árvore.
+   */
+  listarPastas(fichaId: number): Observable<AnotacaoPasta[]> {
+    return this.http.get<AnotacaoPasta[]>(`${this.baseUrl}/fichas/${fichaId}/anotacao-pastas`);
+  }
+
+  /**
+   * POST /api/v1/fichas/{fichaId}/anotacao-pastas
+   * Cria uma nova pasta. pastaPaiId opcional — null/ausente = pasta raiz.
+   */
+  criarPasta(fichaId: number, dto: CriarPastaDto): Observable<AnotacaoPasta> {
+    return this.http.post<AnotacaoPasta>(`${this.baseUrl}/fichas/${fichaId}/anotacao-pastas`, dto);
+  }
+
+  /**
+   * PUT /api/v1/fichas/{fichaId}/anotacao-pastas/{pastaId}
+   * Atualiza nome ou ordem de uma pasta.
+   */
+  atualizarPasta(fichaId: number, pastaId: number, dto: AtualizarPastaDto): Observable<AnotacaoPasta> {
+    return this.http.put<AnotacaoPasta>(
+      `${this.baseUrl}/fichas/${fichaId}/anotacao-pastas/${pastaId}`,
+      dto
+    );
+  }
+
+  /**
+   * DELETE /api/v1/fichas/{fichaId}/anotacao-pastas/{pastaId}
+   * Remove a pasta. Comportamento no backend: move anotações órfãs para raiz.
+   */
+  deletarPasta(fichaId: number, pastaId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/fichas/${fichaId}/anotacao-pastas/${pastaId}`
+    );
   }
 }
