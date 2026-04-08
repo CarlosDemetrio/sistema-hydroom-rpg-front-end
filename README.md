@@ -65,20 +65,34 @@ O frontend é deployado no **Firebase Hosting (CDN Global)** via GitHub Actions.
 | Recurso | Detalhes |
 |---------|----------|
 | Plataforma | Firebase Hosting |
-| URL | https://ficha-controlador-rpg.web.app |
+| Projeto Firebase | `hydroon-rpg-2bedc` |
+| URL customizada | `https://hydroon.com.br` |
+| URL fallback | `https://hydroon-rpg-2bedc.web.app` |
 | CI/CD | `.github/workflows/deploy-firebase.yml` |
-| Trigger | Push na branch `main` (mudanças em `src/`) |
+| Trigger | Manual via `workflow_dispatch` (GitHub Actions) |
 
-**Deploy manual:**
+### Secrets (GitHub Actions)
+
+| Secret | Descrição |
+|--------|-----------|
+| `FIREBASE_PROJECT_ID` | ID do projeto Firebase (`hydroon-rpg-2bedc`) |
+| `FIREBASE_SERVICE_ACCOUNT` | JSON da service account com permissão de deploy |
+
+### Deploy manual
 ```bash
 npm run build:prod
-firebase deploy --only hosting
+firebase deploy --only hosting --project hydroon-rpg-2bedc
 ```
 
-**Rollback:**
+### Rollback
 ```bash
-firebase hosting:rollback
+firebase hosting:rollback --project hydroon-rpg-2bedc
 ```
 
-Guia completo: [`docs/DEPLOY-FIREBASE-DNS.md`](docs/DEPLOY-FIREBASE-DNS.md) | Spec 019: [`docs/specs/019-deploy-frontend-firebase/`](docs/specs/019-deploy-frontend-firebase/)
+### API URL em produção
+O `environment.prod.ts` deriva a URL da API dinamicamente a partir do hostname:
+```
+https://hydroon.com.br → API em https://api.hydroon.com.br
+```
+Não é necessário alterar configurações ao mudar de domínio.
 
