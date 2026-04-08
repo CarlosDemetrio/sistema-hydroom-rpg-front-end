@@ -1,64 +1,131 @@
-# FichaControladorFrontEnd
+# 🎲 Ficha Controlador — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.2.
+Interface web para gerenciamento de fichas de personagens de RPG de mesa, com suporte a configurações totalmente customizáveis pelo Mestre.
 
-## Development server
+[![Angular](https://img.shields.io/badge/Angular-21-red)]()
+[![PrimeNG](https://img.shields.io/badge/PrimeNG-21-blue)]()
+[![Firebase](https://img.shields.io/badge/Firebase-Hosting-orange)]()
+[![License](https://img.shields.io/badge/license-MIT-blue)]()
 
-To start a local development server, run:
+---
+
+## 📋 Índice
+
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Tecnologias](#tecnologias)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação](#instalação)
+- [Execução Local](#execução-local)
+- [Testes](#testes)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Deploy (Produção)](#deploy-produção)
+
+---
+
+## 🎯 Sobre o Projeto
+
+Frontend Angular para o sistema **Ficha Controlador**, que permite ao Mestre configurar regras do jogo e aos Jogadores gerenciarem suas fichas de personagem. Autenticação via Google OAuth2.
+
+---
+
+## 🛠️ Tecnologias
+
+| Categoria | Tecnologia |
+|-----------|-----------|
+| Framework | Angular 21 (Standalone Components, Signals, Control Flow) |
+| UI | PrimeNG 21 + PrimeFlex + PrimeIcons |
+| State | NgRx Signals Store (`@ngrx/signals`) |
+| Testes | Vitest + @testing-library/angular |
+| Linting | ESLint |
+| Build | Angular CLI 21 |
+| Deploy | Firebase Hosting |
+
+---
+
+## ✅ Pré-requisitos
+
+- **Node.js 20+**
+- **npm 10+**
+- Backend rodando (local ou remoto) — ver [ficha-controlador](../ficha-controlador)
+
+---
+
+## 🚀 Instalação
 
 ```bash
-ng serve
+git clone https://github.com/seu-usuario/ficha-controlador-front-end.git
+cd ficha-controlador-front-end
+npm install
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## ▶️ Execução Local
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Com backend local (porta 8081)
+```bash
+npm run start:local
+```
+
+### Com backend via Docker Compose
+```bash
+npm start
+```
+
+A aplicação roda em **http://localhost:4201**. O proxy redireciona `/api`, `/oauth2` e `/login` para o backend.
+
+---
+
+## 🧪 Testes
 
 ```bash
-ng generate component component-name
+# Executar testes
+npm test
+
+# Com cobertura
+npm run test:coverage
+
+# Lint
+npm run lint
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
+## 📁 Estrutura do Projeto
+
+```
+src/app/
+├── core/          # Serviços globais, interceptors, guards, estados (Signals)
+├── shared/        # Componentes reutilizáveis (dumb components), pipes, diretivas
+├── features/      # Módulos de funcionalidade
+│   ├── dashboard/ # Dashboard principal
+│   ├── jogador/   # Área do jogador (fichas)
+│   └── mestre/    # Área do mestre (configurações)
+├── pages/         # Páginas de rota
+│   ├── home/
+│   ├── login/
+│   ├── profile/
+│   ├── oauth-callback/
+│   ├── unauthorized/
+│   └── not-found/
+├── models/        # Interfaces e types TypeScript
+├── guards/        # Route guards
+├── interceptors/  # HTTP interceptors
+└── services/      # Serviços de aplicação
 ```
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
+### Fluxo de dados
+```
+Component → inject(Store) → Signal → computed() → Template
+               ↓
+           Service → HTTP → Backend API
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+> Cálculos de fórmulas (BBA, Ímpeto, etc.) são feitos no **backend** (fonte da verdade). O frontend pode calcular previews temporários para UX responsiva, mas sempre substitui pelos valores oficiais retornados após salvar.
 
-## Running unit tests
+---
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-
-## Deploy
+## 🚀 Deploy (Produção)
 
 O frontend é deployado no **Firebase Hosting (CDN Global)** via GitHub Actions.
 
@@ -66,7 +133,7 @@ O frontend é deployado no **Firebase Hosting (CDN Global)** via GitHub Actions.
 |---------|----------|
 | Plataforma | Firebase Hosting |
 | Projeto Firebase | `hydroon-rpg-2bedc` |
-| URL customizada | `https://hydroon.com.br` |
+| URL | `https://hydroon.com.br` |
 | URL fallback | `https://hydroon-rpg-2bedc.web.app` |
 | CI/CD | `.github/workflows/deploy-firebase.yml` |
 | Trigger | Manual via `workflow_dispatch` (GitHub Actions) |
@@ -90,9 +157,14 @@ firebase hosting:rollback --project hydroon-rpg-2bedc
 ```
 
 ### API URL em produção
-O `environment.prod.ts` deriva a URL da API dinamicamente a partir do hostname:
+O `environment.prod.ts` deriva a URL da API dinamicamente do hostname — não há URL hardcoded:
 ```
-https://hydroon.com.br → API em https://api.hydroon.com.br
+hydroon.com.br  →  api.hydroon.com.br
 ```
-Não é necessário alterar configurações ao mudar de domínio.
+
+---
+
+<p align="center">
+  Feito com ❤️ para a comunidade de RPG
+</p>
 
