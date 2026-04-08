@@ -42,6 +42,7 @@ import { DuplicarFichaDto } from '@models/dtos/ficha.dto';
 import { FichaAnotacoesTabComponent } from './components/ficha-anotacoes-tab/ficha-anotacoes-tab.component';
 import { FichaAptidoesTabComponent } from './components/ficha-aptidoes-tab/ficha-aptidoes-tab.component';
 import { FichaAtributosTabComponent } from './components/ficha-atributos-tab/ficha-atributos-tab.component';
+import { FichaGaleriaTabComponent } from './components/ficha-galeria-tab/ficha-galeria-tab.component';
 import { FichaHeaderComponent } from './components/ficha-header/ficha-header.component';
 import { FichaResumoTabComponent } from './components/ficha-resumo-tab/ficha-resumo-tab.component';
 import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/ficha-vantagens-tab.component';
@@ -71,6 +72,7 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
     FichaAnotacoesTabComponent,
     FichaAptidoesTabComponent,
     FichaAtributosTabComponent,
+    FichaGaleriaTabComponent,
     FichaHeaderComponent,
     FichaResumoTabComponent,
     FichaVantagensTabComponent,
@@ -173,6 +175,9 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
                 <p-tab [value]="5">
                   <i class="pi pi-dice mr-2"></i>Prospecção
                 </p-tab>
+                <p-tab [value]="6">
+                  <i class="pi pi-images mr-2"></i>Galeria
+                </p-tab>
               </p-tablist>
 
               <p-tabpanels>
@@ -252,6 +257,18 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
                     <app-prospeccao
                       [fichaId]="fichaId()!"
                       [jogoId]="ficha()!.jogoId"
+                    />
+                  }
+                </p-tabpanel>
+
+                <!-- Aba 6: Galeria -->
+                <p-tabpanel [value]="6">
+                  @if (fichaId() && ficha()) {
+                    <app-ficha-galeria-tab
+                      [fichaId]="fichaId()!"
+                      [userRole]="userRole()"
+                      [userId]="userIdNumber()"
+                      [fichaJogadorId]="ficha()?.jogadorId ?? null"
                     />
                   }
                 </p-tabpanel>
