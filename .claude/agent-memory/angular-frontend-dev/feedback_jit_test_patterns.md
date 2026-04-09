@@ -1,6 +1,6 @@
 ---
 name: Padroes criticos de testes JIT Angular (Vitest)
-description: 4 armadilhas JIT confirmadas no projeto + correcao do erro templateUrl
+description: 8 armadilhas JIT confirmadas no projeto — input.required, templateUrl, static attrs, fake timers, Subject, p-button click, detectChanges pos-Subject, p-togglebutton aria-label
 type: feedback
 ---
 
@@ -45,6 +45,20 @@ Quando um componente declara `providers: [ConfirmationService]` no seu decorator
 **Correcao**: usar `configureTestBed: (tb) => { tb.overrideTemplate(...); tb.overrideProvider(ConfirmationService, { useValue: mock }); }` para substituir o provider no nivel do componente.
 Exemplo confirmado: `LevelUpDialogComponent` (level-up-dialog.component.spec.ts).
 
+### 8. p-button com (onClick) requer click no inner <button> + detectChanges
+`p-button` com `(onClick)` renderiza um `<button>` interno. `fireEvent.click(hostElement)` nem sempre dispara o handler Angular. Alem disso, componentes OnPush nao re-renderizam apos eventos sem `fixture.detectChanges()`.
+**Correcao**: usar helper `clickPButton(nativeElement, ariaLabel)` que tenta o `querySelector('p-button[aria-label="..."] button')` primeiro. Sempre chamar `fixture.detectChanges()` apos o click.
+Padrão para `p-togglebutton`: verificar presença via `nativeElement.querySelector('p-togglebutton')` — o aria-label pode nao ser propagado ao elemento host em JIT.
+
+### 9. Subject.next() em Observable de service requer detectChanges manual
+Quando um componente OnPush chama `subject.next(dados)` e exibe os dados via `@if`/`@for`, o template nao re-renderiza automaticamente. Sempre chamar `fixture.detectChanges()` apos `subject.next()`.
+**Correcao**: padrao correto:
+```typescript
+anotacoesSubject.next([anotacaoMock]);
+anotacoesSubject.complete();
+fixture.detectChanges(); // obrigatorio
+```
+
 **Why:** Vitest roda em modo JIT sem o plugin Angular (que usa Ivy compiler com template URLs). Todos esses problemas sao especificos do ambiente JIT do Vitest.
 
-**How to apply:** Verificar estas armadilhas ao escrever qualquer spec de componente. Sempre: template inline, overrideTemplate para smart components, Subject para observable testing, rotas stub. Se o componente tem providers locais (ConfirmationService, etc.), usar overrideProvider no configureTestBed.
+**How to apply:** Verificar estas armadilhas ao escrever qualquer spec de componente. Sempre: template inline, overrideTemplate para smart components, Subject para observable testing, rotas stub. Se o componente tem providers locais (ConfirmationService, etc.), usar overrideProvider no configureTestBed. Sempre detectChanges apos Subject.next() e apos click em p-button.
