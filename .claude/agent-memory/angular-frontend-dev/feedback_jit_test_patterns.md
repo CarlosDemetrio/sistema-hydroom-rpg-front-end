@@ -40,6 +40,11 @@ subject.complete();
 O `provideRouter([])` sem rotas faz o router lancar NG04002 quando o componente navega.
 **Correcao**: registrar rotas stub com `provideRouter([{ path: 'destino', component: StubComponent }])`.
 
+### 7. providers locais no @Component ignoram mocks do TestBed
+Quando um componente declara `providers: [ConfirmationService]` no seu decorator, o Angular cria uma instância local que ignora o `{ provide: ConfirmationService, useValue: mock }` no nível do TestBed.
+**Correcao**: usar `configureTestBed: (tb) => { tb.overrideTemplate(...); tb.overrideProvider(ConfirmationService, { useValue: mock }); }` para substituir o provider no nivel do componente.
+Exemplo confirmado: `LevelUpDialogComponent` (level-up-dialog.component.spec.ts).
+
 **Why:** Vitest roda em modo JIT sem o plugin Angular (que usa Ivy compiler com template URLs). Todos esses problemas sao especificos do ambiente JIT do Vitest.
 
-**How to apply:** Verificar estas armadilhas ao escrever qualquer spec de componente. Sempre: template inline, overrideTemplate para smart components, Subject para observable testing, rotas stub.
+**How to apply:** Verificar estas armadilhas ao escrever qualquer spec de componente. Sempre: template inline, overrideTemplate para smart components, Subject para observable testing, rotas stub. Se o componente tem providers locais (ConfirmationService, etc.), usar overrideProvider no configureTestBed.

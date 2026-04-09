@@ -423,4 +423,312 @@ describe('FichaBusinessService', () => {
       expect(service.hasJogo(fichaSemJogo)).toBe(false);
     });
   });
+
+  // ============================================================
+  // Galeria de Imagens
+  // ============================================================
+
+  describe('loadImagens', () => {
+    it('deve delegar para fichasApiService.getImagens com fichaId correto', () => {
+      configurarTestBed();
+      fichasApiMock['getImagens'] = vi.fn().mockReturnValue(of([]));
+
+      service.loadImagens(42).subscribe();
+
+      expect(fichasApiMock['getImagens']).toHaveBeenCalledWith(42);
+    });
+
+    it('deve retornar as imagens recebidas da API', () => {
+      const imagemMock = {
+        id: 1, fichaId: 42,
+        urlCloudinary: 'https://res.cloudinary.com/test/image/upload/avatar.jpg',
+        publicId: 'rpg-fichas/1/fichas/42/avatar',
+        titulo: 'Avatar',
+        tipoImagem: 'AVATAR' as const,
+        ordemExibicao: 0,
+        dataCriacao: '2026-04-03T10:00:00',
+        dataUltimaAtualizacao: '2026-04-03T10:00:00',
+      };
+
+      configurarTestBed();
+      fichasApiMock['getImagens'] = vi.fn().mockReturnValue(of([imagemMock]));
+
+      let resultado: typeof imagemMock[] = [];
+      service.loadImagens(42).subscribe(imgs => (resultado = imgs as typeof imagemMock[]));
+
+      expect(resultado).toHaveLength(1);
+      expect(resultado[0].tipoImagem).toBe('AVATAR');
+    });
+  });
+
+  describe('adicionarImagem', () => {
+    it('deve delegar para fichasApiService.adicionarImagem com UploadImagemDto correto', () => {
+      const novaImagem = {
+        id: 2, fichaId: 42,
+        urlCloudinary: 'https://res.cloudinary.com/test/image/upload/galeria.jpg',
+        publicId: 'rpg-fichas/1/fichas/42/galeria',
+        titulo: null,
+        tipoImagem: 'GALERIA' as const,
+        ordemExibicao: 1,
+        dataCriacao: '2026-04-03T10:00:00',
+        dataUltimaAtualizacao: '2026-04-03T10:00:00',
+      };
+      const dto = {
+        arquivo: new File([''], 'galeria.jpg', { type: 'image/jpeg' }),
+        tipoImagem: 'GALERIA' as const,
+        titulo: undefined,
+      };
+
+      configurarTestBed();
+      fichasApiMock['adicionarImagem'] = vi.fn().mockReturnValue(of(novaImagem));
+
+      service.adicionarImagem(42, dto).subscribe();
+
+      expect(fichasApiMock['adicionarImagem']).toHaveBeenCalledWith(42, dto);
+    });
+  });
+
+  describe('atualizarImagem', () => {
+    it('deve delegar para fichasApiService.atualizarImagem com parametros corretos', () => {
+      const imagemAtualizada = {
+        id: 1, fichaId: 42,
+        urlCloudinary: 'https://res.cloudinary.com/test/image/upload/avatar.jpg',
+        publicId: 'rpg-fichas/1/fichas/42/avatar',
+        titulo: 'Novo Titulo',
+        tipoImagem: 'AVATAR' as const,
+        ordemExibicao: 0,
+        dataCriacao: '2026-04-03T10:00:00',
+        dataUltimaAtualizacao: '2026-04-03T10:00:00',
+      };
+      const dto = { titulo: 'Novo Titulo' };
+
+      configurarTestBed();
+      fichasApiMock['atualizarImagem'] = vi.fn().mockReturnValue(of(imagemAtualizada));
+
+      service.atualizarImagem(42, 1, dto).subscribe();
+
+      expect(fichasApiMock['atualizarImagem']).toHaveBeenCalledWith(42, 1, dto);
+    });
+  });
+
+  describe('deletarImagem', () => {
+    it('deve delegar para fichasApiService.deletarImagem com fichaId e imagemId corretos', () => {
+      configurarTestBed();
+      fichasApiMock['deletarImagem'] = vi.fn().mockReturnValue(of(undefined));
+
+      service.deletarImagem(42, 7).subscribe();
+
+      expect(fichasApiMock['deletarImagem']).toHaveBeenCalledWith(42, 7);
+    });
+  });
+
+  // ============================================================
+  // Anotações — métodos adicionais
+  // ============================================================
+
+  describe('editarAnotacao', () => {
+    it('deve delegar para fichasApiService.editarAnotacao com AtualizarAnotacaoDto correto', () => {
+      const anotacaoAtualizada = {
+        id: 1, fichaId: 10, autorId: 42, autorNome: 'Gandalf',
+        titulo: 'Titulo Editado', conteudo: 'Conteudo editado',
+        tipoAnotacao: 'JOGADOR' as const, visivelParaJogador: true,
+        visivelParaTodos: false, pastaPaiId: null,
+        dataCriacao: '2026-01-01T00:00:00',
+        dataUltimaAtualizacao: '2026-01-02T00:00:00',
+      };
+      const dto = { titulo: 'Titulo Editado', conteudo: 'Conteudo editado' };
+
+      configurarTestBed();
+      fichasApiMock['editarAnotacao'] = vi.fn().mockReturnValue(of(anotacaoAtualizada));
+
+      service.editarAnotacao(10, 1, dto).subscribe();
+
+      expect(fichasApiMock['editarAnotacao']).toHaveBeenCalledWith(10, 1, dto);
+    });
+  });
+
+  describe('listarPastas', () => {
+    it('deve delegar para fichasApiService.listarPastas com fichaId correto', () => {
+      configurarTestBed();
+      fichasApiMock['listarPastas'] = vi.fn().mockReturnValue(of([]));
+
+      service.listarPastas(10).subscribe();
+
+      expect(fichasApiMock['listarPastas']).toHaveBeenCalledWith(10);
+    });
+
+    it('deve retornar as pastas recebidas da API', () => {
+      const pastaMock = {
+        id: 1, fichaId: 10, nome: 'Pasta Principal',
+        pastaPaiId: null, ordemExibicao: 1, subPastas: [],
+        dataCriacao: '2026-01-01T00:00:00',
+        dataUltimaAtualizacao: '2026-01-01T00:00:00',
+      };
+
+      configurarTestBed();
+      fichasApiMock['listarPastas'] = vi.fn().mockReturnValue(of([pastaMock]));
+
+      let resultado: typeof pastaMock[] = [];
+      service.listarPastas(10).subscribe(pastas => (resultado = pastas as typeof pastaMock[]));
+
+      expect(resultado).toHaveLength(1);
+      expect(resultado[0].nome).toBe('Pasta Principal');
+    });
+  });
+
+  describe('criarPasta', () => {
+    it('deve delegar para fichasApiService.criarPasta com CriarPastaDto correto', () => {
+      const novaPasta = {
+        id: 1, fichaId: 10, nome: 'Nova Pasta',
+        pastaPaiId: null, ordemExibicao: 1, subPastas: [],
+        dataCriacao: '2026-01-01T00:00:00',
+        dataUltimaAtualizacao: '2026-01-01T00:00:00',
+      };
+      const dto = { nome: 'Nova Pasta', pastaPaiId: undefined, ordemExibicao: 1 };
+
+      configurarTestBed();
+      fichasApiMock['criarPasta'] = vi.fn().mockReturnValue(of(novaPasta));
+
+      service.criarPasta(10, dto).subscribe();
+
+      expect(fichasApiMock['criarPasta']).toHaveBeenCalledWith(10, dto);
+    });
+
+    it('deve retornar a pasta criada recebida da API', () => {
+      const novaPasta = {
+        id: 5, fichaId: 10, nome: 'Pasta de Sessao',
+        pastaPaiId: null, ordemExibicao: 2, subPastas: [],
+        dataCriacao: '2026-01-01T00:00:00',
+        dataUltimaAtualizacao: '2026-01-01T00:00:00',
+      };
+      const dto = { nome: 'Pasta de Sessao', pastaPaiId: undefined, ordemExibicao: 2 };
+
+      configurarTestBed();
+      fichasApiMock['criarPasta'] = vi.fn().mockReturnValue(of(novaPasta));
+
+      let resultado: typeof novaPasta | undefined;
+      service.criarPasta(10, dto).subscribe(p => (resultado = p as typeof novaPasta));
+
+      expect(resultado?.nome).toBe('Pasta de Sessao');
+      expect(resultado?.id).toBe(5);
+    });
+  });
+
+  // ============================================================
+  // Suite 5 — Extensão: 7 cenários adicionais de delegação
+  // ============================================================
+
+  describe('loadImagens — cenarios adicionais', () => {
+    it('deve retornar lista vazia quando a API nao tem imagens', () => {
+      configurarTestBed();
+      fichasApiMock['getImagens'] = vi.fn().mockReturnValue(of([]));
+
+      let resultado: unknown[] = [];
+      service.loadImagens(42).subscribe(imgs => (resultado = imgs));
+
+      expect(resultado).toHaveLength(0);
+    });
+  });
+
+  describe('adicionarImagem — cenarios adicionais', () => {
+    it('deve retornar a imagem criada com tipoImagem e url da API', () => {
+      const imagemCriada = {
+        id: 10, fichaId: 42,
+        urlCloudinary: 'https://res.cloudinary.com/test/image/upload/novo.jpg',
+        publicId: 'rpg-fichas/1/fichas/42/novo',
+        titulo: 'Capa do Personagem',
+        tipoImagem: 'GALERIA' as const,
+        ordemExibicao: 2,
+        dataCriacao: '2026-04-08T10:00:00',
+        dataUltimaAtualizacao: '2026-04-08T10:00:00',
+      };
+      const dto = {
+        arquivo: new File([''], 'novo.jpg', { type: 'image/jpeg' }),
+        tipoImagem: 'GALERIA' as const,
+        titulo: 'Capa do Personagem',
+      };
+
+      configurarTestBed();
+      fichasApiMock['adicionarImagem'] = vi.fn().mockReturnValue(of(imagemCriada));
+
+      let resultado: typeof imagemCriada | undefined;
+      service.adicionarImagem(42, dto).subscribe(img => (resultado = img as typeof imagemCriada));
+
+      expect(resultado?.titulo).toBe('Capa do Personagem');
+      expect(resultado?.tipoImagem).toBe('GALERIA');
+    });
+  });
+
+  describe('atualizarImagem — cenarios adicionais', () => {
+    it('deve retornar a imagem atualizada com novo titulo', () => {
+      const imagemAtualizada = {
+        id: 1, fichaId: 42,
+        urlCloudinary: 'https://res.cloudinary.com/test/image/upload/avatar.jpg',
+        publicId: 'rpg-fichas/1/fichas/42/avatar',
+        titulo: 'Avatar Atualizado',
+        tipoImagem: 'AVATAR' as const,
+        ordemExibicao: 0,
+        dataCriacao: '2026-04-03T10:00:00',
+        dataUltimaAtualizacao: '2026-04-08T10:00:00',
+      };
+      const dto = { titulo: 'Avatar Atualizado' };
+
+      configurarTestBed();
+      fichasApiMock['atualizarImagem'] = vi.fn().mockReturnValue(of(imagemAtualizada));
+
+      let resultado: typeof imagemAtualizada | undefined;
+      service.atualizarImagem(42, 1, dto).subscribe(img => (resultado = img as typeof imagemAtualizada));
+
+      expect(resultado?.titulo).toBe('Avatar Atualizado');
+    });
+  });
+
+  describe('deletarImagem — cenarios adicionais', () => {
+    it('deve completar o observable sem valor apos deletar com sucesso', () => {
+      configurarTestBed();
+      fichasApiMock['deletarImagem'] = vi.fn().mockReturnValue(of(undefined));
+
+      let completou = false;
+      service.deletarImagem(42, 7).subscribe({ complete: () => (completou = true) });
+
+      expect(completou).toBe(true);
+      expect(fichasApiMock['deletarImagem']).toHaveBeenCalledWith(42, 7);
+    });
+  });
+
+  describe('editarAnotacao — cenarios adicionais', () => {
+    it('deve retornar a anotacao atualizada recebida da API', () => {
+      const anotacaoAtualizada = {
+        id: 1, fichaId: 10, autorId: 42, autorNome: 'Gandalf',
+        titulo: 'Novo Titulo', conteudo: 'Novo conteudo',
+        tipoAnotacao: 'JOGADOR' as const,
+        visivelParaJogador: true, visivelParaTodos: false,
+        pastaPaiId: null,
+        dataCriacao: '2026-01-01T00:00:00',
+        dataUltimaAtualizacao: '2026-04-08T00:00:00',
+      };
+      const dto = { titulo: 'Novo Titulo', conteudo: 'Novo conteudo' };
+
+      configurarTestBed();
+      fichasApiMock['editarAnotacao'] = vi.fn().mockReturnValue(of(anotacaoAtualizada));
+
+      let resultado: typeof anotacaoAtualizada | undefined;
+      service.editarAnotacao(10, 1, dto).subscribe(a => (resultado = a as typeof anotacaoAtualizada));
+
+      expect(resultado?.titulo).toBe('Novo Titulo');
+      expect(resultado?.dataUltimaAtualizacao).toBe('2026-04-08T00:00:00');
+    });
+  });
+
+  describe('listarPastas — cenarios adicionais', () => {
+    it('deve retornar lista vazia quando a ficha nao tem pastas', () => {
+      configurarTestBed();
+      fichasApiMock['listarPastas'] = vi.fn().mockReturnValue(of([]));
+
+      let resultado: unknown[] = [];
+      service.listarPastas(10).subscribe(pastas => (resultado = pastas));
+
+      expect(resultado).toHaveLength(0);
+    });
+  });
 });
