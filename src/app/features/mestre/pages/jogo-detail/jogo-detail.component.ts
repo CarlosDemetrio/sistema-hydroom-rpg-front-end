@@ -17,6 +17,7 @@ import { FichaBusinessService } from '@core/services/business/ficha-business.ser
 import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
 import { ParticipanteStatus, Participante } from '@core/models';
 import { JogosStore } from '@core/stores/jogos.store';
+import { CurrentGameService } from '@core/services/current-game.service';
 import { EmptyStateComponent } from '@shared/components/empty-state.component';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
@@ -78,6 +79,19 @@ type FiltroStatus = 'TODOS' | 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'BANIDO';
           </div>
         </div>
         <div class="flex gap-2 mb-4">
+          <p-button
+            [label]="isCurrentGame() ? 'Jogo Atual' : 'Usar como Atual'"
+            icon="pi pi-compass"
+            [severity]="isCurrentGame() ? 'success' : 'secondary'"
+            [outlined]="!isCurrentGame()"
+            (onClick)="definirJogoAtual()"
+          ></p-button>
+          <p-button
+            label="Configurar este Jogo"
+            icon="pi pi-cog"
+            [text]="true"
+            (onClick)="abrirConfiguracoesDoJogo()"
+          ></p-button>
           <p-button
             label="Editar"
             icon="pi pi-pencil"
@@ -302,6 +316,7 @@ export class JogoDetailComponent implements OnInit {
   private participanteService = inject(ParticipanteBusinessService);
   private fichaService = inject(FichaBusinessService);
   private jogosStore = inject(JogosStore);
+  private currentGameService = inject(CurrentGameService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private confirmationService = inject(ConfirmationService);
@@ -333,6 +348,8 @@ export class JogoDetailComponent implements OnInit {
     if (!id) return null;
     return this.jogoFacade.jogos().find(j => j.id === id) || null;
   });
+
+  isCurrentGame = computed(() => this.currentGameService.currentGameId() === this.jogoId());
 
   participantes = computed<Participante[]>(() => {
     const id = this.jogoId();
@@ -382,6 +399,26 @@ export class JogoDetailComponent implements OnInit {
 
   editarJogo() {
     this.router.navigate(['/mestre/jogos', this.jogoId(), 'edit']);
+  }
+
+  definirJogoAtual() {
+    const jogoId = this.jogoId();
+    if (!jogoId) {
+      return;
+    }
+
+    this.currentGameService.selectGame(jogoId);
+    this.toastService.success('Agora voce esta gerenciando este jogo');
+  }
+
+  abrirConfiguracoesDoJogo() {
+    const jogoId = this.jogoId();
+    if (!jogoId) {
+      return;
+    }
+
+    this.currentGameService.selectGame(jogoId);
+    this.router.navigate(['/mestre/config']);
   }
 
   confirmarExclusao() {

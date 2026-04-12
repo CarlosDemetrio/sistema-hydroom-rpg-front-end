@@ -12,6 +12,7 @@ import { JogosStore } from '@core/stores/jogos.store';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastService } from '@services/toast.service';
 import { Participante } from '@core/models/participante.model';
+import { CurrentGameService } from '@core/services/current-game.service';
 
 // ============================================================
 // Stubs
@@ -106,6 +107,13 @@ function criarFichaServiceMock() {
   };
 }
 
+function criarCurrentGameServiceMock() {
+  return {
+    currentGameId: signal<number | null>(null).asReadonly(),
+    selectGame: vi.fn(),
+  };
+}
+
 // ============================================================
 // Helpers de configuração do TestBed
 // ============================================================
@@ -115,6 +123,7 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
   const jogosStoreMock = criarJogosStoreMock(participantes);
   const jogoFacadeMock = criarJogoFacadeMock();
   const fichaServiceMock = criarFichaServiceMock();
+  const currentGameServiceMock = criarCurrentGameServiceMock();
   const confirmationServiceMock = { confirm: vi.fn() };
   const toastServiceMock = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() };
   const routerMock = { navigate: vi.fn() };
@@ -124,11 +133,12 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
     providers: [
       { provide: ParticipanteBusinessService, useValue: participanteServiceMock },
       { provide: JogosStore, useValue: jogosStoreMock },
-      { provide: JogoManagementFacadeService, useValue: jogoFacadeMock },
-      { provide: FichaBusinessService, useValue: fichaServiceMock },
-      {
-        provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: { get: () => '1' } } },
+        { provide: JogoManagementFacadeService, useValue: jogoFacadeMock },
+        { provide: FichaBusinessService, useValue: fichaServiceMock },
+        { provide: CurrentGameService, useValue: currentGameServiceMock },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: { get: () => '1' } } },
       },
       { provide: Router, useValue: routerMock },
       { provide: ToastService, useValue: toastServiceMock },
@@ -158,10 +168,11 @@ function configurarTestBed(participantes: Participante[] = todosParticipantes) {
     component,
     fixture,
     participanteServiceMock,
-    confirmationServiceMock,
-    toastServiceMock,
-    routerMock,
-  };
+      confirmationServiceMock,
+      currentGameServiceMock,
+      toastServiceMock,
+      routerMock,
+    };
 }
 
 // ============================================================
@@ -322,6 +333,28 @@ describe('JogoDetailComponent', () => {
         ([rota]: [unknown[]]) => Array.isArray(rota) && rota[0] === '/jogador/fichas'
       );
       expect(navegouParaJogador).toBe(false);
+    });
+  });
+
+  describe('definirJogoAtual()', () => {
+    it('seleciona o jogo da tela como jogo atual e mostra feedback', () => {
+      const { component, currentGameServiceMock, toastServiceMock } = configurarTestBed();
+
+      component.definirJogoAtual();
+
+      expect(currentGameServiceMock.selectGame).toHaveBeenCalledWith(1);
+      expect(toastServiceMock.success).toHaveBeenCalledWith('Agora voce esta gerenciando este jogo');
+    });
+  });
+
+  describe('abrirConfiguracoesDoJogo()', () => {
+    it('define o jogo atual antes de navegar para configuracoes', () => {
+      const { component, currentGameServiceMock, routerMock } = configurarTestBed();
+
+      component.abrirConfiguracoesDoJogo();
+
+      expect(currentGameServiceMock.selectGame).toHaveBeenCalledWith(1);
+      expect(routerMock.navigate).toHaveBeenCalledWith(['/mestre/config']);
     });
   });
 });

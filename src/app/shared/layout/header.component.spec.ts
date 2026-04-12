@@ -22,10 +22,14 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { render, screen } from '@testing-library/angular';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HeaderComponent } from './header.component';
 import { AuthService, UserInfo } from '@services/auth.service';
+import { CurrentGameService } from '@core/services/current-game.service';
+import { JogoBusinessService } from '@core/services/business/jogo-business.service';
+import { JogoResumo } from '@core/models/jogo.model';
 
 // ================================================================
 // Helpers
@@ -59,6 +63,37 @@ const semRoleMock: UserInfo = {
   name: 'Sem Role',
   email: 'semrole@example.com',
 };
+
+const jogoAtualMock: JogoResumo = {
+  id: 1,
+  nome: 'Campanha dos Heróis',
+  descricao: 'Uma grande aventura',
+  totalParticipantes: 5,
+  ativo: true,
+  meuRole: 'MESTRE',
+};
+
+function createMockCurrentGameService(
+  currentGame: JogoResumo | null = null,
+  availableGames: JogoResumo[] = []
+) {
+  return {
+    currentGame: signal(currentGame).asReadonly(),
+    currentGameId: signal(currentGame?.id ?? null).asReadonly(),
+    availableGames: signal(availableGames).asReadonly(),
+    hasCurrentGame: signal(currentGame !== null).asReadonly(),
+    selectGame: vi.fn(),
+    clearGame: vi.fn(),
+    reconcileSelection: vi.fn(),
+  };
+}
+
+function createMockJogoBusinessService() {
+  return {
+    loadJogos: vi.fn().mockReturnValue(of([])),
+    jogos: signal<JogoResumo[]>([]).asReadonly(),
+  };
+}
 
 // ================================================================
 // Testes
@@ -107,14 +142,24 @@ describe('HeaderComponent — hasBothRoles()', () => {
 });
 
 describe('HeaderComponent — template: seletor "Visualizar como"', () => {
-  async function renderWithUser(user: UserInfo | null) {
+  async function renderWithUser(
+    user: UserInfo | null,
+    options?: {
+      currentGameService?: ReturnType<typeof createMockCurrentGameService>;
+      jogoBusinessService?: ReturnType<typeof createMockJogoBusinessService>;
+    }
+  ) {
     const mockAuth = createMockAuthService(user);
+    const mockCurrentGame = options?.currentGameService ?? createMockCurrentGameService();
+    const mockJogoBusiness = options?.jogoBusinessService ?? createMockJogoBusinessService();
     return render(HeaderComponent, {
       providers: [
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AuthService, useValue: mockAuth },
+        { provide: CurrentGameService, useValue: mockCurrentGame },
+        { provide: JogoBusinessService, useValue: mockJogoBusiness },
       ],
     });
   }
@@ -132,5 +177,28 @@ describe('HeaderComponent — template: seletor "Visualizar como"', () => {
   it('não deve exibir seletor "Visualizar como" quando não autenticado', async () => {
     await renderWithUser(null);
     expect(screen.queryByText(/Visualizar como/i)).toBeNull();
+  });
+
+  it('deve exibir o contexto de jogo atual para usuario MESTRE', async () => {
+    await renderWithUser(mestreMock, {
+      currentGameService: createMockCurrentGameService(
+        jogoAtualMock,
+        [jogoAtualMock]
+      ),
+    });
+
+    expect(screen.getByText(/Jogo atual/i)).toBeTruthy();
+    expect(screen.getByText('Campanha dos Heróis')).toBeTruthy();
+  });
+
+  it('não deve exibir contexto de jogo atual para usuario JOGADOR', async () => {
+    await renderWithUser(jogadorMock, {
+      currentGameService: createMockCurrentGameService(
+        jogoAtualMock,
+        [jogoAtualMock]
+      ),
+    });
+
+    expect(screen.queryByText(/Jogo atual/i)).toBeNull();
   });
 });

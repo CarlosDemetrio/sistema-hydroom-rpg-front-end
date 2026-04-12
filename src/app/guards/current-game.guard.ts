@@ -1,6 +1,8 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { CurrentGameService } from '@core/services';
+import { JogoBusinessService } from '@core/services/business/jogo-business.service';
+import { map } from 'rxjs/operators';
 
 /**
  * Current Game Guard
@@ -10,13 +12,18 @@ import { CurrentGameService } from '@core/services';
  */
 export const currentGameGuard: CanActivateFn = () => {
   const currentGameService = inject(CurrentGameService);
+  const jogoBusinessService = inject(JogoBusinessService);
   const router = inject(Router);
 
-  if (currentGameService.hasCurrentGame()) {
-    return true;
-  }
+  return jogoBusinessService.loadJogos().pipe(
+    map(() => {
+      currentGameService.reconcileSelection();
 
-  // Redireciona para lista de jogos se não houver jogo selecionado
-  router.navigate(['/mestre/jogos']);
-  return false;
+      if (currentGameService.hasCurrentGame()) {
+        return true;
+      }
+
+      return router.createUrlTree(['/mestre/jogos']);
+    })
+  );
 };

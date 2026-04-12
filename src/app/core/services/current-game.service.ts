@@ -31,7 +31,7 @@ export class CurrentGameService {
   currentGame = computed(() => {
     const id = this._currentGameId();
     if (!id) return null;
-    return this.jogoService.jogos().find(j => j.id === id) || null;
+    return this.availableGames().find(j => j.id === id) || null;
   });
 
   // ID do jogo atual (read-only)
@@ -43,21 +43,25 @@ export class CurrentGameService {
   );
 
   // Verifica se há jogo selecionado
-  hasCurrentGame = computed(() => !!this._currentGameId());
+  hasCurrentGame = computed(() => this.currentGame() !== null);
 
   constructor() {
-    // Auto-seleciona o primeiro jogo se não houver seleção
+    // Mantém a seleção alinhada com a lista atual de jogos disponíveis.
+    // Se houver apenas um jogo ativo, seleciona automaticamente.
+    // Se houver vários e a seleção for inválida, limpa para o usuário escolher explicitamente.
     effect(() => {
-      if (!this.hasCurrentGame() && this.availableGames().length > 0) {
-        this.selectGame(this.availableGames()[0].id!);
+      if (this.availableGames().length > 0) {
+        this.syncSelection(false);
       }
     });
 
     // Persiste mudanças no localStorage
     effect(() => {
       const id = this._currentGameId();
-      if (id) {
+      if (id !== null) {
         this.saveToStorage(id);
+      } else {
+        localStorage.removeItem('currentGameId');
       }
     });
   }
@@ -81,6 +85,14 @@ export class CurrentGameService {
     localStorage.removeItem('currentGameId');
   }
 
+  /**
+   * Revalida a seleção atual contra os jogos disponíveis já carregados.
+   * Útil após um refresh explícito da lista de jogos (guards/header).
+   */
+  reconcileSelection() {
+    this.syncSelection(true);
+  }
+
   // ============================================
   // PERSISTENCE (localStorage)
   // ============================================
@@ -92,5 +104,30 @@ export class CurrentGameService {
   private loadFromStorage(): number | null {
     const stored = localStorage.getItem('currentGameId');
     return stored ? parseInt(stored, 10) : null;
+  }
+
+  private syncSelection(clearWhenNoGames: boolean) {
+    const games = this.availableGames();
+    const selectedId = this._currentGameId();
+
+    if (games.length === 0) {
+      if (clearWhenNoGames && selectedId !== null) {
+        this.clearGame();
+      }
+      return;
+    }
+
+    if (selectedId !== null && games.some(game => game.id === selectedId)) {
+      return;
+    }
+
+    if (games.length === 1) {
+      this.selectGame(games[0].id!);
+      return;
+    }
+
+    if (selectedId !== null) {
+      this.clearGame();
+    }
   }
 }

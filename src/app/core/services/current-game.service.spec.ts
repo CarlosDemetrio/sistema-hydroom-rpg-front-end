@@ -44,6 +44,7 @@ function criarJogoBusinessServiceMock(jogos: JogoResumo[] = []) {
   const jogosSignal = signal<JogoResumo[]>(jogos);
   return {
     jogos: jogosSignal.asReadonly(),
+    setJogos: (novosJogos: JogoResumo[]) => jogosSignal.set(novosJogos),
     loading: signal(false).asReadonly(),
     error: signal<string | null>(null).asReadonly(),
     loadJogos: vi.fn(),
@@ -78,6 +79,7 @@ describe('CurrentGameService', () => {
     });
 
     service = TestBed.inject(CurrentGameService);
+    TestBed.flushEffects();
   }
 
   afterEach(() => {
@@ -126,6 +128,16 @@ describe('CurrentGameService', () => {
       service.selectGame(1);
 
       expect(service.hasCurrentGame()).toBe(true);
+    });
+
+    it('deve retornar false quando o ID salvo nao corresponde a nenhum jogo disponivel', () => {
+      localStorage.setItem('currentGameId', '999');
+      configurarTestBed([]);
+
+      jogoServiceMock.setJogos([jogoAtivoStub, jogoAtivo2Stub]);
+      TestBed.flushEffects();
+
+      expect(service.hasCurrentGame()).toBe(false);
     });
   });
 
@@ -227,6 +239,36 @@ describe('CurrentGameService', () => {
       configurarTestBed([]);
 
       expect(service.currentGameId()).toBeNull();
+    });
+
+    it('nao deve auto-selecionar o primeiro jogo quando houver multiplos jogos ativos', () => {
+      configurarTestBed([jogoAtivoStub, jogoAtivo2Stub]);
+
+      expect(service.currentGameId()).toBeNull();
+      expect(service.hasCurrentGame()).toBe(false);
+      expect(localStorage.getItem('currentGameId')).toBeNull();
+    });
+
+    it('deve auto-selecionar o unico jogo ativo disponivel', () => {
+      configurarTestBed([jogoInativoStub, jogoAtivo2Stub]);
+
+      expect(service.currentGameId()).toBe(3);
+      expect(service.currentGame()).toEqual(jogoAtivo2Stub);
+      expect(service.hasCurrentGame()).toBe(true);
+      expect(localStorage.getItem('currentGameId')).toBe('3');
+    });
+
+    it('deve limpar selecao invalida salva quando os jogos sao carregados', () => {
+      localStorage.setItem('currentGameId', '999');
+      configurarTestBed([]);
+
+      jogoServiceMock.setJogos([jogoAtivoStub, jogoAtivo2Stub]);
+      TestBed.flushEffects();
+
+      expect(service.currentGameId()).toBeNull();
+      expect(service.currentGame()).toBeNull();
+      expect(service.hasCurrentGame()).toBe(false);
+      expect(localStorage.getItem('currentGameId')).toBeNull();
     });
   });
 });

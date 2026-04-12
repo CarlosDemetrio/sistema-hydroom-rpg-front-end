@@ -1,11 +1,16 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
+import { SelectModule } from 'primeng/select';
+import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from '@services/auth.service';
+import { CurrentGameService } from '@core/services/current-game.service';
+import { JogoBusinessService } from '@core/services/business/jogo-business.service';
 import { ThemeToggleComponent } from '@shared/components/theme-toggle/theme-toggle.component';
 
 /**
@@ -18,10 +23,13 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle/theme-togg
   selector: 'app-header',
   standalone: true,
   imports: [
+    FormsModule,
     ToolbarModule,
     ButtonModule,
     AvatarModule,
     MenuModule,
+    SelectModule,
+    TooltipModule,
     ThemeToggleComponent
   ],
   template: `
@@ -50,6 +58,40 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle/theme-togg
         <app-theme-toggle />
 
         @if (authService.isAuthenticated()) {
+          @if (shouldShowGameSelector()) {
+            <div class="hidden xl:flex align-items-center gap-3 px-3 py-2 border-round-lg surface-100 border-1 surface-border min-w-18rem">
+              <div class="flex flex-column gap-1 flex-1">
+                <span class="text-xs font-semibold uppercase text-color-secondary">
+                  Jogo atual
+                </span>
+                <span class="text-sm font-semibold">
+                  {{ currentGameName() }}
+                </span>
+                <p-select
+                  [options]="availableGames()"
+                  optionLabel="nome"
+                  optionValue="id"
+                  [ngModel]="selectedGameId()"
+                  (ngModelChange)="onGameChange($event)"
+                  [placeholder]="availableGames().length ? 'Selecione um jogo' : 'Nenhum jogo disponível'"
+                  class="w-full"
+                  appendTo="body"
+                ></p-select>
+              </div>
+
+              @if (hasCurrentGame()) {
+                <p-button
+                  icon="pi pi-cog"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Abrir configurações do jogo atual"
+                  tooltipPosition="bottom"
+                  (onClick)="goToCurrentGameConfig()"
+                ></p-button>
+              }
+            </div>
+          }
+
           @if (hasBothRoles()) {
             <div class="hidden md:flex align-items-center gap-2 p-2 border-round-lg surface-100 border-1 surface-border">
               <span class="text-sm font-semibold text-color-secondary px-2">Visualizar como:</span>
@@ -104,18 +146,31 @@ import { ThemeToggleComponent } from '@shared/components/theme-toggle/theme-togg
 })
 export class HeaderComponent implements OnInit {
   authService = inject(AuthService);
+  private currentGameService = inject(CurrentGameService);
+  private jogoService = inject(JogoBusinessService);
   private router = inject(Router);
 
   currentRole = signal<'MESTRE' | 'JOGADOR'>('JOGADOR');
   userMenuItems = signal<MenuItem[]>([]);
+  availableGames = this.currentGameService.availableGames;
+  hasCurrentGame = this.currentGameService.hasCurrentGame;
+  currentGameName = computed(() => this.currentGameService.currentGame()?.nome ?? 'Nenhum jogo selecionado');
+  selectedGameId = computed(() =>
+    this.hasCurrentGame() ? this.currentGameService.currentGameId() : null
+  );
 
   ngOnInit() {
+    if (this.authService.isAuthenticated() && this.authService.isMestre()) {
+      this.jogoService.loadJogos().subscribe({
+        next: () => this.currentGameService.reconcileSelection(),
+      });
+    }
+
     this.userMenuItems.set([
       {
         label: 'Perfil',
         icon: 'pi pi-user',
         command: () => {
-          console.log('Menu: Navegando para perfil');
           this.navigateToProfile();
         }
       },
@@ -126,7 +181,6 @@ export class HeaderComponent implements OnInit {
         label: 'Sair',
         icon: 'pi pi-sign-out',
         command: () => {
-          console.log('Menu: Executando logout');
           this.logout();
         }
       }
@@ -144,13 +198,33 @@ export class HeaderComponent implements OnInit {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   }
 
+  shouldShowGameSelector(): boolean {
+    return this.authService.isMestre();
+  }
+
+  onGameChange(gameId: number | null) {
+    if (gameId === null) {
+      this.currentGameService.clearGame();
+      return;
+    }
+
+    this.currentGameService.selectGame(gameId);
+  }
+
+  goToCurrentGameConfig() {
+    if (!this.hasCurrentGame()) {
+      return;
+    }
+
+    this.router.navigate(['/mestre/config']);
+  }
+
   switchRole(role: 'MESTRE' | 'JOGADOR') {
     this.currentRole.set(role);
     this.router.navigate(role === 'MESTRE' ? ['/mestre'] : ['/jogador']);
   }
 
   onMenuToggle() {
-    console.log('Toggle sidebar');
   }
 
   navigateHome() {
