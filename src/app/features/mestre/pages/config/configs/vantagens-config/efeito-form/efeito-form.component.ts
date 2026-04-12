@@ -22,6 +22,7 @@ import { AtributoConfig } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
 import { BonusConfig, DadoProspeccaoConfig, MembroCorpoConfig } from '@core/models/config.models';
 import { TipoEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
+import { DadoUpPreviewComponent } from './dado-up-preview/dado-up-preview.component';
 
 export interface TipoEfeitoOption {
   label: string;
@@ -99,6 +100,7 @@ interface EfeitoFormState {
     TagModule,
     TextareaModule,
     TooltipModule,
+    DadoUpPreviewComponent,
   ],
   template: `
     <div class="flex flex-column gap-3">
@@ -240,79 +242,12 @@ interface EfeitoFormState {
           }
         }
 
-        <!-- DADO_UP: seletor visual de progressão -->
+        <!-- DADO_UP: preview visual de progressão de dado -->
         @if (isDadoUp()) {
-          <div class="flex flex-column gap-3">
-
-            @if (dadosDisponiveis().length === 0) {
-              <div class="flex align-items-start gap-2 p-3 border-round surface-100">
-                <i class="pi pi-exclamation-circle text-orange-400 mt-1"></i>
-                <p class="m-0 text-sm text-color-secondary">
-                  Configure os dados de prospecção no jogo para ver o preview.
-                </p>
-              </div>
-            } @else {
-              <!-- Preview interativo -->
-              <div class="p-3 border-round surface-100 flex flex-column gap-3">
-                <span class="font-semibold text-sm">Simular progressão de dado</span>
-
-                <!-- Linha: seletor base + nível + resultado -->
-                <div class="flex align-items-center gap-3 flex-wrap">
-                  <div class="flex flex-column gap-1 flex-1" style="min-width: 9rem;">
-                    <label class="text-xs text-color-secondary">Dado base</label>
-                    <p-select
-                      [options]="dadosDisponiveis()"
-                      optionLabel="nome"
-                      optionValue="id"
-                      placeholder="Selecionar..."
-                      [(ngModel)]="dadoBasePreviewModel"
-                      (onChange)="onDadoBaseChange($event.value)"
-                    />
-                  </div>
-
-                  <i class="pi pi-arrow-right text-primary" style="margin-top: 1.2rem;"></i>
-
-                  <div class="flex flex-column gap-1 flex-1" style="min-width: 9rem;">
-                    <label class="text-xs text-color-secondary">Nível {{ nivelPreview() }}</label>
-                    <p-slider
-                      [(ngModel)]="nivelPreviewModel"
-                      [min]="1"
-                      [max]="nivelMaximoVantagem()"
-                      (onChange)="onNivelPreviewChange($event.value ?? 0)"
-                    />
-                  </div>
-
-                  <i class="pi pi-arrow-right text-primary" style="margin-top: 1.2rem;"></i>
-
-                  <div class="flex flex-column gap-1 flex-1" style="min-width: 9rem;">
-                    <label class="text-xs text-color-secondary">Resultado</label>
-                    @if (dadoResultantePreview()) {
-                      <p-tag
-                        [value]="dadoResultantePreview()!.nome"
-                        severity="success"
-                      />
-                    } @else {
-                      <span class="text-color-secondary text-sm">—</span>
-                    }
-                  </div>
-                </div>
-
-              </div>
-            }
-
-            <!-- Caixa de info explicativa (sempre visível) -->
-            <div class="flex align-items-start gap-2 p-3 border-round surface-100">
-              <i class="pi pi-info-circle text-primary mt-1"></i>
-              <div>
-                <p class="m-0 font-semibold text-sm">Como funciona o Dado Up</p>
-                <p class="m-0 text-sm text-color-secondary">
-                  Cada nível desta vantagem avança o dado de prospecção uma posição
-                  na sequência de dados configurados pelo Mestre.
-                </p>
-              </div>
-            </div>
-
-          </div>
+          <app-dado-up-preview
+            [dadosOrdenados]="dadosDisponiveis()"
+            [nivelMaximo]="nivelMaximoVantagem()"
+          />
         }
 
         <!-- FORMULA_CUSTOMIZADA: indisponível no momento -->
@@ -393,10 +328,6 @@ export class EfeitoFormComponent {
   nivelPreview         = signal<number>(1);
   nivelPreviewModel    = 1;
 
-  // Estado do preview DADO_UP
-  dadoBasePreviewId    = signal<number | null>(null);
-  dadoBasePreviewModel: number | null = null;
-
   form: EfeitoFormState = {
     atributoAlvoId:  null,
     aptidaoAlvoId:   null,
@@ -426,17 +357,6 @@ export class EfeitoFormComponent {
 
   mostrarFormula = computed(() => this.tipoSelecionado() === 'FORMULA_CUSTOMIZADA');
   isDadoUp       = computed(() => this.tipoSelecionado() === 'DADO_UP');
-
-  dadoResultantePreview = computed<DadoProspeccaoConfig | null>(() => {
-    const dados  = this.dadosDisponiveis();
-    const baseId = this.dadoBasePreviewId();
-    const nivel  = this.nivelPreview();
-    if (!baseId || dados.length === 0) return null;
-    const idx = dados.findIndex((d) => d.id === baseId);
-    if (idx === -1) return null;
-    const resultIdx = Math.min(idx + nivel, dados.length - 1);
-    return dados[resultIdx];
-  });
 
   descricaoTipoAtual = computed(() => {
     const tipo = this.tipoSelecionado();
@@ -491,10 +411,6 @@ export class EfeitoFormComponent {
 
   onNivelPreviewChange(valor: number): void {
     this.nivelPreview.set(valor);
-  }
-
-  onDadoBaseChange(id: number | null): void {
-    this.dadoBasePreviewId.set(id);
   }
 
   salvar(): void {

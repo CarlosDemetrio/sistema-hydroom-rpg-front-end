@@ -11,15 +11,29 @@
 
 import { TestBed } from '@angular/core/testing';
 import { render } from '@testing-library/angular';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { vi } from 'vitest';
 
 import { EfeitoFormComponent } from './efeito-form.component';
+import { DadoUpPreviewComponent } from './dado-up-preview/dado-up-preview.component';
 import { AtributoConfig } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
 import { BonusConfig, DadoProspeccaoConfig, MembroCorpoConfig } from '@core/models/config.models';
 import { TipoEfeito } from '@core/models/vantagem-efeito.model';
+
+// ============================================================
+// Stub para DadoUpPreviewComponent — evita NG0950 em testes JIT
+// O componente real usa input.required() que lança NG0950 quando
+// instanciado dentro de outro componente via JIT sem binding.
+// ============================================================
+
+@Component({
+  selector: 'app-dado-up-preview',
+  standalone: true,
+  template: '<div data-testid="dado-up-preview-stub"></div>',
+})
+class DadoUpPreviewStubComponent {}
 
 // ============================================================
 // Helper JIT: atribuir valor a input() / input.required() signal
@@ -111,6 +125,13 @@ async function renderEfeitoForm(opcoes: {
   const result = await render(EfeitoFormComponent, {
     detectChangesOnRender: false,
     schemas: [NO_ERRORS_SCHEMA],
+    configureTestBed: (tb) => {
+      // Substitui DadoUpPreviewComponent por stub para evitar NG0950 (input.required() em JIT)
+      tb.overrideComponent(EfeitoFormComponent, {
+        remove: { imports: [DadoUpPreviewComponent] },
+        add:    { imports: [DadoUpPreviewStubComponent] },
+      });
+    },
   });
 
   const comp = result.fixture.componentInstance;
@@ -584,11 +605,11 @@ describe('EfeitoFormComponent', () => {
   });
 
   // ----------------------------------------------------------
-  // 7. DADO_UP — preview visual de progressão de dado
+  // 7. DADO_UP — integração com DadoUpPreviewComponent
   // ----------------------------------------------------------
 
-  describe('DADO_UP — preview de progressão de dado', () => {
-    it('deve ativar isDadoUp e ter dadosDisponiveis quando dados são fornecidos', async () => {
+  describe('DADO_UP — flags e delegação ao DadoUpPreviewComponent', () => {
+    it('deve ativar isDadoUp quando tipo DADO_UP é selecionado', async () => {
       const { fixture } = await renderEfeitoForm({ dados: dadosMock });
       const comp = fixture.componentInstance;
 
@@ -596,59 +617,51 @@ describe('EfeitoFormComponent', () => {
       fixture.detectChanges();
 
       expect(comp.isDadoUp()).toBe(true);
-      expect(comp.dadosDisponiveis().length).toBe(5);
     });
 
-    it('deve retornar null para dadoResultantePreview quando nenhum dado base está selecionado', async () => {
+    it('deve ter dadosDisponiveis disponíveis para delegação ao DadoUpPreviewComponent', async () => {
       const { fixture } = await renderEfeitoForm({ dados: dadosMock });
       const comp = fixture.componentInstance;
 
       selecionarTipo(comp, 'DADO_UP');
-      comp.dadoBasePreviewId.set(null);
       fixture.detectChanges();
 
-      expect(comp.dadoResultantePreview()).toBeNull();
+      // Os dados são passados via input ao DadoUpPreviewComponent
+      expect(comp.dadosDisponiveis().length).toBe(5);
     });
 
-    it('deve calcular dadoResultantePreview: d4 (idx=0) + nível 2 → d8 (idx=2)', async () => {
-      const { fixture } = await renderEfeitoForm({ dados: dadosMock, nivelMaximo: 5 });
+    it('não deve mostrar campos numéricos para DADO_UP', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: dadosMock });
       const comp = fixture.componentInstance;
 
       selecionarTipo(comp, 'DADO_UP');
-      comp.dadoBasePreviewId.set(10); // d4, idx=0
-      comp.nivelPreview.set(2);
       fixture.detectChanges();
 
-      const resultado = comp.dadoResultantePreview();
-      expect(resultado).not.toBeNull();
-      expect(resultado!.id).toBe(12);   // d8
-      expect(resultado!.nome).toBe('d8');
+      expect(comp.mostrarValorNumerico()).toBe(false);
+      expect(comp.podeMostrarPreview()).toBe(false);
     });
 
-    it('deve retornar o último dado quando nível ultrapassa o máximo disponível', async () => {
-      const { fixture } = await renderEfeitoForm({ dados: dadosMock, nivelMaximo: 10 });
+    it('deve desativar isDadoUp ao trocar tipo para BONUS_VIDA', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: dadosMock });
       const comp = fixture.componentInstance;
 
       selecionarTipo(comp, 'DADO_UP');
-      comp.dadoBasePreviewId.set(13); // d10, idx=3
-      comp.nivelPreview.set(10);      // idx = min(3+10, 4) = 4 → d12
       fixture.detectChanges();
+      expect(comp.isDadoUp()).toBe(true);
 
-      const resultado = comp.dadoResultantePreview();
-      expect(resultado).not.toBeNull();
-      expect(resultado!.nome).toBe('d12'); // último da lista
+      selecionarTipo(comp, 'BONUS_VIDA');
+      fixture.detectChanges();
+      expect(comp.isDadoUp()).toBe(false);
     });
 
-    it('deve retornar null para dadoResultantePreview quando dadosDisponiveis está vazio', async () => {
-      const { fixture } = await renderEfeitoForm({ dados: [] });
+    it('deve permitir salvar DADO_UP sem campos numéricos', async () => {
+      const { fixture } = await renderEfeitoForm({ dados: dadosMock });
       const comp = fixture.componentInstance;
 
       selecionarTipo(comp, 'DADO_UP');
-      comp.dadoBasePreviewId.set(10);
-      comp.nivelPreview.set(1);
       fixture.detectChanges();
 
-      expect(comp.dadoResultantePreview()).toBeNull();
+      expect(comp.podeSubmeter()).toBe(true);
     });
   });
 });
