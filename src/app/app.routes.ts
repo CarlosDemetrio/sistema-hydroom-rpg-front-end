@@ -153,6 +153,18 @@ export const routes: Routes = [
               {
                 path: 'bonus',
                 loadComponent: () => import('./features/mestre/pages/config/configs/bonus-config/bonus-config.component').then(m => m.BonusConfigComponent)
+              },
+              {
+                path: 'raridades-item',
+                loadComponent: () => import('./features/mestre/pages/config/configs/raridades-item-config/raridades-item-config.component').then(m => m.RaridadesItemConfigComponent)
+              },
+              {
+                path: 'tipos-item',
+                loadComponent: () => import('./features/mestre/pages/config/configs/tipos-item-config/tipos-item-config.component').then(m => m.TiposItemConfigComponent)
+              },
+              {
+                path: 'itens',
+                loadComponent: () => import('./features/mestre/pages/config/configs/itens-config/itens-config.component').then(m => m.ItensConfigComponent)
               }
             ]
           }

@@ -49,6 +49,29 @@ import { ConfigStore } from '@core/stores/config.store';
             <i class="pi pi-chevron-right text-color-secondary"></i>
           </a>
         }
+
+        <div class="p-3 mt-2 border-top-1 surface-border">
+          <span class="text-xs font-semibold text-color-secondary uppercase tracking-wide">
+            Configuração de Equipamentos
+          </span>
+        </div>
+
+        @for (item of equipMenuItems; track item.route) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="active-menu-item"
+            class="flex align-items-center gap-3 p-3 border-round cursor-pointer text-color no-underline hover:surface-hover transition-colors transition-duration-150"
+          >
+            <i [class]="item.icon + ' text-xl'"></i>
+            <div class="flex-1">
+              <span class="flex align-items-center justify-content-between w-full">
+                <span class="font-semibold">{{ item.label }}</span>
+              </span>
+              <div class="text-sm text-color-secondary">{{ item.description }}</div>
+            </div>
+            <i class="pi pi-chevron-right text-color-secondary"></i>
+          </a>
+        }
       </nav>
     </div>
   `,
@@ -66,6 +89,27 @@ import { ConfigStore } from '@core/stores/config.store';
 })
 export class ConfigSidebarComponent {
   private readonly configStore = inject(ConfigStore);
+
+  protected readonly equipMenuItems = [
+    {
+      label: 'Raridades de Item',
+      description: 'Comum, Raro, Épico, etc.',
+      icon: 'pi pi-star',
+      route: '/mestre/config/raridades-item',
+    },
+    {
+      label: 'Tipos de Item',
+      description: 'Espada, Armadura, Poção, etc.',
+      icon: 'pi pi-tag',
+      route: '/mestre/config/tipos-item',
+    },
+    {
+      label: 'Catálogo de Itens',
+      description: 'Todos os itens disponíveis no jogo',
+      icon: 'pi pi-box',
+      route: '/mestre/config/itens',
+    },
+  ];
 
   protected readonly menuItems = computed(() => [
     {

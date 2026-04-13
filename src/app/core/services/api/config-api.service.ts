@@ -3,6 +3,21 @@ import { ClasseVantagemPreDefinida, ClasseVantagemPreDefinidaRequest } from '@co
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { RaridadeItemConfig, CreateRaridadeItemDto, UpdateRaridadeItemDto } from '@core/models/raridade-item-config.model';
+import { TipoItemConfig, CreateTipoItemDto, UpdateTipoItemDto } from '@core/models/tipo-item-config.model';
+import {
+  ItemConfigResumo,
+  ItemConfigResponse,
+  CreateItemConfigDto,
+  UpdateItemConfigDto,
+  ItemEfeitoResponse,
+  ItemEfeitoRequest,
+  ItemRequisitoResponse,
+  ItemRequisitoRequest,
+  PageResponse,
+} from '@core/models/item-config.model';
+import { CategoriaItem } from '@core/models/tipo-item-config.model';
+import { ClasseEquipamentoInicial, CreateClasseEquipamentoInicialDto, UpdateClasseEquipamentoInicialDto } from '@core/models/classe-equipamento-inicial.model';
 import { AtributoConfig, CreateAtributoDto, UpdateAtributoDto } from '@core/models/atributo-config.model';
 import { AptidaoConfig, CreateAptidaoDto, UpdateAptidaoDto } from '@core/models/aptidao-config.model';
 import { TipoAptidao } from '@core/models/tipo-aptidao.model';
@@ -647,5 +662,141 @@ export class ConfigApiService {
     return this.http.delete<void>(
       `${environment.apiUrl}/jogos/${jogoId}/configuracoes/vantagens/${vantagemId}/efeitos/${efeitoId}`
     );
+  }
+
+  // ===== Raridades de Item =====
+  // Base: /api/v1/configuracoes/raridades-item
+
+  listRaridadesItem(jogoId: number): Observable<RaridadeItemConfig[]> {
+    const params = new HttpParams().set('jogoId', jogoId.toString());
+    return this.http.get<RaridadeItemConfig[]>(`${this.configUrl}/raridades-item`, { params });
+  }
+
+  getRaridadeItem(id: number): Observable<RaridadeItemConfig> {
+    return this.http.get<RaridadeItemConfig>(`${this.configUrl}/raridades-item/${id}`);
+  }
+
+  createRaridadeItem(dto: CreateRaridadeItemDto): Observable<RaridadeItemConfig> {
+    return this.http.post<RaridadeItemConfig>(`${this.configUrl}/raridades-item`, dto);
+  }
+
+  updateRaridadeItem(id: number, dto: UpdateRaridadeItemDto): Observable<RaridadeItemConfig> {
+    return this.http.put<RaridadeItemConfig>(`${this.configUrl}/raridades-item/${id}`, dto);
+  }
+
+  deleteRaridadeItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/raridades-item/${id}`);
+  }
+
+  // ===== Tipos de Item =====
+  // Base: /api/v1/configuracoes/tipos-item
+
+  listTiposItem(jogoId: number): Observable<TipoItemConfig[]> {
+    const params = new HttpParams().set('jogoId', jogoId.toString());
+    return this.http.get<TipoItemConfig[]>(`${this.configUrl}/tipos-item`, { params });
+  }
+
+  getTipoItem(id: number): Observable<TipoItemConfig> {
+    return this.http.get<TipoItemConfig>(`${this.configUrl}/tipos-item/${id}`);
+  }
+
+  createTipoItem(dto: CreateTipoItemDto): Observable<TipoItemConfig> {
+    return this.http.post<TipoItemConfig>(`${this.configUrl}/tipos-item`, dto);
+  }
+
+  updateTipoItem(id: number, dto: UpdateTipoItemDto): Observable<TipoItemConfig> {
+    return this.http.put<TipoItemConfig>(`${this.configUrl}/tipos-item/${id}`, dto);
+  }
+
+  deleteTipoItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/tipos-item/${id}`);
+  }
+
+  // ===== Itens (ItemConfig) =====
+  // Base: /api/v1/configuracoes/itens
+
+  listItens(
+    jogoId: number,
+    page = 0,
+    size = 20,
+    nomeQuery?: string,
+    raridadeId?: number,
+    categoriaItem?: CategoriaItem,
+  ): Observable<PageResponse<ItemConfigResumo>> {
+    let params = new HttpParams()
+      .set('jogoId', jogoId.toString())
+      .set('page', page.toString())
+      .set('size', size.toString());
+    if (nomeQuery) params = params.set('nomeQuery', nomeQuery);
+    if (raridadeId) params = params.set('raridadeId', raridadeId.toString());
+    if (categoriaItem) params = params.set('categoriaItem', categoriaItem);
+    return this.http.get<PageResponse<ItemConfigResumo>>(`${this.configUrl}/itens`, { params });
+  }
+
+  getItem(id: number): Observable<ItemConfigResponse> {
+    return this.http.get<ItemConfigResponse>(`${this.configUrl}/itens/${id}`);
+  }
+
+  createItem(dto: CreateItemConfigDto): Observable<ItemConfigResponse> {
+    return this.http.post<ItemConfigResponse>(`${this.configUrl}/itens`, dto);
+  }
+
+  updateItem(id: number, dto: UpdateItemConfigDto): Observable<ItemConfigResponse> {
+    return this.http.put<ItemConfigResponse>(`${this.configUrl}/itens/${id}`, dto);
+  }
+
+  deleteItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/itens/${id}`);
+  }
+
+  // ItemEfeito sub-resource
+
+  listItemEfeitos(itemId: number): Observable<ItemEfeitoResponse[]> {
+    return this.http.get<ItemEfeitoResponse[]>(`${this.configUrl}/itens/${itemId}/efeitos`);
+  }
+
+  addItemEfeito(itemId: number, dto: ItemEfeitoRequest): Observable<ItemEfeitoResponse> {
+    return this.http.post<ItemEfeitoResponse>(`${this.configUrl}/itens/${itemId}/efeitos`, dto);
+  }
+
+  updateItemEfeito(itemId: number, efeitoId: number, dto: ItemEfeitoRequest): Observable<ItemEfeitoResponse> {
+    return this.http.put<ItemEfeitoResponse>(`${this.configUrl}/itens/${itemId}/efeitos/${efeitoId}`, dto);
+  }
+
+  removeItemEfeito(itemId: number, efeitoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/itens/${itemId}/efeitos/${efeitoId}`);
+  }
+
+  // ItemRequisito sub-resource
+
+  listItemRequisitos(itemId: number): Observable<ItemRequisitoResponse[]> {
+    return this.http.get<ItemRequisitoResponse[]>(`${this.configUrl}/itens/${itemId}/requisitos`);
+  }
+
+  addItemRequisito(itemId: number, dto: ItemRequisitoRequest): Observable<ItemRequisitoResponse> {
+    return this.http.post<ItemRequisitoResponse>(`${this.configUrl}/itens/${itemId}/requisitos`, dto);
+  }
+
+  removeItemRequisito(itemId: number, requisitoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/itens/${itemId}/requisitos/${requisitoId}`);
+  }
+
+  // ===== Equipamentos Iniciais de Classe =====
+  // Base: /api/v1/configuracoes/classes/{classeId}/equipamentos-iniciais
+
+  listClasseEquipamentosIniciais(classeId: number): Observable<ClasseEquipamentoInicial[]> {
+    return this.http.get<ClasseEquipamentoInicial[]>(`${this.configUrl}/classes/${classeId}/equipamentos-iniciais`);
+  }
+
+  addClasseEquipamentoInicial(classeId: number, dto: CreateClasseEquipamentoInicialDto): Observable<ClasseEquipamentoInicial> {
+    return this.http.post<ClasseEquipamentoInicial>(`${this.configUrl}/classes/${classeId}/equipamentos-iniciais`, dto);
+  }
+
+  updateClasseEquipamentoInicial(classeId: number, id: number, dto: UpdateClasseEquipamentoInicialDto): Observable<ClasseEquipamentoInicial> {
+    return this.http.put<ClasseEquipamentoInicial>(`${this.configUrl}/classes/${classeId}/equipamentos-iniciais/${id}`, dto);
+  }
+
+  removeClasseEquipamentoInicial(classeId: number, id: number): Observable<void> {
+    return this.http.delete<void>(`${this.configUrl}/classes/${classeId}/equipamentos-iniciais/${id}`);
   }
 }
