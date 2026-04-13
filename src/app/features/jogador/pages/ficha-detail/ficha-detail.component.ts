@@ -42,6 +42,7 @@ import { DuplicarFichaDto } from '@models/dtos/ficha.dto';
 import { FichaAnotacoesTabComponent } from './components/ficha-anotacoes-tab/ficha-anotacoes-tab.component';
 import { FichaAptidoesTabComponent } from './components/ficha-aptidoes-tab/ficha-aptidoes-tab.component';
 import { FichaAtributosTabComponent } from './components/ficha-atributos-tab/ficha-atributos-tab.component';
+import { FichaEquipamentosTabComponent } from './components/ficha-equipamentos-tab/ficha-equipamentos-tab.component';
 import { FichaGaleriaTabComponent } from './components/ficha-galeria-tab/ficha-galeria-tab.component';
 import { FichaHeaderComponent } from './components/ficha-header/ficha-header.component';
 import { FichaResumoTabComponent } from './components/ficha-resumo-tab/ficha-resumo-tab.component';
@@ -72,6 +73,7 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
     FichaAnotacoesTabComponent,
     FichaAptidoesTabComponent,
     FichaAtributosTabComponent,
+    FichaEquipamentosTabComponent,
     FichaGaleriaTabComponent,
     FichaHeaderComponent,
     FichaResumoTabComponent,
@@ -173,9 +175,12 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
                   <i class="pi pi-pencil mr-2"></i>Anotacoes
                 </p-tab>
                 <p-tab [value]="5">
-                  <i class="pi pi-dice mr-2"></i>Prospecção
+                  <i class="pi pi-shield mr-2"></i>Equipamentos
                 </p-tab>
                 <p-tab [value]="6">
+                  <i class="pi pi-dice mr-2"></i>Prospecção
+                </p-tab>
+                <p-tab [value]="7">
                   <i class="pi pi-images mr-2"></i>Galeria
                 </p-tab>
               </p-tablist>
@@ -251,8 +256,20 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
                   }
                 </p-tabpanel>
 
-                <!-- Aba 5: Prospecção -->
+                <!-- Aba 5: Equipamentos -->
                 <p-tabpanel [value]="5">
+                  @if (fichaId() && ficha()) {
+                    <app-ficha-equipamentos-tab
+                      [fichaId]="fichaId()!"
+                      [jogoId]="ficha()!.jogoId"
+                      [podeEditar]="podeEditar()"
+                      [isMestre]="isMestre()"
+                    />
+                  }
+                </p-tabpanel>
+
+                <!-- Aba 6: Prospecção -->
+                <p-tabpanel [value]="6">
                   @if (fichaId() && ficha()) {
                     <app-prospeccao
                       [fichaId]="fichaId()!"
@@ -261,8 +278,8 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
                   }
                 </p-tabpanel>
 
-                <!-- Aba 6: Galeria -->
-                <p-tabpanel [value]="6">
+                <!-- Aba 7: Galeria -->
+                <p-tabpanel [value]="7">
                   @if (fichaId() && ficha()) {
                     <app-ficha-galeria-tab
                       [fichaId]="fichaId()!"
