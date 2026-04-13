@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -29,6 +29,7 @@ import { VantagemConfig } from '@core/models/vantagem-config.model';
 import { ClasseConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { uniqueNameValidator } from '@shared/validators/config-validators';
+import { ClasseEquipInicialComponent } from './classe-equipamento-inicial/classe-equip-inicial.component';
 
 @Component({
   selector: 'app-classes-config',
@@ -51,6 +52,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
     TooltipModule,
     SelectModule,
     BaseConfigTableComponent,
+    ClasseEquipInicialComponent,
   ],
   providers: [ConfirmationService],
   template: `
@@ -104,7 +106,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       [draggable]="false"
       [resizable]="false"
     >
-      <p-tabs [value]="activeTab()">
+      <p-tabs [value]="activeTab()" (valueChange)="onTabChange($event)">
         <p-tablist>
           <p-tab value="dados">Dados Gerais</p-tab>
           <p-tab
@@ -150,6 +152,14 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
             @if (vantagensPreDefinidas().length) {
               <span class="ml-1 badge-atributo">{{ vantagensPreDefinidas().length }}</span>
             }
+          </p-tab>
+          <p-tab
+            value="equipamentos-iniciais"
+            [disabled]="!editMode()"
+            pTooltip="Salve os dados gerais primeiro para habilitar esta aba"
+            tooltipPosition="top"
+          >
+            Equipamentos Iniciais
           </p-tab>
         </p-tablist>
 
@@ -490,6 +500,16 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
               </div>
             </div>
           </p-tabpanel>
+
+          <!-- Aba: Equipamentos Iniciais -->
+          <p-tabpanel value="equipamentos-iniciais">
+            @if (selectedClasse()?.id) {
+              <app-classe-equip-inicial
+                [classeId]="selectedClasse()!.id"
+                #equipInicialRef
+              />
+            }
+          </p-tabpanel>
         </p-tabpanels>
       </p-tabs>
     </p-dialog>
@@ -504,6 +524,8 @@ export class ClassesConfigComponent extends BaseConfigComponent<
   protected service = inject(ClasseConfigService);
   private confirmationService = inject(ConfirmationService);
   private configApi = inject(ConfigApiService);
+
+  @ViewChild('equipInicialRef') equipInicialRef?: ClasseEquipInicialComponent;
 
   protected drawerVisible = signal(false);
   protected loading = signal(false);
@@ -605,6 +627,28 @@ export class ClassesConfigComponent extends BaseConfigComponent<
     if (item?.id) {
       this.loadPontosConfig(item.id);
       this.loadVantagensPreDefinidas(item.id);
+      // Pré-carrega catálogo de itens para a aba de equipamentos iniciais
+      const jogoId = this.service.currentGameId();
+      if (jogoId) {
+        // equipInicialRef pode não estar disponível ainda (lazy render no tab)
+        // O carregamento ocorrerá quando a aba for aberta via onTabChange
+        this._pendingJogoIdParaItens = jogoId;
+      }
+    }
+  }
+
+  /** jogoId pendente para carregar itens quando a aba equipamentos for aberta */
+  private _pendingJogoIdParaItens: number | null = null;
+
+  protected onTabChange(tabValue: string): void {
+    this.activeTab.set(tabValue);
+    if (tabValue === 'equipamentos-iniciais' && this._pendingJogoIdParaItens) {
+      // Dar um tick para o ViewChild ser renderizado
+      setTimeout(() => {
+        if (this._pendingJogoIdParaItens) {
+          this.equipInicialRef?.carregarItensParaJogo(this._pendingJogoIdParaItens);
+        }
+      }, 50);
     }
   }
 
