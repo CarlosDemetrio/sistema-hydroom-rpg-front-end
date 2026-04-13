@@ -1,7 +1,8 @@
 import { ClassePontosConfig, ClassePontosConfigRequest } from '@core/models/classe-pontos-config.model';
 import { ClasseVantagemPreDefinida, ClasseVantagemPreDefinidaRequest } from '@core/models/classe-vantagem-predefinida.model';
+import { HabilidadeConfig, CreateHabilidadeConfigDto, UpdateHabilidadeConfigDto } from '@core/models/habilidade-config.model';
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { RaridadeItemConfig, CreateRaridadeItemDto, UpdateRaridadeItemDto } from '@core/models/raridade-item-config.model';
 import { TipoItemConfig, CreateTipoItemDto, UpdateTipoItemDto } from '@core/models/tipo-item-config.model';
@@ -798,5 +799,29 @@ export class ConfigApiService {
 
   removeClasseEquipamentoInicial(classeId: number, id: number): Observable<void> {
     return this.http.delete<void>(`${this.configUrl}/classes/${classeId}/equipamentos-iniciais/${id}`);
+  }
+
+  // ===== Habilidades =====
+  // Base: /api/jogos/{jogoId}/config/habilidades  (sem /v1/ — mesmo padrão de CategoriaVantagem)
+  // Diferença: MESTRE e JOGADOR têm permissões simétricas (POST, PUT, DELETE)
+
+  listHabilidades(jogoId: number): Observable<HabilidadeConfig[]> {
+    return this.http.get<HabilidadeConfig[]>(`/api/jogos/${jogoId}/config/habilidades`);
+  }
+
+  getHabilidade(jogoId: number, id: number): Observable<HabilidadeConfig> {
+    return this.http.get<HabilidadeConfig>(`/api/jogos/${jogoId}/config/habilidades/${id}`);
+  }
+
+  createHabilidade(jogoId: number, dto: CreateHabilidadeConfigDto, context?: HttpContext): Observable<HabilidadeConfig> {
+    return this.http.post<HabilidadeConfig>(`/api/jogos/${jogoId}/config/habilidades`, dto, { context });
+  }
+
+  updateHabilidade(jogoId: number, id: number, dto: UpdateHabilidadeConfigDto, context?: HttpContext): Observable<HabilidadeConfig> {
+    return this.http.put<HabilidadeConfig>(`/api/jogos/${jogoId}/config/habilidades/${id}`, dto, { context });
+  }
+
+  deleteHabilidade(jogoId: number, id: number): Observable<void> {
+    return this.http.delete<void>(`/api/jogos/${jogoId}/config/habilidades/${id}`);
   }
 }

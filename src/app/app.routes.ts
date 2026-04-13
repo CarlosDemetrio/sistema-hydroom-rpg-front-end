@@ -165,6 +165,10 @@ export const routes: Routes = [
               {
                 path: 'itens',
                 loadComponent: () => import('./features/mestre/pages/config/configs/itens-config/itens-config.component').then(m => m.ItensConfigComponent)
+              },
+              {
+                path: 'habilidades',
+                loadComponent: () => import('./features/mestre/pages/config/configs/habilidades-config/habilidades-config.component').then(m => m.HabilidadesConfigComponent)
               }
             ]
           }
@@ -205,6 +209,11 @@ export const routes: Routes = [
           {
             path: 'jogos',
             loadComponent: () => import('./features/jogador/pages/jogos-disponiveis/jogos-disponiveis.component').then(m => m.JogosDisponiveisComponent)
+          },
+          {
+            path: 'habilidades',
+            loadComponent: () => import('./features/jogador/pages/habilidades/jogador-habilidades.component').then(m => m.JogadorHabilidadesComponent),
+            canActivate: [currentGameGuard]
           }
         ]
       }

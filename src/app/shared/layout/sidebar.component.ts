@@ -105,6 +105,11 @@ export class SidebarComponent implements OnInit {
             label: 'Jogos Disponíveis',
             icon: 'pi pi-search',
             command: () => this.router.navigate(['/jogador/jogos'])
+          },
+          {
+            label: 'Habilidades',
+            icon: 'pi pi-bolt',
+            command: () => this.router.navigate(['/jogador/habilidades'])
           }
         ]
       });

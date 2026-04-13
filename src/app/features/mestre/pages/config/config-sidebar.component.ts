@@ -217,5 +217,12 @@ export class ConfigSidebarComponent {
       route: '/mestre/config/membros-corpo',
       count: this.configStore.membrosCorpo().length,
     },
+    {
+      label: 'Habilidades',
+      description: 'Ataques, técnicas e manobras',
+      icon: 'pi pi-bolt',
+      route: '/mestre/config/habilidades',
+      count: 0,
+    },
   ]);
 }
