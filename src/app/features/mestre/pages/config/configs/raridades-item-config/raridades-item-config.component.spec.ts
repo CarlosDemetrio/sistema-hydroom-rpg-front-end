@@ -108,6 +108,7 @@ const TEMPLATE_STUB = `
       <div id="edit-mode">Modo edição</div>
     }
     <span id="cor-preview">{{ corPreview() }}</span>
+    <span id="cor-picker-value">{{ corPickerValue() }}</span>
   </div>
 `;
 
@@ -204,23 +205,19 @@ describe('RaridadesItemConfigComponent', () => {
   });
 
   // ----------------------------------------------------------
-  // 3. Color picker — corPreview e corTextoContraste
+  // 3. Color picker — corPreview, corPickerValue e corTextoContraste
   // ----------------------------------------------------------
 
-  describe('color picker', () => {
+  describe('color picker — PrimeNG p-colorpicker', () => {
     it('corPreview deve retornar fallback para cor inválida no formulário', async () => {
       const { fixture } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      // Sem abrir dialog, form tem cor padrão '#9d9d9d'
-      // corPreview lê this.form?.get('cor')?.value que é uma leitura direta (não reativa via signal)
-      // O fallback (#9d9d9d) é retornado quando a cor não é hex válida ou é o default
       comp.openDialog();
-      comp.form.patchValue({ cor: 'invalido' });
+      comp.corFormValue.set('invalido');
       fixture.detectChanges();
 
-      // Cor inválida -> retorna fallback #9d9d9d
       expect(comp.corPreview()).toBe('#9d9d9d');
     });
 
@@ -232,36 +229,107 @@ describe('RaridadesItemConfigComponent', () => {
       comp.openDialog();
       fixture.detectChanges();
 
-      // Deve retornar string '#000000' ou '#ffffff'
       const contraste = comp.corTextoContraste();
       expect(contraste === '#000000' || contraste === '#ffffff').toBe(true);
     });
 
-    it('onColorPickerChange deve atualizar o campo cor do formulário', async () => {
+    it('onColorPickerNgModelChange deve atualizar o campo cor com prefixo #', async () => {
       const { fixture } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
       comp.openDialog();
 
-      const fakeEvent = { target: { value: '#ff0000' } } as unknown as Event;
-      comp.onColorPickerChange(fakeEvent);
+      // p-colorpicker emite o valor sem '#' (ex: 'ff0000')
+      comp.onColorPickerNgModelChange('ff0000');
       fixture.detectChanges();
 
       expect(comp.form.get('cor')?.value).toBe('#FF0000');
     });
 
-    it('corTextoContraste deve retornar preto para cor branca (#FFFFFF)', async () => {
+    it('onColorPickerNgModelChange deve atualizar corFormValue reativamente', async () => {
       const { fixture } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
       comp.openDialog();
-      // Simular cor clara via onColorPickerChange
-      comp.onColorPickerChange({ target: { value: '#ffffff' } } as unknown as Event);
+      comp.onColorPickerNgModelChange('ff0000');
+      fixture.detectChanges();
+
+      // corFormValue deve ser atualizado via valueChanges do form control
+      // (a subscrição dispara automaticamente)
+      expect(comp.corPreview()).toBe('#FF0000');
+    });
+
+    it('corPickerValue deve retornar a cor sem # para o p-colorpicker', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      comp.corFormValue.set('#0070DD');
+      fixture.detectChanges();
+
+      // corPickerValue = corPreview sem '#'
+      expect(comp.corPickerValue()).toBe('0070DD');
+    });
+
+    it('corTextoContraste deve retornar preto para cor clara', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      comp.onColorPickerNgModelChange('ffffff');
       fixture.detectChanges();
 
       expect(comp.corTextoContraste()).toBe('#000000');
+    });
+
+    it('corTextoContraste deve retornar branco para cor escura', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      comp.onColorPickerNgModelChange('000000');
+      fixture.detectChanges();
+
+      expect(comp.corTextoContraste()).toBe('#ffffff');
+    });
+
+    it('openDialog em modo edição deve sincronizar corFormValue com a cor do item', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog(raridadeRaroMock); // cor = '#0070dd'
+      fixture.detectChanges();
+
+      expect(comp.corFormValue()).toBe('#0070dd');
+      // corPickerValue remove o '#' — mantém o case original da string
+      expect(comp.corPickerValue()).toBe('0070dd');
+    });
+
+    it('openDialog em modo criação deve inicializar corFormValue com fallback', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog(); // sem item = criação
+      fixture.detectChanges();
+
+      expect(comp.corFormValue()).toBe('#9d9d9d');
+    });
+
+    it('onColorPickerNgModelChange não deve falhar com valor vazio', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      // Não deve lançar erro
+      expect(() => comp.onColorPickerNgModelChange('')).not.toThrow();
     });
   });
 

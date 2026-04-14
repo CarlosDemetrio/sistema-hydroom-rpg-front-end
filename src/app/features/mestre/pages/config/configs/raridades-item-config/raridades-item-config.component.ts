@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
@@ -6,6 +6,7 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ColorPickerModule } from 'primeng/colorpicker';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -29,12 +30,14 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 @Component({
   selector: 'app-raridades-item-config',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
     BadgeModule,
     ButtonModule,
     CardModule,
     CheckboxModule,
+    ColorPickerModule,
     ConfirmDialogModule,
     DialogModule,
     InputNumberModule,
@@ -214,35 +217,41 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
             <label class="font-semibold">
               Cor <span class="text-red-400">*</span>
             </label>
-            <div class="flex align-items-center gap-3">
-              <!-- Color picker nativo -->
-              <input
-                type="color"
-                [value]="corPreview()"
-                (input)="onColorPickerChange($event)"
-                style="width: 3rem; height: 3rem; border: none; cursor: pointer; padding: 0; border-radius: 4px;"
+
+            <div class="flex align-items-center gap-3 flex-wrap">
+              <!-- PrimeNG ColorPicker — bidirecional com o input hex -->
+              <p-colorpicker
+                [ngModel]="corPickerValue()"
+                (ngModelChange)="onColorPickerNgModelChange($event)"
+                [inline]="false"
+                appendTo="body"
                 aria-label="Seletor de cor"
-              />
-              <!-- Input hex manual -->
+              ></p-colorpicker>
+
+              <!-- Input hex manual — fonte primária do valor -->
               <input
                 pInputText
                 id="cor"
                 formControlName="cor"
                 placeholder="#9d9d9d"
-                style="font-family: monospace; flex: 1"
+                style="font-family: monospace; flex: 1; min-width: 8rem;"
                 [class.ng-invalid]="form.get('cor')?.invalid && form.get('cor')?.touched"
+                aria-label="Valor hexadecimal da cor"
               />
-              <!-- Preview chip -->
+
+              <!-- Preview em tempo real -->
               <div
-                class="border-round flex align-items-center justify-content-center"
+                class="border-round flex align-items-center justify-content-center flex-shrink-0"
                 [style.background-color]="corPreview()"
-                style="width: 6rem; height: 2rem; border: 1px solid var(--surface-border)"
+                style="width: 6rem; height: 2.5rem; border: 1px solid var(--surface-border)"
+                aria-label="Preview da cor selecionada"
               >
                 <span class="text-xs font-semibold" [style.color]="corTextoContraste()">
                   Preview
                 </span>
               </div>
             </div>
+
             @if (form.get('cor')?.invalid && form.get('cor')?.touched) {
               <small class="text-red-400">
                 @if (form.get('cor')?.errors?.['required']) { Campo obrigatório }
@@ -386,11 +395,30 @@ export class RaridadesItemConfigComponent implements OnInit {
   protected readonly editMode = signal(false);
   protected readonly currentEditId = signal<number | null>(null);
 
+  /**
+   * Valor reativo da cor para disparar recomputação dos computeds de preview.
+   * Atualizado manualmente sempre que o form control 'cor' muda.
+   */
+  protected readonly corFormValue = signal<string>('#9d9d9d');
+
+  /**
+   * Cor validada para preview — fallback para cinza padrão se hex inválido.
+   */
   protected readonly corPreview = computed(() => {
-    const cor = this.form?.get('cor')?.value ?? '#9d9d9d';
+    const cor = this.corFormValue();
     return /^#[0-9A-Fa-f]{6}$/.test(cor) ? cor : '#9d9d9d';
   });
 
+  /**
+   * Valor sem '#' para o p-colorpicker (espera RRGGBB sem o hash).
+   */
+  protected readonly corPickerValue = computed(() =>
+    this.corPreview().replace('#', '')
+  );
+
+  /**
+   * Cor de texto com contraste adequado sobre o preview.
+   */
   protected readonly corTextoContraste = computed(() => {
     const hex = this.corPreview().replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16);
@@ -404,9 +432,20 @@ export class RaridadesItemConfigComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.buildForm();
+    this.subscribeCorChanges();
     if (this.hasGame()) {
       this.loadData();
     }
+  }
+
+  /**
+   * Assina mudanças no control 'cor' para manter corFormValue sincronizado.
+   * Isso permite que corPreview e corPickerValue reajam reativamente.
+   */
+  private subscribeCorChanges(): void {
+    this.form.get('cor')?.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((valor: string) => this.corFormValue.set(valor ?? '#9d9d9d'));
   }
 
   private buildForm(): FormGroup {
@@ -440,6 +479,7 @@ export class RaridadesItemConfigComponent implements OnInit {
 
   protected openDialog(item?: RaridadeItemConfig): void {
     this.form = this.buildForm();
+    this.subscribeCorChanges();
     if (item) {
       this.editMode.set(true);
       this.currentEditId.set(item.id);
@@ -454,10 +494,12 @@ export class RaridadesItemConfigComponent implements OnInit {
         bonusDerivadoMax: item.bonusDerivadoMax,
         descricao: item.descricao,
       });
+      this.corFormValue.set(item.cor ?? '#9d9d9d');
     } else {
       this.editMode.set(false);
       this.currentEditId.set(null);
       this.form.reset({ cor: '#9d9d9d', ordemExibicao: this.raridades().length + 1, podeJogadorAdicionar: false });
+      this.corFormValue.set('#9d9d9d');
     }
     this.dialogVisible.set(true);
   }
@@ -471,9 +513,14 @@ export class RaridadesItemConfigComponent implements OnInit {
     if (!visible) this.closeDialog();
   }
 
-  protected onColorPickerChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.form.get('cor')?.setValue(input.value.toUpperCase());
+  /**
+   * Callback do p-colorpicker — recebe o valor em formato RRGGBB (sem #).
+   * Atualiza o form control 'cor' com o prefixo '#' e em maiúsculas.
+   */
+  protected onColorPickerNgModelChange(valor: string): void {
+    if (!valor) return;
+    const hexComHash = `#${valor.toUpperCase()}`;
+    this.form.get('cor')?.setValue(hexComHash);
     this.form.get('cor')?.markAsTouched();
   }
 
