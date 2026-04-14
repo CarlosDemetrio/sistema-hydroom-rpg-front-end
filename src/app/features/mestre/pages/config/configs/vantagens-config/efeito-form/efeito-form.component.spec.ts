@@ -15,7 +15,7 @@ import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ɵSIGNAL as SIGNAL_SYM } from '@angular/core';
 import { vi } from 'vitest';
 
-import { EfeitoFormComponent } from './efeito-form.component';
+import { EfeitoFormComponent, CampoAlvoOption } from './efeito-form.component';
 import { DadoUpPreviewComponent } from './dado-up-preview/dado-up-preview.component';
 import { AtributoConfig } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
@@ -426,15 +426,40 @@ describe('EfeitoFormComponent', () => {
       expect(comp.podeSubmeter()).toBe(true);
     });
 
-    it('deve ser false para FORMULA_CUSTOMIZADA (indisponível)', async () => {
+    it('deve ser false para FORMULA_CUSTOMIZADA sem campoAlvoFormula', async () => {
       const { fixture } = await renderEfeitoForm();
       const comp = fixture.componentInstance;
 
       selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
-      comp.form.formula = 'nivel * 2';
+      comp.form.campoAlvoFormula   = null;
+      comp.form.formulaCustomizada = 'nivel * 2';
       fixture.detectChanges();
 
       expect(comp.podeSubmeter()).toBe(false);
+    });
+
+    it('deve ser false para FORMULA_CUSTOMIZADA sem formulaCustomizada', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR' };
+      comp.form.formulaCustomizada = '';
+      fixture.detectChanges();
+
+      expect(comp.podeSubmeter()).toBe(false);
+    });
+
+    it('deve ser true para FORMULA_CUSTOMIZADA com campoAlvo e formula preenchidos', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR' };
+      comp.form.formulaCustomizada = 'nivel * 2 + FOR';
+      fixture.detectChanges();
+
+      expect(comp.podeSubmeter()).toBe(true);
     });
 
     it('deve ser true para BONUS_VIDA com valorPorNivel preenchido', async () => {
@@ -662,6 +687,265 @@ describe('EfeitoFormComponent', () => {
       fixture.detectChanges();
 
       expect(comp.podeSubmeter()).toBe(true);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 8. FORMULA_CUSTOMIZADA — sub-formulário de campo alvo
+  // ----------------------------------------------------------
+
+  describe('FORMULA_CUSTOMIZADA — sub-formulário', () => {
+
+    // ---- camposAlvoFormula ----
+
+    it('deve construir camposAlvoFormula combinando atributos e bônus', async () => {
+      const { fixture } = await renderEfeitoForm({
+        atributos: [atributoMock],
+        bonus: [bonusMock],
+      });
+      const comp = fixture.componentInstance;
+
+      const campos = comp.camposAlvoFormula();
+
+      expect(campos.length).toBe(2);
+      expect(campos[0]).toEqual<CampoAlvoOption>({
+        id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR',
+      });
+      expect(campos[1]).toEqual<CampoAlvoOption>({
+        id: 3, nome: 'BBA', tipo: 'bonus', sigla: 'BBA',
+      });
+    });
+
+    it('deve retornar camposAlvoFormula vazio quando não há atributos nem bônus', async () => {
+      const { fixture } = await renderEfeitoForm({ atributos: [], bonus: [] });
+      const comp = fixture.componentInstance;
+
+      expect(comp.camposAlvoFormula()).toEqual([]);
+    });
+
+    it('deve listar apenas atributos quando bônus está vazio', async () => {
+      const { fixture } = await renderEfeitoForm({ atributos: [atributoMock], bonus: [] });
+      const comp = fixture.componentInstance;
+
+      const campos = comp.camposAlvoFormula();
+      expect(campos.length).toBe(1);
+      expect(campos[0].tipo).toBe('atributo');
+    });
+
+    it('deve listar apenas bônus quando atributos está vazio', async () => {
+      const { fixture } = await renderEfeitoForm({ atributos: [], bonus: [bonusMock] });
+      const comp = fixture.componentInstance;
+
+      const campos = comp.camposAlvoFormula();
+      expect(campos.length).toBe(1);
+      expect(campos[0].tipo).toBe('bonus');
+    });
+
+    // ---- siglasDisponiveis ----
+
+    it('deve expor siglas dos atributos para o hint da fórmula', async () => {
+      const atributo2: AtributoConfig = { ...atributoMock, id: 99, nome: 'Agilidade', abreviacao: 'AGI' };
+      const { fixture } = await renderEfeitoForm({ atributos: [atributoMock, atributo2] });
+      const comp = fixture.componentInstance;
+
+      expect(comp.siglasDisponiveis()).toEqual(['FOR', 'AGI']);
+    });
+
+    // ---- mostrarFormula ----
+
+    it('deve ativar mostrarFormula somente para FORMULA_CUSTOMIZADA', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      fixture.detectChanges();
+
+      expect(comp.mostrarFormula()).toBe(true);
+      expect(comp.mostrarValorNumerico()).toBe(false);
+      expect(comp.mostrarAlvoAtributo()).toBe(false);
+    });
+
+    // ---- reset ao mudar tipo ----
+
+    it('deve limpar campoAlvoFormula e formulaCustomizada ao mudar de tipo', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR' };
+      comp.form.formulaCustomizada = 'nivel * 2';
+      fixture.detectChanges();
+
+      selecionarTipo(comp, 'BONUS_VIDA');
+      fixture.detectChanges();
+
+      expect(comp.form.campoAlvoFormula).toBeNull();
+      expect(comp.form.formulaCustomizada).toBe('');
+    });
+
+    it('deve resetar tentouSubmeter ao mudar de tipo', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.salvar(); // dispara tentouSubmeter
+      expect(comp.tentouSubmeter()).toBe(true);
+
+      selecionarTipo(comp, 'BONUS_VIDA');
+      fixture.detectChanges();
+
+      expect(comp.tentouSubmeter()).toBe(false);
+    });
+
+    // ---- formulaInvalida ----
+
+    it('formulaInvalida deve ser false antes de tentar submeter', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.formulaCustomizada = '';
+      fixture.detectChanges();
+
+      expect(comp.formulaInvalida()).toBe(false);
+    });
+
+    it('formulaInvalida deve ser true após tentativa de submit com fórmula vazia', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR' };
+      comp.form.formulaCustomizada = '';
+      fixture.detectChanges();
+
+      comp.salvar();
+      fixture.detectChanges();
+
+      expect(comp.formulaInvalida()).toBe(true);
+    });
+
+    it('formulaInvalida deve ser false quando tipo não é FORMULA_CUSTOMIZADA', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      selecionarTipo(comp, 'BONUS_VIDA');
+      comp.tentouSubmeter.set(true);
+      fixture.detectChanges();
+
+      expect(comp.formulaInvalida()).toBe(false);
+    });
+
+    // ---- emissão de DTO com campo atributo ----
+
+    it('deve emitir DTO com atributoAlvoId ao salvar FORMULA_CUSTOMIZADA com alvo atributo', async () => {
+      const { fixture } = await renderEfeitoForm({
+        atributos: [atributoMock],
+        bonus: [bonusMock],
+      });
+      const comp = fixture.componentInstance;
+
+      const efeitoSalvoSpy = vi.fn();
+      comp.efeitoSalvo.subscribe(efeitoSalvoSpy);
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR' };
+      comp.form.formulaCustomizada = 'nivel * 2 + FOR';
+      comp.form.descricaoEfeito    = 'Bônus por nível';
+      fixture.detectChanges();
+
+      comp.salvar();
+
+      expect(efeitoSalvoSpy).toHaveBeenCalledTimes(1);
+      const dto = efeitoSalvoSpy.mock.calls[0][0];
+      expect(dto.tipoEfeito).toBe('FORMULA_CUSTOMIZADA');
+      expect(dto.atributoAlvoId).toBe(1);
+      expect(dto.bonusAlvoId).toBeUndefined();
+      expect(dto.formula).toBe('nivel * 2 + FOR');
+      expect(dto.descricaoEfeito).toBe('Bônus por nível');
+    });
+
+    // ---- emissão de DTO com campo bônus ----
+
+    it('deve emitir DTO com bonusAlvoId ao salvar FORMULA_CUSTOMIZADA com alvo bônus', async () => {
+      const { fixture } = await renderEfeitoForm({
+        atributos: [atributoMock],
+        bonus: [bonusMock],
+      });
+      const comp = fixture.componentInstance;
+
+      const efeitoSalvoSpy = vi.fn();
+      comp.efeitoSalvo.subscribe(efeitoSalvoSpy);
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 3, nome: 'BBA', tipo: 'bonus', sigla: 'BBA' };
+      comp.form.formulaCustomizada = 'base + nivel';
+      fixture.detectChanges();
+
+      comp.salvar();
+
+      expect(efeitoSalvoSpy).toHaveBeenCalledTimes(1);
+      const dto = efeitoSalvoSpy.mock.calls[0][0];
+      expect(dto.tipoEfeito).toBe('FORMULA_CUSTOMIZADA');
+      expect(dto.bonusAlvoId).toBe(3);
+      expect(dto.atributoAlvoId).toBeUndefined();
+      expect(dto.formula).toBe('base + nivel');
+    });
+
+    // ---- não emite quando inválido ----
+
+    it('não deve emitir efeitoSalvo quando FORMULA_CUSTOMIZADA sem campoAlvo', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      const efeitoSalvoSpy = vi.fn();
+      comp.efeitoSalvo.subscribe(efeitoSalvoSpy);
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = null;
+      comp.form.formulaCustomizada = 'nivel * 2';
+      fixture.detectChanges();
+
+      comp.salvar();
+
+      expect(efeitoSalvoSpy).not.toHaveBeenCalled();
+    });
+
+    it('não deve emitir efeitoSalvo quando FORMULA_CUSTOMIZADA com fórmula vazia', async () => {
+      const { fixture } = await renderEfeitoForm();
+      const comp = fixture.componentInstance;
+
+      const efeitoSalvoSpy = vi.fn();
+      comp.efeitoSalvo.subscribe(efeitoSalvoSpy);
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR' };
+      comp.form.formulaCustomizada = '   '; // só espaços
+      fixture.detectChanges();
+
+      comp.salvar();
+
+      expect(efeitoSalvoSpy).not.toHaveBeenCalled();
+    });
+
+    // ---- fórmula com trim ----
+
+    it('deve enviar fórmula com trim aplicado', async () => {
+      const { fixture } = await renderEfeitoForm({ atributos: [atributoMock] });
+      const comp = fixture.componentInstance;
+
+      const efeitoSalvoSpy = vi.fn();
+      comp.efeitoSalvo.subscribe(efeitoSalvoSpy);
+
+      selecionarTipo(comp, 'FORMULA_CUSTOMIZADA');
+      comp.form.campoAlvoFormula   = { id: 1, nome: 'Força', tipo: 'atributo', sigla: 'FOR' };
+      comp.form.formulaCustomizada = '  total + 1  ';
+      fixture.detectChanges();
+
+      comp.salvar();
+
+      const dto = efeitoSalvoSpy.mock.calls[0][0];
+      expect(dto.formula).toBe('total + 1');
     });
   });
 });

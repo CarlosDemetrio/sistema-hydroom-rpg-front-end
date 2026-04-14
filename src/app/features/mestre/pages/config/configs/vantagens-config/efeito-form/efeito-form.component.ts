@@ -24,6 +24,16 @@ import { BonusConfig, DadoProspeccaoConfig, MembroCorpoConfig } from '@core/mode
 import { TipoEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
 import { DadoUpPreviewComponent } from './dado-up-preview/dado-up-preview.component';
 
+/** Opção unificada para o dropdown de campo alvo da fórmula customizada. */
+export interface CampoAlvoOption {
+  id: number;
+  nome: string;
+  /** 'atributo' | 'bonus' — determina qual FK preencher no DTO */
+  tipo: 'atributo' | 'bonus';
+  /** Sigla exibida no hint de variáveis disponíveis (ex: FOR, BBA) */
+  sigla: string | null;
+}
+
 export interface TipoEfeitoOption {
   label: string;
   value: TipoEfeito;
@@ -69,7 +79,7 @@ const TIPOS_EFEITO: TipoEfeitoOption[] = [
   {
     value: 'FORMULA_CUSTOMIZADA',
     label: 'Fórmula Customizada',
-    descricao: 'Efeito calculado por expressão matemática. Disponível em versão futura.',
+    descricao: 'Efeito calculado por expressão matemática customizada. Selecione o campo alvo e defina a fórmula.',
   },
 ];
 
@@ -82,6 +92,10 @@ interface EfeitoFormState {
   valorPorNivel: number | null;
   formula: string;
   descricaoEfeito: string;
+  /** Campo alvo selecionado para FORMULA_CUSTOMIZADA (atributo ou bônus) */
+  campoAlvoFormula: CampoAlvoOption | null;
+  /** Texto da fórmula customizada */
+  formulaCustomizada: string;
 }
 
 @Component({
@@ -250,17 +264,77 @@ interface EfeitoFormState {
           />
         }
 
-        <!-- FORMULA_CUSTOMIZADA: indisponível no momento -->
+        <!-- FORMULA_CUSTOMIZADA: sub-formulário de campo alvo + fórmula -->
         @if (mostrarFormula()) {
-          <div class="flex align-items-start gap-2 p-3 border-round surface-200">
-            <i class="pi pi-clock text-orange-400 mt-1"></i>
-            <div>
-              <p class="m-0 font-semibold text-sm">Fórmula Customizada — Em breve</p>
-              <p class="m-0 text-sm text-color-secondary">
-                O editor de fórmulas estará disponível em uma próxima versão.
-                Selecione outro tipo de efeito por enquanto.
-              </p>
-            </div>
+          <p-divider />
+
+          <!-- Campo alvo -->
+          <div class="flex flex-column gap-2">
+            <label class="font-semibold">
+              Campo alvo <span class="text-red-400">*</span>
+            </label>
+            <p-select
+              [options]="camposAlvoFormula()"
+              optionLabel="nome"
+              [(ngModel)]="form.campoAlvoFormula"
+              placeholder="Selecione o campo que receberá o resultado..."
+              [filter]="true"
+              filterPlaceholder="Buscar campo..."
+            >
+              <ng-template #item let-opt>
+                <div class="flex align-items-center gap-2">
+                  <p-tag
+                    [value]="opt.tipo === 'atributo' ? 'ATR' : 'BÔN'"
+                    [severity]="opt.tipo === 'atributo' ? 'info' : 'warn'"
+                    styleClass="text-xs"
+                  />
+                  <span>{{ opt.nome }}</span>
+                  @if (opt.sigla) {
+                    <span class="text-color-secondary text-sm font-mono">{{ opt.sigla }}</span>
+                  }
+                </div>
+              </ng-template>
+              <ng-template #selectedItem let-opt>
+                <div class="flex align-items-center gap-2">
+                  <p-tag
+                    [value]="opt.tipo === 'atributo' ? 'ATR' : 'BÔN'"
+                    [severity]="opt.tipo === 'atributo' ? 'info' : 'warn'"
+                    styleClass="text-xs"
+                  />
+                  <span>{{ opt.nome }}</span>
+                  @if (opt.sigla) {
+                    <span class="text-color-secondary text-sm font-mono">{{ opt.sigla }}</span>
+                  }
+                </div>
+              </ng-template>
+            </p-select>
+            <small class="text-color-secondary">
+              Atributos e bônus derivados do jogo estão disponíveis como alvos.
+            </small>
+          </div>
+
+          <!-- Fórmula customizada -->
+          <div class="flex flex-column gap-2">
+            <label class="font-semibold">
+              Fórmula <span class="text-red-400">*</span>
+            </label>
+            <input
+              pInputText
+              [(ngModel)]="form.formulaCustomizada"
+              placeholder="Ex: total * 2 + FOR"
+              style="font-family: var(--font-mono, monospace); font-size: 0.95rem;"
+              [class.ng-invalid]="formulaInvalida()"
+              aria-label="Fórmula customizada"
+            />
+            @if (formulaInvalida()) {
+              <small class="text-red-400">A fórmula não pode estar vazia.</small>
+            }
+            <small class="text-color-secondary">
+              Variáveis disponíveis: <code>total</code>, <code>nivel</code>, <code>base</code>
+              @if (siglasDisponiveis().length) {
+                , {{ siglasDisponiveis().join(', ') }}
+              }
+            </small>
           </div>
         }
 
@@ -329,15 +403,20 @@ export class EfeitoFormComponent {
   nivelPreviewModel    = 1;
 
   form: EfeitoFormState = {
-    atributoAlvoId:  null,
-    aptidaoAlvoId:   null,
-    bonusAlvoId:     null,
-    membroAlvoId:    null,
-    valorFixo:       null,
-    valorPorNivel:   null,
-    formula:         '',
-    descricaoEfeito: '',
+    atributoAlvoId:     null,
+    aptidaoAlvoId:      null,
+    bonusAlvoId:        null,
+    membroAlvoId:       null,
+    valorFixo:          null,
+    valorPorNivel:      null,
+    formula:            '',
+    descricaoEfeito:    '',
+    campoAlvoFormula:   null,
+    formulaCustomizada: '',
   };
+
+  /** Indica se o usuário tentou submeter e a fórmula está vazia (para exibir validação) */
+  tentouSubmeter = signal(false);
 
   // ============================================================
   // Computed: quais campos mostrar
@@ -364,6 +443,45 @@ export class EfeitoFormComponent {
   });
 
   // ============================================================
+  // Computed: FORMULA_CUSTOMIZADA
+  // ============================================================
+
+  /**
+   * Lista unificada de campos alvo disponíveis para FORMULA_CUSTOMIZADA:
+   * atributos do jogo + bônus derivados do jogo.
+   */
+  camposAlvoFormula = computed<CampoAlvoOption[]>(() => {
+    const atributos: CampoAlvoOption[] = this.atributosDisponiveis().map(a => ({
+      id: a.id,
+      nome: a.nome,
+      tipo: 'atributo',
+      sigla: a.abreviacao,
+    }));
+    const bonus: CampoAlvoOption[] = this.bonusDisponiveis().map(b => ({
+      id: b.id,
+      nome: b.nome,
+      tipo: 'bonus',
+      sigla: b.sigla ?? null,
+    }));
+    return [...atributos, ...bonus];
+  });
+
+  /**
+   * Siglas disponíveis para uso nas fórmulas (atributos com abreviação).
+   * Exibidas no hint do campo fórmula.
+   */
+  siglasDisponiveis = computed<string[]>(() =>
+    this.atributosDisponiveis()
+      .map(a => a.abreviacao)
+      .filter(s => !!s)
+  );
+
+  /** True quando o usuário tentou submeter e a fórmula está vazia. */
+  formulaInvalida = computed(
+    () => this.tentouSubmeter() && this.mostrarFormula() && !this.form.formulaCustomizada.trim()
+  );
+
+  // ============================================================
   // Preview calculado
   // ============================================================
 
@@ -386,13 +504,16 @@ export class EfeitoFormComponent {
   podeSubmeter = computed(() => {
     const tipo = this.tipoSelecionado();
     if (!tipo) return false;
-    if (tipo === 'FORMULA_CUSTOMIZADA') return false; // indisponível
-    if (tipo === 'BONUS_ATRIBUTO'   && !this.form.atributoAlvoId) return false;
-    if (tipo === 'BONUS_APTIDAO'    && !this.form.aptidaoAlvoId)  return false;
-    if (tipo === 'BONUS_DERIVADO'   && !this.form.bonusAlvoId)    return false;
-    if (tipo === 'BONUS_VIDA_MEMBRO' && !this.form.membroAlvoId)  return false;
+    if (tipo === 'BONUS_ATRIBUTO'    && !this.form.atributoAlvoId) return false;
+    if (tipo === 'BONUS_APTIDAO'     && !this.form.aptidaoAlvoId)  return false;
+    if (tipo === 'BONUS_DERIVADO'    && !this.form.bonusAlvoId)    return false;
+    if (tipo === 'BONUS_VIDA_MEMBRO' && !this.form.membroAlvoId)   return false;
     const ehNumerico = !['DADO_UP', 'FORMULA_CUSTOMIZADA'].includes(tipo);
     if (ehNumerico && !this.form.valorFixo && !this.form.valorPorNivel) return false;
+    if (tipo === 'FORMULA_CUSTOMIZADA') {
+      if (!this.form.campoAlvoFormula) return false;
+      if (!this.form.formulaCustomizada.trim()) return false;
+    }
     return true;
   });
 
@@ -402,11 +523,14 @@ export class EfeitoFormComponent {
 
   onTipoChange(tipo: TipoEfeito | null): void {
     this.tipoSelecionado.set(tipo);
-    // Reseta campos de alvo ao mudar o tipo
-    this.form.atributoAlvoId = null;
-    this.form.aptidaoAlvoId  = null;
-    this.form.bonusAlvoId    = null;
-    this.form.membroAlvoId   = null;
+    this.tentouSubmeter.set(false);
+    // Reseta todos os campos de alvo ao mudar o tipo
+    this.form.atributoAlvoId     = null;
+    this.form.aptidaoAlvoId      = null;
+    this.form.bonusAlvoId        = null;
+    this.form.membroAlvoId       = null;
+    this.form.campoAlvoFormula   = null;
+    this.form.formulaCustomizada = '';
   }
 
   onNivelPreviewChange(valor: number): void {
@@ -414,18 +538,32 @@ export class EfeitoFormComponent {
   }
 
   salvar(): void {
+    this.tentouSubmeter.set(true);
     if (!this.podeSubmeter()) return;
     const tipo = this.tipoSelecionado()!;
+
+    // Para FORMULA_CUSTOMIZADA, mapeia o campo alvo selecionado para a FK correta
+    const campoAlvo = this.form.campoAlvoFormula;
+    const atributoAlvoFormula = (tipo === 'FORMULA_CUSTOMIZADA' && campoAlvo?.tipo === 'atributo')
+      ? campoAlvo.id
+      : null;
+    const bonusAlvoFormula = (tipo === 'FORMULA_CUSTOMIZADA' && campoAlvo?.tipo === 'bonus')
+      ? campoAlvo.id
+      : null;
 
     const dto: CriarVantagemEfeitoDto = {
       tipoEfeito: tipo,
       ...(this.form.atributoAlvoId  != null && { atributoAlvoId:  this.form.atributoAlvoId }),
+      ...(atributoAlvoFormula       != null && { atributoAlvoId:  atributoAlvoFormula }),
       ...(this.form.aptidaoAlvoId   != null && { aptidaoAlvoId:   this.form.aptidaoAlvoId }),
       ...(this.form.bonusAlvoId     != null && { bonusAlvoId:     this.form.bonusAlvoId }),
+      ...(bonusAlvoFormula          != null && { bonusAlvoId:     bonusAlvoFormula }),
       ...(this.form.membroAlvoId    != null && { membroAlvoId:    this.form.membroAlvoId }),
       ...(this.form.valorFixo       != null && { valorFixo:       this.form.valorFixo }),
       ...(this.form.valorPorNivel   != null && { valorPorNivel:   this.form.valorPorNivel }),
       ...(this.form.formula?.trim() && { formula: this.form.formula.trim() }),
+      ...(tipo === 'FORMULA_CUSTOMIZADA' && this.form.formulaCustomizada.trim()
+        && { formula: this.form.formulaCustomizada.trim() }),
       ...(this.form.descricaoEfeito?.trim() && { descricaoEfeito: this.form.descricaoEfeito.trim() }),
     };
 
