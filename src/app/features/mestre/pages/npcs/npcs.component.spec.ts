@@ -239,6 +239,49 @@ describe('NpcsComponent', () => {
       }));
     });
 
+    it('inclui racaId e classeId no payload quando selecionados via form', async () => {
+      // NOTA JIT: p-select não é interativo via fireEvent em ambiente JIT (sem browser).
+      // Testamos o comportamento do form diretamente: quando racaId/classeId têm valor,
+      // o DTO enviado ao serviço deve incluí-los.
+      const { fichaService, fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as any;
+      comp.form.patchValue({ nome: 'Orc Guerreiro', racaId: 3, classeId: 3 });
+      fixture.detectChanges();
+
+      fireEvent.click(screen.getByRole('button', { name: /Criar NPC/i }));
+
+      expect(fichaService.criarNpc).toHaveBeenCalledWith(10, expect.objectContaining({
+        jogoId:   10,
+        nome:     'Orc Guerreiro',
+        racaId:   3,
+        classeId: 3,
+      }));
+    });
+
+    it('envia racaId e classeId como null quando campos opcionais não são preenchidos', async () => {
+      const { fichaService, fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as any;
+      comp.form.patchValue({ nome: 'Espectro Sem Classe' });
+      fixture.detectChanges();
+
+      fireEvent.click(screen.getByRole('button', { name: /Criar NPC/i }));
+
+      expect(fichaService.criarNpc).toHaveBeenCalledWith(10, expect.objectContaining({
+        jogoId:   10,
+        nome:     'Espectro Sem Classe',
+        racaId:   null,
+        classeId: null,
+      }));
+    });
+
     it('exibe toast de sucesso após criar NPC', async () => {
       const { toastService } = await renderNpcsComponent({ npcs: [] });
 
