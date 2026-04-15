@@ -274,7 +274,7 @@ interface SelectOption {
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '50rem' }"
+      [style]="{ width: '56rem', maxWidth: '95vw' }"
     >
       <p-tabs [value]="activeTab()">
         <p-tablist>
@@ -997,7 +997,7 @@ export class ItensConfigComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.deleteItem(id),
     });
   }

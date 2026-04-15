@@ -210,7 +210,7 @@ export class GenerosConfigComponent extends BaseConfigComponent<GeneroConfig, Ge
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }

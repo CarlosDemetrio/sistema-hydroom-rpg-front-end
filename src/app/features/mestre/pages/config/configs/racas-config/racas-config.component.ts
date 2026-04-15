@@ -106,6 +106,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [style]="{ width: '56rem', maxWidth: '95vw' }"
     >
       <p-tabs [value]="activeTab()">
         <p-tablist>
@@ -810,7 +811,7 @@ export class RacasConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }
@@ -903,7 +904,7 @@ export class RacasConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, remover',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.deletePontosConfig(pontosConfigId),
     });
   }
@@ -966,7 +967,7 @@ export class RacasConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, remover',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.deleteVantagemPreDefinida(predefinidaId),
     });
   }

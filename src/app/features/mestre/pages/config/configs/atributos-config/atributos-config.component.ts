@@ -112,6 +112,7 @@ import {
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [style]="{ width: '56rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -405,7 +406,7 @@ export class AtributosConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }

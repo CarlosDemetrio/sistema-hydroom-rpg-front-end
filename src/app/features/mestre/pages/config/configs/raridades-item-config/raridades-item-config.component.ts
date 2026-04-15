@@ -187,7 +187,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '36rem' }"
+      [style]="{ width: '38rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -561,7 +561,7 @@ export class RaridadesItemConfigComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }

@@ -107,6 +107,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [style]="{ width: '38rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">

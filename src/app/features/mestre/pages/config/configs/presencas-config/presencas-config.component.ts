@@ -84,6 +84,7 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [style]="{ width: '30rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -209,7 +210,7 @@ export class PresencasConfigComponent extends BaseConfigComponent<PresencaConfig
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }

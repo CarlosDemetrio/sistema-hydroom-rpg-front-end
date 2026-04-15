@@ -105,6 +105,7 @@ import { ClasseEquipInicialComponent } from './classe-equipamento-inicial/classe
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [style]="{ width: '56rem', maxWidth: '95vw' }"
     >
       <p-tabs [value]="activeTab()" (valueChange)="onTabChange($event)">
         <p-tablist>
@@ -809,7 +810,7 @@ export class ClassesConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, remover',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => {
         const classeId = this.selectedClasse()?.id;
         if (!classeId) return;
@@ -856,7 +857,7 @@ export class ClassesConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, remover',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => {
         const classeId = this.selectedClasse()?.id;
         if (!classeId) return;
@@ -885,7 +886,7 @@ export class ClassesConfigComponent extends BaseConfigComponent<
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }
