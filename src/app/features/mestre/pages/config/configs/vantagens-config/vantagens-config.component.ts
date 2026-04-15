@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, Injector, runInInjectionContext, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -210,6 +210,24 @@ interface TipoPreRequisitoOpcao {
                   @if (form.get('categoriaVantagemId')?.invalid && form.get('categoriaVantagemId')?.touched) {
                     <small class="text-red-400">Campo obrigatório</small>
                   }
+                </div>
+
+                <!-- Tipo Vantagem (Insólitus) -->
+                <div class="flex flex-column gap-2">
+                  <div class="flex align-items-center gap-2">
+                    <p-checkbox
+                      inputId="isInsolitus"
+                      [(ngModel)]="isInsolitus"
+                      [binary]="true"
+                      data-testid="checkbox-insolitus"
+                    />
+                    <label for="isInsolitus" class="font-semibold cursor-pointer">
+                      Esta vantagem é Insólitus
+                    </label>
+                  </div>
+                  <small class="text-color-secondary">
+                    Concedida gratuitamente pelo Mestre, sem custo de pontos.
+                  </small>
                 </div>
 
                 <!-- Nível Máximo -->
@@ -644,6 +662,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
   protected service = inject(VantagemConfigService);
   private confirmationService = inject(ConfirmationService);
   private configApi = inject(ConfigApiService);
+  private injector = inject(Injector);
 
   protected drawerVisible            = signal(false);
   protected loading                  = signal(false);
@@ -651,6 +670,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
   protected activeTab                = signal('dados');
   protected selectedVantagem         = signal<VantagemConfig | null>(null);
   protected categoriasVantagem       = signal<CategoriaVantagem[]>([]);
+  protected isInsolitus              = signal(false);
 
   // Efeitos
   protected efeitos                  = signal<VantagemEfeito[]>([]);
@@ -687,22 +707,28 @@ export class VantagensConfigComponent extends BaseConfigComponent<
   ];
 
   readonly columns: ConfigTableColumn[] = [
-    { field: 'ordemExibicao',  header: 'Ordem', width: '5rem' },
-    { field: 'nome',           header: 'Nome' },
-    { field: 'sigla',          header: 'Sigla', width: '6rem' },
-    { field: 'categoriaNome',  header: 'Categoria', width: '12rem' },
-    { field: 'nivelMaximo',    header: 'Nível Máx.', width: '8rem' },
+    { field: 'ordemExibicao',     header: 'Ordem',      width: '5rem' },
+    { field: 'nome',              header: 'Nome' },
+    { field: 'sigla',             header: 'Sigla',      width: '6rem' },
+    { field: 'categoriaNome',     header: 'Categoria',  width: '12rem' },
+    { field: 'nivelMaximo',       header: 'Nível Máx.', width: '8rem' },
+    { field: 'tipoVantagemLabel', header: 'Tipo',       width: '7rem' },
   ];
 
   protected filteredItems = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
-    if (!q) return this.items();
-    return this.items().filter(
-      (v) =>
-        v.nome?.toLowerCase().includes(q) ||
-        (v.sigla ?? '').toLowerCase().includes(q) ||
-        (v.categoriaNome ?? '').toLowerCase().includes(q),
-    );
+    const base = !q
+      ? this.items()
+      : this.items().filter(
+          (v) =>
+            v.nome?.toLowerCase().includes(q) ||
+            (v.sigla ?? '').toLowerCase().includes(q) ||
+            (v.categoriaNome ?? '').toLowerCase().includes(q),
+        );
+    return base.map((v) => ({
+      ...v,
+      tipoVantagemLabel: v.tipoVantagem === 'INSOLITUS' ? 'Insólitus' : '—',
+    }));
   });
 
   protected vantagensDisponiveis = computed(() => {
@@ -743,11 +769,29 @@ export class VantagensConfigComponent extends BaseConfigComponent<
       descricaoEfeito:     ['',   [Validators.maxLength(500)]],
       descricao:           ['',   [Validators.maxLength(500)]],
       ordemExibicao:       [1,    [Validators.required, Validators.min(1)]],
+      tipoVantagem:        ['VANTAGEM'],
+    });
+  }
+
+  private setupInsolitusEffect(): void {
+    runInInjectionContext(this.injector, () => {
+      effect(() => {
+        const insolitus = this.isInsolitus();
+        this.form.patchValue({ tipoVantagem: insolitus ? 'INSOLITUS' : 'VANTAGEM' });
+        const formulaCusto = this.form.get('formulaCusto');
+        if (insolitus) {
+          formulaCusto?.disable();
+          formulaCusto?.setValue('');
+        } else {
+          formulaCusto?.enable();
+        }
+      }, { allowSignalWrites: true });
     });
   }
 
   override ngOnInit(): void {
     super.ngOnInit();
+    this.setupInsolitusEffect();
     const jogoId = this.service.currentGameId();
     if (jogoId) {
       this.configApi.listCategoriasVantagem(jogoId)
@@ -787,6 +831,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
   openDrawer(item?: VantagemConfig): void {
     this.openDialog(item);
     this.selectedVantagem.set(item ?? null);
+    this.isInsolitus.set(item?.tipoVantagem === 'INSOLITUS');
     this.activeTab.set('dados');
     this.efeitos.set([]);
     this.mostrarFormAdicionarEfeito.set(false);

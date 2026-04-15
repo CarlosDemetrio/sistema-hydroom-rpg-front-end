@@ -79,6 +79,7 @@ export interface CreateVantagemDto {
   formulaCusto?: string;
   descricaoEfeito?: string;
   ordemExibicao?: number;
+  tipoVantagem?: 'VANTAGEM' | 'INSOLITUS';
 }
 
 export interface UpdateVantagemDto {
@@ -90,4 +91,5 @@ export interface UpdateVantagemDto {
   formulaCusto?: string;
   descricaoEfeito?: string;
   ordemExibicao?: number;
+  tipoVantagem?: 'VANTAGEM' | 'INSOLITUS';
 }

@@ -1127,4 +1127,197 @@ describe('VantagensConfigComponent — aba pré-requisitos', () => {
     });
   });
 
+  // ----------------------------------------------------------
+  // 15. tipoVantagem — checkbox Insólitus no formulário
+  // ----------------------------------------------------------
+
+  describe('tipoVantagem — isInsolitus e formulário', () => {
+
+    it('deve iniciar isInsolitus como false por padrão (nova vantagem)', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(); // sem item = nova vantagem
+      fixture.detectChanges();
+
+      expect(comp.isInsolitus()).toBe(false);
+    });
+
+    it('deve setar isInsolitus=true ao abrir edição de item INSOLITUS', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemInsolitusMock);
+      fixture.detectChanges();
+
+      expect(comp.isInsolitus()).toBe(true);
+    });
+
+    it('deve setar isInsolitus=false ao abrir edição de item VANTAGEM normal', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      fixture.detectChanges();
+
+      expect(comp.isInsolitus()).toBe(false);
+    });
+
+    it('deve atualizar tipoVantagem no form para INSOLITUS ao marcar checkbox', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      fixture.detectChanges();
+
+      comp.isInsolitus.set(true);
+      fixture.detectChanges();
+
+      expect(comp.form.get('tipoVantagem').value).toBe('INSOLITUS');
+    });
+
+    it('deve atualizar tipoVantagem no form para VANTAGEM ao desmarcar checkbox', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemInsolitusMock);
+      fixture.detectChanges();
+
+      comp.isInsolitus.set(false);
+      fixture.detectChanges();
+
+      expect(comp.form.get('tipoVantagem').value).toBe('VANTAGEM');
+    });
+
+    it('deve desabilitar formulaCusto ao marcar isInsolitus=true', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      fixture.detectChanges();
+
+      comp.isInsolitus.set(true);
+      fixture.detectChanges();
+
+      expect(comp.form.get('formulaCusto').disabled).toBe(true);
+    });
+
+    it('deve limpar formulaCusto ao marcar isInsolitus=true', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      comp.form.get('formulaCusto').setValue('nivel * 2');
+      fixture.detectChanges();
+
+      comp.isInsolitus.set(true);
+      fixture.detectChanges();
+
+      expect(comp.form.get('formulaCusto').value).toBe('');
+    });
+
+    it('deve reabilitar formulaCusto ao desmarcar isInsolitus', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemInsolitusMock);
+      fixture.detectChanges();
+
+      // Garante que está desabilitado (INSOLITUS)
+      expect(comp.form.get('formulaCusto').disabled).toBe(true);
+
+      comp.isInsolitus.set(false);
+      fixture.detectChanges();
+
+      expect(comp.form.get('formulaCusto').enabled).toBe(true);
+    });
+
+    it('deve ter campo tipoVantagem definido no formulário', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      // O form deve ter o controle tipoVantagem
+      expect(comp.form.get('tipoVantagem')).not.toBeNull();
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 16. tipoVantagemLabel — campo virtual em filteredItems()
+  // ----------------------------------------------------------
+
+  describe('tipoVantagemLabel — campo virtual na tabela', () => {
+
+    it('deve mapear tipoVantagem INSOLITUS para "Insólitus" na coluna', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      fixture.detectChanges();
+
+      const items = comp.filteredItems();
+      const insolitus = items.find((v: { id: number }) => v.id === vantagemInsolitusMock.id);
+      expect(insolitus).toBeTruthy();
+      expect(insolitus.tipoVantagemLabel).toBe('Insólitus');
+    });
+
+    it('deve mapear tipoVantagem VANTAGEM para "—" na coluna', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      fixture.detectChanges();
+
+      const items = comp.filteredItems();
+      const vantagem = items.find((v: { id: number }) => v.id === vantagemTCOMock.id);
+      expect(vantagem).toBeTruthy();
+      expect(vantagem.tipoVantagemLabel).toBe('—');
+    });
+
+    it('deve mapear tipoVantagem undefined como "—" na coluna', async () => {
+      const vantagemSemTipo: VantagemConfig = {
+        ...vantagemTCOMock,
+        id: 99,
+        tipoVantagem: undefined,
+      };
+      const { fixture } = await renderVantagens({ vantagens: [vantagemSemTipo] });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      fixture.detectChanges();
+
+      const items = comp.filteredItems();
+      expect(items[0].tipoVantagemLabel).toBe('—');
+    });
+
+    it('deve incluir tipoVantagemLabel em resultados filtrados por nome', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.searchQuery.set('chama');
+      fixture.detectChanges();
+
+      const items = comp.filteredItems();
+      expect(items.length).toBe(1);
+      expect(items[0].tipoVantagemLabel).toBe('Insólitus');
+    });
+
+    it('deve conter coluna tipoVantagemLabel no array columns', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      const colTipo = comp.columns.find((c: { field: string }) => c.field === 'tipoVantagemLabel');
+      expect(colTipo).toBeTruthy();
+      expect(colTipo.header).toBe('Tipo');
+      expect(colTipo.width).toBe('7rem');
+    });
+  });
+
 });
