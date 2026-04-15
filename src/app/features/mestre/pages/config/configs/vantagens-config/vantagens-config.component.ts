@@ -6,10 +6,12 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
@@ -23,14 +25,30 @@ import {
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
 import { VantagemConfig, CategoriaVantagem } from '@core/models';
+import {
+  VantagemPreRequisito,
+  AddPreRequisitoDto,
+  TipoPreRequisito,
+} from '@core/models/vantagem-config.model';
 import { AtributoConfig } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
-import { BonusConfig, DadoProspeccaoConfig, MembroCorpoConfig } from '@core/models/config.models';
+import {
+  BonusConfig,
+  ClassePersonagem,
+  DadoProspeccaoConfig,
+  MembroCorpoConfig,
+  Raca,
+} from '@core/models/config.models';
 import { VantagemEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
 import { VantagemConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { uniqueNameValidator } from '@shared/validators/config-validators';
 import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
+
+interface TipoPreRequisitoOpcao {
+  label: string;
+  value: TipoPreRequisito;
+}
 
 @Component({
   selector: 'app-vantagens-config',
@@ -41,10 +59,12 @@ import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
     ButtonModule,
     CardModule,
     CheckboxModule,
+    ChipModule,
     ConfirmDialogModule,
     DialogModule,
     InputNumberModule,
     InputTextModule,
+    MessageModule,
     SelectModule,
     SkeletonModule,
     TabsModule,
@@ -284,49 +304,229 @@ import { EfeitoFormComponent } from './efeito-form/efeito-form.component';
           <p-tabpanel value="prerequisitos">
             <div class="flex flex-column gap-3 p-2">
               <div class="rpg-section-title">Pré-requisitos para esta Vantagem</div>
-              <small class="text-color-secondary">
-                O jogador deve ter todas as vantagens listadas abaixo para comprar esta.
-              </small>
 
+              <!-- Hint de lógica OR/AND -->
+              <p-message severity="info" styleClass="w-full" data-testid="hint-or-and">
+                Pré-requisitos do <strong>mesmo tipo</strong> são alternativos (OU). Tipos diferentes são cumulativos (E).
+                Exemplo: [RAÇA] Elfo OU Anão  E  [ATRIBUTO] FOR ≥ 14
+              </p-message>
+
+              <!-- Lista de chips por tipo -->
               @if (selectedVantagem()?.preRequisitos?.length) {
-                <div class="flex flex-column gap-2">
+                <div class="flex flex-wrap gap-2" data-testid="lista-prerequisitos">
                   @for (pr of selectedVantagem()!.preRequisitos; track pr.id) {
-                    <div class="flex justify-content-between align-items-center p-3 surface-100 border-round">
-                      <span class="font-semibold">{{ pr.preRequisitoNome }}</span>
-                      <p-button
-                        icon="pi pi-trash"
-                        [rounded]="true"
-                        [text]="true"
-                        severity="danger"
-                        (onClick)="removePreRequisito(pr.id)"
-                        pTooltip="Remover pré-requisito"
-                      />
-                    </div>
+                    <p-chip
+                      [label]="labelPreRequisito(pr)"
+                      [removable]="true"
+                      (onRemove)="removePreRequisito(pr.id)"
+                      styleClass="chip-prerequisito"
+                    />
                   }
                 </div>
               } @else {
-                <div class="text-center p-4 text-color-secondary">
-                  <i class="pi pi-inbox text-3xl mb-2 block"></i>
-                  <p class="m-0">Nenhum pré-requisito configurado</p>
+                <!-- Estado vazio com CTA -->
+                <div class="flex flex-column align-items-center gap-3 p-4 surface-100 border-round text-center" data-testid="estado-vazio-prerequisitos">
+                  <i class="pi pi-list text-3xl text-color-secondary"></i>
+                  <p class="m-0 text-color-secondary">Nenhum pré-requisito configurado</p>
+                  <p-button
+                    label="Adicionar primeiro pré-requisito"
+                    icon="pi pi-plus"
+                    [outlined]="true"
+                    size="small"
+                    (onClick)="mostrarFormAdicionarPreRequisito.set(true)"
+                    data-testid="btn-adicionar-primeiro-prerequisito"
+                  />
                 </div>
               }
 
-              <div class="flex gap-2 mt-2">
-                <p-select
-                  [options]="vantagensDisponiveis()"
-                  [(ngModel)]="selectedPreRequisitoId"
-                  optionLabel="nome"
-                  optionValue="id"
-                  placeholder="Selecione uma vantagem..."
-                  class="flex-1"
-                />
+              <!-- Formulário de adição -->
+              @if (mostrarFormAdicionarPreRequisito()) {
+                <div class="flex flex-column gap-3 p-3 border-1 border-round surface-border" data-testid="form-adicionar-prerequisito">
+                  <p class="font-semibold m-0">Novo Pré-requisito</p>
+
+                  <!-- Select tipo -->
+                  <div class="flex flex-column gap-2">
+                    <label class="font-semibold text-sm">
+                      Tipo <span class="text-red-400">*</span>
+                    </label>
+                    <p-select
+                      [options]="tiposPreRequisito"
+                      [(ngModel)]="novoPreRequisitoTipo"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Selecione o tipo..."
+                      (onChange)="onTipoPreRequisitoChange()"
+                      data-testid="select-tipo-prerequisito"
+                    />
+                  </div>
+
+                  <!-- Campos condicionais por tipo -->
+
+                  @if (novoPreRequisitoTipo() === 'VANTAGEM') {
+                    <div class="flex flex-column gap-2" data-testid="campos-tipo-VANTAGEM">
+                      <label class="font-semibold text-sm">
+                        Vantagem <span class="text-red-400">*</span>
+                      </label>
+                      <p-select
+                        [options]="vantagensDisponiveis()"
+                        [(ngModel)]="novoPreRequisitoVantagemId"
+                        optionValue="id"
+                        placeholder="Selecione a vantagem..."
+                        data-testid="select-vantagem-prerequisito"
+                      >
+                        <ng-template #item let-v>
+                          <div class="flex align-items-center gap-2">
+                            @if (v.tipoVantagem === 'INSOLITUS') {
+                              <p-tag value="INSÓLITUS" severity="warn" styleClass="text-xs" />
+                            }
+                            <span>{{ v.nome }}</span>
+                          </div>
+                        </ng-template>
+                        <ng-template #selectedItem let-v>
+                          <div class="flex align-items-center gap-2">
+                            @if (v?.tipoVantagem === 'INSOLITUS') {
+                              <p-tag value="INSÓLITUS" severity="warn" styleClass="text-xs" />
+                            }
+                            <span>{{ v?.nome }}</span>
+                          </div>
+                        </ng-template>
+                      </p-select>
+                      <label class="font-semibold text-sm mt-1">Nível mínimo</label>
+                      <p-input-number
+                        [(ngModel)]="novoPreRequisitoNivelMinimo"
+                        [showButtons]="true"
+                        [min]="1"
+                        [max]="99"
+                        data-testid="input-nivel-minimo-vantagem"
+                      />
+                    </div>
+                  }
+
+                  @if (novoPreRequisitoTipo() === 'RACA') {
+                    <div class="flex flex-column gap-2" data-testid="campos-tipo-RACA">
+                      <label class="font-semibold text-sm">
+                        Raça <span class="text-red-400">*</span>
+                      </label>
+                      <p-select
+                        [options]="racas()"
+                        [(ngModel)]="novoPreRequisitoRacaId"
+                        optionLabel="nome"
+                        optionValue="id"
+                        placeholder="Selecione a raça..."
+                        data-testid="select-raca-prerequisito"
+                      />
+                    </div>
+                  }
+
+                  @if (novoPreRequisitoTipo() === 'CLASSE') {
+                    <div class="flex flex-column gap-2" data-testid="campos-tipo-CLASSE">
+                      <label class="font-semibold text-sm">
+                        Classe <span class="text-red-400">*</span>
+                      </label>
+                      <p-select
+                        [options]="classes()"
+                        [(ngModel)]="novoPreRequisitoClasseId"
+                        optionLabel="nome"
+                        optionValue="id"
+                        placeholder="Selecione a classe..."
+                        data-testid="select-classe-prerequisito"
+                      />
+                    </div>
+                  }
+
+                  @if (novoPreRequisitoTipo() === 'ATRIBUTO') {
+                    <div class="flex flex-column gap-2" data-testid="campos-tipo-ATRIBUTO">
+                      <label class="font-semibold text-sm">
+                        Atributo <span class="text-red-400">*</span>
+                      </label>
+                      <p-select
+                        [options]="atributosConfig()"
+                        [(ngModel)]="novoPreRequisitoAtributoId"
+                        optionLabel="nome"
+                        optionValue="id"
+                        placeholder="Selecione o atributo..."
+                        data-testid="select-atributo-prerequisito"
+                      />
+                      <label class="font-semibold text-sm mt-1">
+                        Valor mínimo <span class="text-red-400">*</span>
+                      </label>
+                      <p-input-number
+                        [(ngModel)]="novoPreRequisitoValorMinimo"
+                        [showButtons]="true"
+                        [min]="1"
+                        data-testid="input-valor-minimo-atributo"
+                      />
+                    </div>
+                  }
+
+                  @if (novoPreRequisitoTipo() === 'NIVEL') {
+                    <div class="flex flex-column gap-2" data-testid="campos-tipo-NIVEL">
+                      <label class="font-semibold text-sm">
+                        Nível mínimo do personagem <span class="text-red-400">*</span>
+                      </label>
+                      <p-input-number
+                        [(ngModel)]="novoPreRequisitoValorMinimo"
+                        [showButtons]="true"
+                        [min]="1"
+                        data-testid="input-nivel-minimo-personagem"
+                      />
+                    </div>
+                  }
+
+                  @if (novoPreRequisitoTipo() === 'APTIDAO') {
+                    <div class="flex flex-column gap-2" data-testid="campos-tipo-APTIDAO">
+                      <label class="font-semibold text-sm">
+                        Aptidão <span class="text-red-400">*</span>
+                      </label>
+                      <p-select
+                        [options]="aptidoesConfig()"
+                        [(ngModel)]="novoPreRequisitoAptidaoId"
+                        optionLabel="nome"
+                        optionValue="id"
+                        placeholder="Selecione a aptidão..."
+                        data-testid="select-aptidao-prerequisito"
+                      />
+                      <label class="font-semibold text-sm mt-1">
+                        Valor mínimo <span class="text-red-400">*</span>
+                      </label>
+                      <p-input-number
+                        [(ngModel)]="novoPreRequisitoValorMinimo"
+                        [showButtons]="true"
+                        [min]="1"
+                        data-testid="input-valor-minimo-aptidao"
+                      />
+                    </div>
+                  }
+
+                  <div class="flex gap-2 mt-2">
+                    <p-button
+                      label="Adicionar"
+                      icon="pi pi-plus"
+                      [disabled]="!preRequisitoFormValido()"
+                      (onClick)="addPreRequisito()"
+                      data-testid="btn-confirmar-adicionar-prerequisito"
+                    />
+                    <p-button
+                      label="Cancelar"
+                      severity="secondary"
+                      [outlined]="true"
+                      (onClick)="cancelarAdicionarPreRequisito()"
+                    />
+                  </div>
+                </div>
+              }
+
+              <!-- Botão para abrir formulário (quando já existem pré-requisitos) -->
+              @if (!mostrarFormAdicionarPreRequisito() && selectedVantagem()?.preRequisitos?.length) {
                 <p-button
+                  label="Adicionar pré-requisito"
                   icon="pi pi-plus"
-                  label="Adicionar"
-                  [disabled]="!selectedPreRequisitoId()"
-                  (onClick)="addPreRequisito()"
+                  [outlined]="true"
+                  (onClick)="mostrarFormAdicionarPreRequisito.set(true)"
+                  data-testid="btn-adicionar-prerequisito"
                 />
-              </div>
+              }
+
             </div>
           </p-tabpanel>
 
@@ -445,25 +645,46 @@ export class VantagensConfigComponent extends BaseConfigComponent<
   private confirmationService = inject(ConfirmationService);
   private configApi = inject(ConfigApiService);
 
-  protected drawerVisible           = signal(false);
-  protected loading                 = signal(false);
-  protected searchQuery             = signal('');
-  protected activeTab               = signal('dados');
-  protected selectedVantagem        = signal<VantagemConfig | null>(null);
-  protected selectedPreRequisitoId  = signal<number | null>(null);
-  protected categoriasVantagem      = signal<CategoriaVantagem[]>([]);
+  protected drawerVisible            = signal(false);
+  protected loading                  = signal(false);
+  protected searchQuery              = signal('');
+  protected activeTab                = signal('dados');
+  protected selectedVantagem         = signal<VantagemConfig | null>(null);
+  protected categoriasVantagem       = signal<CategoriaVantagem[]>([]);
 
   // Efeitos
-  protected efeitos                 = signal<VantagemEfeito[]>([]);
-  protected loadingEfeitos          = signal(false);
+  protected efeitos                  = signal<VantagemEfeito[]>([]);
+  protected loadingEfeitos           = signal(false);
   protected mostrarFormAdicionarEfeito = signal(false);
 
-  // Dados de configuração para os dropdowns do formulário de efeito
+  // Pré-requisitos — formulário de adição
+  protected mostrarFormAdicionarPreRequisito = signal(false);
+  protected novoPreRequisitoTipo     = signal<TipoPreRequisito | null>(null);
+  protected novoPreRequisitoVantagemId  = signal<number | null>(null);
+  protected novoPreRequisitoNivelMinimo = signal<number>(1);
+  protected novoPreRequisitoRacaId   = signal<number | null>(null);
+  protected novoPreRequisitoClasseId = signal<number | null>(null);
+  protected novoPreRequisitoAtributoId = signal<number | null>(null);
+  protected novoPreRequisitoAptidaoId  = signal<number | null>(null);
+  protected novoPreRequisitoValorMinimo = signal<number | null>(null);
+
+  // Dados de configuração para os dropdowns
   protected atributosConfig  = signal<AtributoConfig[]>([]);
   protected aptidoesConfig   = signal<AptidaoConfig[]>([]);
   protected bonusConfig      = signal<BonusConfig[]>([]);
   protected membrosConfig    = signal<MembroCorpoConfig[]>([]);
   protected dadosConfig      = signal<DadoProspeccaoConfig[]>([]);
+  protected racas            = signal<Raca[]>([]);
+  protected classes          = signal<ClassePersonagem[]>([]);
+
+  readonly tiposPreRequisito: TipoPreRequisitoOpcao[] = [
+    { label: 'Vantagem',  value: 'VANTAGEM'  },
+    { label: 'Raça',      value: 'RACA'      },
+    { label: 'Classe',    value: 'CLASSE'    },
+    { label: 'Atributo',  value: 'ATRIBUTO'  },
+    { label: 'Nível',     value: 'NIVEL'     },
+    { label: 'Aptidão',   value: 'APTIDAO'   },
+  ];
 
   readonly columns: ConfigTableColumn[] = [
     { field: 'ordemExibicao',  header: 'Ordem', width: '5rem' },
@@ -486,8 +707,27 @@ export class VantagensConfigComponent extends BaseConfigComponent<
 
   protected vantagensDisponiveis = computed(() => {
     const self = this.selectedVantagem()?.id;
-    const jaIds = new Set((this.selectedVantagem()?.preRequisitos ?? []).map((p) => p.preRequisitoId));
+    const jaIds = new Set(
+      (this.selectedVantagem()?.preRequisitos ?? [])
+        .filter((p) => p.tipo === 'VANTAGEM')
+        .map((p) => p.preRequisitoId),
+    );
     return this.items().filter((v) => v.id !== self && !jaIds.has(v.id));
+  });
+
+  /** Valida se os campos obrigatórios do tipo selecionado estão preenchidos. */
+  protected preRequisitoFormValido = computed((): boolean => {
+    const tipo = this.novoPreRequisitoTipo();
+    if (!tipo) return false;
+    switch (tipo) {
+      case 'VANTAGEM':  return this.novoPreRequisitoVantagemId() != null;
+      case 'RACA':      return this.novoPreRequisitoRacaId() != null;
+      case 'CLASSE':    return this.novoPreRequisitoClasseId() != null;
+      case 'ATRIBUTO':  return this.novoPreRequisitoAtributoId() != null && this.novoPreRequisitoValorMinimo() != null;
+      case 'NIVEL':     return this.novoPreRequisitoValorMinimo() != null;
+      case 'APTIDAO':   return this.novoPreRequisitoAptidaoId() != null && this.novoPreRequisitoValorMinimo() != null;
+      default:          return false;
+    }
   });
 
   protected getEntityName(): string { return 'Vantagem'; }
@@ -533,6 +773,14 @@ export class VantagensConfigComponent extends BaseConfigComponent<
       this.configApi.listDadosProspeccao(jogoId)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({ next: (d) => this.dadosConfig.set(d) });
+
+      this.configApi.listRacas(jogoId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (r) => this.racas.set(r) });
+
+      this.configApi.listClasses(jogoId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (c) => this.classes.set(c) });
     }
   }
 
@@ -542,6 +790,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
     this.activeTab.set('dados');
     this.efeitos.set([]);
     this.mostrarFormAdicionarEfeito.set(false);
+    this.resetFormPreRequisito();
     this.drawerVisible.set(true);
     if (item?.id) {
       this.carregarEfeitos(item.id);
@@ -553,6 +802,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
     this.selectedVantagem.set(null);
     this.efeitos.set([]);
     this.mostrarFormAdicionarEfeito.set(false);
+    this.resetFormPreRequisito();
     this.closeDialog();
   }
 
@@ -604,15 +854,76 @@ export class VantagensConfigComponent extends BaseConfigComponent<
     });
   }
 
+  // ============================================================
+  // Pré-requisitos polimórficos
+  // ============================================================
+
+  /** Retorna label legível para exibição no chip. */
+  labelPreRequisito(pr: VantagemPreRequisito): string {
+    switch (pr.tipo) {
+      case 'VANTAGEM':
+        return `Vantagem: ${pr.preRequisitoNome ?? '?'} (nível ${pr.nivelMinimo ?? 1})`;
+      case 'RACA':
+        return `Raça: ${pr.racaNome ?? '?'}`;
+      case 'CLASSE':
+        return `Classe: ${pr.classeNome ?? '?'}`;
+      case 'ATRIBUTO':
+        return `${pr.atributoAbreviacao ?? pr.atributoNome ?? '?'} \u2265 ${pr.valorMinimo ?? '?'}`;
+      case 'NIVEL':
+        return `Nível \u2265 ${pr.valorMinimo ?? '?'}`;
+      case 'APTIDAO':
+        return `Aptidão: ${pr.aptidaoNome ?? '?'} \u2265 ${pr.valorMinimo ?? '?'}`;
+      default:
+        return 'Pré-requisito';
+    }
+  }
+
+  onTipoPreRequisitoChange(): void {
+    this.novoPreRequisitoVantagemId.set(null);
+    this.novoPreRequisitoNivelMinimo.set(1);
+    this.novoPreRequisitoRacaId.set(null);
+    this.novoPreRequisitoClasseId.set(null);
+    this.novoPreRequisitoAtributoId.set(null);
+    this.novoPreRequisitoAptidaoId.set(null);
+    this.novoPreRequisitoValorMinimo.set(null);
+  }
+
   addPreRequisito(): void {
     const vantagemId = this.selectedVantagem()?.id;
-    const prId = this.selectedPreRequisitoId();
-    if (!vantagemId || !prId) return;
-    this.configApi.addVantagemPreRequisito(vantagemId, { preRequisitoId: prId })
+    const tipo = this.novoPreRequisitoTipo();
+    if (!vantagemId || !tipo) return;
+
+    const dto: AddPreRequisitoDto = { tipo };
+
+    switch (tipo) {
+      case 'VANTAGEM':
+        dto.preRequisitoId = this.novoPreRequisitoVantagemId()!;
+        dto.nivelMinimo    = this.novoPreRequisitoNivelMinimo();
+        break;
+      case 'RACA':
+        dto.racaId = this.novoPreRequisitoRacaId()!;
+        break;
+      case 'CLASSE':
+        dto.classeId = this.novoPreRequisitoClasseId()!;
+        break;
+      case 'ATRIBUTO':
+        dto.atributoId   = this.novoPreRequisitoAtributoId()!;
+        dto.valorMinimo  = this.novoPreRequisitoValorMinimo()!;
+        break;
+      case 'NIVEL':
+        dto.valorMinimo = this.novoPreRequisitoValorMinimo()!;
+        break;
+      case 'APTIDAO':
+        dto.aptidaoId   = this.novoPreRequisitoAptidaoId()!;
+        dto.valorMinimo = this.novoPreRequisitoValorMinimo()!;
+        break;
+    }
+
+    this.configApi.addVantagemPreRequisito(vantagemId, dto)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.selectedPreRequisitoId.set(null);
+          this.resetFormPreRequisito();
           this.refreshSelectedVantagem(vantagemId);
           this.toastService.success('Pré-requisito adicionado', 'Sucesso');
         },
@@ -630,6 +941,22 @@ export class VantagensConfigComponent extends BaseConfigComponent<
           this.toastService.success('Pré-requisito removido', 'Sucesso');
         },
       });
+  }
+
+  cancelarAdicionarPreRequisito(): void {
+    this.resetFormPreRequisito();
+  }
+
+  private resetFormPreRequisito(): void {
+    this.mostrarFormAdicionarPreRequisito.set(false);
+    this.novoPreRequisitoTipo.set(null);
+    this.novoPreRequisitoVantagemId.set(null);
+    this.novoPreRequisitoNivelMinimo.set(1);
+    this.novoPreRequisitoRacaId.set(null);
+    this.novoPreRequisitoClasseId.set(null);
+    this.novoPreRequisitoAtributoId.set(null);
+    this.novoPreRequisitoAptidaoId.set(null);
+    this.novoPreRequisitoValorMinimo.set(null);
   }
 
   private refreshSelectedVantagem(vantagemId: number): void {

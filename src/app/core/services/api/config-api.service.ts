@@ -22,7 +22,7 @@ import { ClasseEquipamentoInicial, CreateClasseEquipamentoInicialDto, UpdateClas
 import { AtributoConfig, CreateAtributoDto, UpdateAtributoDto } from '@core/models/atributo-config.model';
 import { AptidaoConfig, CreateAptidaoDto, UpdateAptidaoDto } from '@core/models/aptidao-config.model';
 import { TipoAptidao } from '@core/models/tipo-aptidao.model';
-import { VantagemConfig, CreateVantagemDto, UpdateVantagemDto } from '@core/models/vantagem-config.model';
+import { VantagemConfig, VantagemPreRequisito, AddPreRequisitoDto, CreateVantagemDto, UpdateVantagemDto } from '@core/models/vantagem-config.model';
 import { VantagemEfeito, CriarVantagemEfeitoDto } from '@core/models/vantagem-efeito.model';
 import {
   PontosVantagemConfig,
@@ -301,13 +301,13 @@ export class ConfigApiService {
     return this.http.put<void>(`${this.configUrl}/vantagens/reordenar?jogoId=${jogoId}`, request);
   }
 
-  // Sub-recursos de Vantagem (pré-requisitos)
-  listVantagemPreRequisitos(vantagemId: number): Observable<unknown[]> {
-    return this.http.get<unknown[]>(`${this.configUrl}/vantagens/${vantagemId}/prerequisitos`);
+  // Sub-recursos de Vantagem (pré-requisitos polimórficos)
+  listVantagemPreRequisitos(vantagemId: number): Observable<VantagemPreRequisito[]> {
+    return this.http.get<VantagemPreRequisito[]>(`${this.configUrl}/vantagens/${vantagemId}/prerequisitos`);
   }
 
-  addVantagemPreRequisito(vantagemId: number, dto: { preRequisitoId: number }): Observable<unknown> {
-    return this.http.post<unknown>(`${this.configUrl}/vantagens/${vantagemId}/prerequisitos`, dto);
+  addVantagemPreRequisito(vantagemId: number, dto: AddPreRequisitoDto): Observable<VantagemPreRequisito> {
+    return this.http.post<VantagemPreRequisito>(`${this.configUrl}/vantagens/${vantagemId}/prerequisitos`, dto);
   }
 
   removeVantagemPreRequisito(vantagemId: number, prId: number): Observable<void> {

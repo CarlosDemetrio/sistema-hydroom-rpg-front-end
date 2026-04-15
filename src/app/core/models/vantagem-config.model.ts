@@ -1,14 +1,48 @@
 import { VantagemEfeito } from './vantagem-efeito.model';
 
+export type TipoPreRequisito = 'VANTAGEM' | 'RACA' | 'CLASSE' | 'ATRIBUTO' | 'NIVEL' | 'APTIDAO';
+
 /**
- * Pré-requisito de uma vantagem.
- * Aligned with backend VantagemPreRequisitoResponse record.
+ * Pré-requisito polimórfico de uma vantagem.
+ * Aligned with backend VantagemPreRequisitoResponse record (campos adicionados na Spec 023).
  */
 export interface VantagemPreRequisito {
   id: number;
   vantagemId: number;
-  preRequisitoId: number;
-  preRequisitoNome: string;
+  tipo: TipoPreRequisito;
+  // tipo VANTAGEM
+  preRequisitoId?: number;
+  preRequisitoNome?: string;
+  nivelMinimo?: number;
+  // tipo RACA
+  racaId?: number;
+  racaNome?: string;
+  // tipo CLASSE
+  classeId?: number;
+  classeNome?: string;
+  // tipo ATRIBUTO
+  atributoId?: number;
+  atributoNome?: string;
+  atributoAbreviacao?: string;
+  // tipo APTIDAO
+  aptidaoId?: number;
+  aptidaoNome?: string;
+  // tipo ATRIBUTO, APTIDAO, NIVEL
+  valorMinimo?: number;
+}
+
+/**
+ * DTO para adicionar pré-requisito polimórfico.
+ */
+export interface AddPreRequisitoDto {
+  tipo: TipoPreRequisito;
+  preRequisitoId?: number;
+  nivelMinimo?: number;
+  racaId?: number;
+  classeId?: number;
+  atributoId?: number;
+  aptidaoId?: number;
+  valorMinimo?: number;
 }
 
 /**
