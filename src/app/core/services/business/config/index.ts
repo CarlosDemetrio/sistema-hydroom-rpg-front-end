@@ -29,5 +29,11 @@ export * from './habilidade-config.service';
 // Tipo Item Service
 export * from './tipo-item-config.service';
 
+// Raridade Item Service
+export * from './raridade-item-config.service';
+
+// Item Config Service
+export * from './item-config.service';
+
 // Facade Service
 export * from './config-facade.service';
