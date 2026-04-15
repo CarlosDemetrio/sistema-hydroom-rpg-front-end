@@ -70,6 +70,11 @@ export const routes: Routes = [
             canActivate: [currentGameGuard]
           },
           {
+            path: 'prospeccao-pendentes',
+            loadComponent: () => import('./features/mestre/pages/prospeccao-pendentes/prospeccao-pendentes.component').then(m => m.ProspeccaoPendentesComponent),
+            canActivate: [currentGameGuard]
+          },
+          {
             path: 'fichas/criar',
             loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent),
             canActivate: [currentGameGuard]

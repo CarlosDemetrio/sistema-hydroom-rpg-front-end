@@ -78,6 +78,11 @@ export class SidebarComponent implements OnInit {
             command: () => this.router.navigate(['/mestre/jogos/novo'])
           },
           {
+            label: 'Prospecções Pendentes',
+            icon: 'pi pi-clock',
+            command: () => this.router.navigate(['/mestre/prospeccao-pendentes'])
+          },
+          {
             label: 'Configurações',
             icon: 'pi pi-cog',
             command: () => this.router.navigate(['/mestre/config'])
