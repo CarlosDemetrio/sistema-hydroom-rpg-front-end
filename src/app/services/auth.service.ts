@@ -62,11 +62,9 @@ export class AuthService {
 
   logout(): Observable<any> {
     const url = `${this.apiUrl}/auth/logout`;
-    console.log('[LOGOUT] Iniciando logout para:', url);
 
     return this.http.post(url, {}, { withCredentials: true }).pipe(
       tap(() => {
-        console.log('[LOGOUT] Requisição completada com sucesso');
         this.setCurrentUser(null);
       })
     );
