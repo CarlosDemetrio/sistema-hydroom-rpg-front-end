@@ -796,7 +796,8 @@ export class FichaDetailComponent implements OnInit {
   protected irParaEdicao(): void {
     const fichaId = this.fichaId();
     if (fichaId) {
-      this.router.navigate(['/fichas', fichaId, 'editar']);
+      const prefixo = this.isMestre() ? '/mestre' : '/jogador';
+      this.router.navigate([prefixo, 'fichas', fichaId, 'edit']);
     }
   }
 
@@ -849,7 +850,8 @@ export class FichaDetailComponent implements OnInit {
     this.fichaBusinessService.deleteFicha(fichaId).subscribe({
       next: () => {
         this.toastService.success('Ficha deletada com sucesso.');
-        this.router.navigate(['/fichas']);
+        const prefixo = this.isMestre() ? '/mestre' : '/jogador';
+        this.router.navigate([prefixo, 'fichas']);
       },
       error: () => {
         this.toastService.error('Erro ao deletar a ficha.');
@@ -873,7 +875,8 @@ export class FichaDetailComponent implements OnInit {
         this.showDuplicarDialog.set(false);
         this.novoNomeDuplicar.set('');
         this.duplicando.set(false);
-        this.router.navigate(['/fichas', resultado.fichaId]);
+        const prefixo = this.isMestre() ? '/mestre' : '/jogador';
+        this.router.navigate([prefixo, 'fichas', resultado.fichaId]);
       },
       error: () => {
         this.toastService.error('Erro ao duplicar a ficha.');
