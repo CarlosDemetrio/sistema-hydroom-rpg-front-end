@@ -1,6 +1,7 @@
 /**
  * HabilidadesConfigComponent — Spec (Mestre)
  *
+ * Migrado para BaseConfigComponent + HabilidadeConfigService.
  * NOTA JIT: Usa overrideTemplate para evitar NG0950 em modo JIT no Vitest.
  * Foco: sinais, CRUD, tratamento de 409, truncamento, estado sem jogo.
  */
@@ -12,6 +13,7 @@ import { vi } from 'vitest';
 import { ConfirmationService } from 'primeng/api';
 
 import { HabilidadesConfigComponent } from './habilidades-config.component';
+import { HabilidadeConfigService } from '@core/services/business/config/habilidade-config.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { ToastService } from '@services/toast.service';
@@ -58,6 +60,22 @@ const habilidadeSemEfeitoMock: HabilidadeConfig = {
 // Helpers de mock
 // ============================================================
 
+function criarHabilidadeServiceMock(
+  habilidades: HabilidadeConfig[] = [golpeBrutalMock, chamaSagradaMock],
+  temJogo = true,
+) {
+  const jogoAtual = temJogo ? { id: 10, nome: 'Campanha Teste', ativo: true } : null;
+  return {
+    loadItems:      vi.fn().mockReturnValue(of(habilidades)),
+    createItem:     vi.fn().mockReturnValue(of(golpeBrutalMock)),
+    updateItem:     vi.fn().mockReturnValue(of(golpeBrutalMock)),
+    deleteItem:     vi.fn().mockReturnValue(of(void 0)),
+    currentGameId:  () => (temJogo ? 10 : null),
+    hasCurrentGame: () => temJogo,
+    currentGame:    () => jogoAtual,
+  };
+}
+
 function criarConfigApiMock(
   habilidades: HabilidadeConfig[] = [golpeBrutalMock, chamaSagradaMock],
 ) {
@@ -100,7 +118,7 @@ const TEMPLATE_STUB = `
     @if (!hasGame()) {
       <p id="sem-jogo">Nenhum jogo selecionado</p>
     }
-    @for (h of habilidades(); track h.id) {
+    @for (h of items(); track h.id) {
       <span class="habilidade-nome">{{ h.nome }}</span>
       <span class="habilidade-efeito">{{ h.danoEfeito }}</span>
     }
@@ -120,6 +138,7 @@ async function renderHabilidades(
   habilidades: HabilidadeConfig[] = [golpeBrutalMock, chamaSagradaMock],
   temJogo = true,
 ) {
+  const habilidadeServiceMock  = criarHabilidadeServiceMock(habilidades, temJogo);
   const configApiMock          = criarConfigApiMock(habilidades);
   const currentGameServiceMock = criarCurrentGameServiceMock(temJogo);
   const toastServiceMock       = criarToastServiceMock();
@@ -129,15 +148,16 @@ async function renderHabilidades(
       tb.overrideTemplate(HabilidadesConfigComponent, TEMPLATE_STUB);
     },
     providers: [
-      { provide: ConfigApiService,   useValue: configApiMock },
-      { provide: CurrentGameService, useValue: currentGameServiceMock },
-      { provide: ToastService,       useValue: toastServiceMock },
+      { provide: HabilidadeConfigService, useValue: habilidadeServiceMock },
+      { provide: ConfigApiService,        useValue: configApiMock },
+      { provide: CurrentGameService,      useValue: currentGameServiceMock },
+      { provide: ToastService,            useValue: toastServiceMock },
       ConfirmationService,
     ],
   });
 
   const confirmationService = result.fixture.componentRef.injector.get(ConfirmationService);
-  return { ...result, configApiMock, toastServiceMock, confirmationService };
+  return { ...result, habilidadeServiceMock, configApiMock, toastServiceMock, confirmationService };
 }
 
 // ============================================================
@@ -156,9 +176,9 @@ describe('HabilidadesConfigComponent', () => {
 
   describe('carregamento de dados', () => {
     it('deve carregar habilidades ao inicializar quando há jogo selecionado', async () => {
-      const { configApiMock } = await renderHabilidades();
+      const { habilidadeServiceMock } = await renderHabilidades();
 
-      expect(configApiMock.listHabilidades).toHaveBeenCalledWith(10);
+      expect(habilidadeServiceMock.loadItems).toHaveBeenCalled();
     });
 
     it('deve exibir habilidades carregadas', async () => {
@@ -169,9 +189,9 @@ describe('HabilidadesConfigComponent', () => {
     });
 
     it('não deve carregar quando não há jogo selecionado', async () => {
-      const { configApiMock } = await renderHabilidades([], false);
+      const { habilidadeServiceMock } = await renderHabilidades([], false);
 
-      expect(configApiMock.listHabilidades).not.toHaveBeenCalled();
+      expect(habilidadeServiceMock.loadItems).not.toHaveBeenCalled();
     });
 
     it('deve exibir aviso de sem jogo quando hasGame é false', async () => {
@@ -186,12 +206,12 @@ describe('HabilidadesConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('sinais de estado', () => {
-    it('habilidades deve ter 2 itens após carregamento', async () => {
+    it('items deve ter 2 itens após carregamento', async () => {
       const { fixture } = await renderHabilidades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      expect(comp.habilidades().length).toBe(2);
+      expect(comp.items().length).toBe(2);
     });
 
     it('loading deve ser false após carregar', async () => {
@@ -228,16 +248,16 @@ describe('HabilidadesConfigComponent', () => {
   });
 
   // ----------------------------------------------------------
-  // 3. openDialog e editMode
+  // 3. openDialogHabilidade e editMode
   // ----------------------------------------------------------
 
-  describe('openDialog', () => {
+  describe('openDialogHabilidade', () => {
     it('deve abrir dialog em modo criação quando chamado sem argumento', async () => {
       const { fixture } = await renderHabilidades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog();
+      comp.openDialogHabilidade();
       fixture.detectChanges();
 
       expect(comp.dialogVisible()).toBe(true);
@@ -249,7 +269,7 @@ describe('HabilidadesConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog(golpeBrutalMock);
+      comp.openDialogHabilidade(golpeBrutalMock);
       fixture.detectChanges();
 
       expect(comp.dialogVisible()).toBe(true);
@@ -264,7 +284,7 @@ describe('HabilidadesConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog();
+      comp.openDialogHabilidade();
       comp.closeDialog();
       fixture.detectChanges();
 
@@ -277,7 +297,7 @@ describe('HabilidadesConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog(habilidadeSemEfeitoMock);
+      comp.openDialogHabilidade(habilidadeSemEfeitoMock);
       fixture.detectChanges();
 
       expect(comp.form.get('danoEfeito')?.value).toBe('');
@@ -294,7 +314,7 @@ describe('HabilidadesConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog();
+      comp.openDialogHabilidade();
       comp.form.patchValue({
         nome: 'Ataque Relâmpago',
         danoEfeito: '1D10+AGI',
@@ -314,7 +334,7 @@ describe('HabilidadesConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog(golpeBrutalMock);
+      comp.openDialogHabilidade(golpeBrutalMock);
       comp.form.patchValue({ nome: 'Golpe Devastador' });
       comp.save();
 
@@ -331,7 +351,7 @@ describe('HabilidadesConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog();
+      comp.openDialogHabilidade();
       comp.form.patchValue({ nome: '' });
       comp.save();
 
@@ -351,16 +371,17 @@ describe('HabilidadesConfigComponent', () => {
           tb.overrideTemplate(HabilidadesConfigComponent, TEMPLATE_STUB);
         },
         providers: [
-          { provide: ConfigApiService,   useValue: configApiMock },
-          { provide: CurrentGameService, useValue: criarCurrentGameServiceMock() },
-          { provide: ToastService,       useValue: criarToastServiceMock() },
+          { provide: HabilidadeConfigService, useValue: criarHabilidadeServiceMock([golpeBrutalMock]) },
+          { provide: ConfigApiService,        useValue: configApiMock },
+          { provide: CurrentGameService,      useValue: criarCurrentGameServiceMock() },
+          { provide: ToastService,            useValue: criarToastServiceMock() },
           ConfirmationService,
         ],
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = result.fixture.componentInstance as any;
-      comp.openDialog();
+      comp.openDialogHabilidade();
       comp.form.patchValue({ nome: 'Golpe Brutal', ordemExibicao: 1 });
       comp.save();
       result.fixture.detectChanges();
@@ -374,8 +395,8 @@ describe('HabilidadesConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('exclusão', () => {
-    it('deve chamar deleteHabilidade ao confirmar exclusão', async () => {
-      const { fixture, configApiMock, confirmationService } = await renderHabilidades();
+    it('deve chamar service.deleteItem ao confirmar exclusão', async () => {
+      const { fixture, habilidadeServiceMock, confirmationService } = await renderHabilidades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -385,7 +406,7 @@ describe('HabilidadesConfigComponent', () => {
 
       comp.confirmDelete(1);
 
-      expect(configApiMock.deleteHabilidade).toHaveBeenCalledWith(10, 1);
+      expect(habilidadeServiceMock.deleteItem).toHaveBeenCalledWith(1);
     });
   });
 
@@ -421,6 +442,35 @@ describe('HabilidadesConfigComponent', () => {
 
       const texto60 = 'A'.repeat(60);
       expect(comp.truncar(texto60, 60)).toBe(texto60);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 7. filteredItems (busca)
+  // ----------------------------------------------------------
+
+  describe('filteredItems', () => {
+    it('deve retornar todos os itens quando searchQuery está vazio', async () => {
+      const { fixture } = await renderHabilidades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.searchQuery.set('');
+      fixture.detectChanges();
+
+      expect(comp.filteredItems().length).toBe(2);
+    });
+
+    it('deve filtrar itens pelo nome', async () => {
+      const { fixture } = await renderHabilidades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.searchQuery.set('golpe');
+      fixture.detectChanges();
+
+      expect(comp.filteredItems().length).toBe(1);
+      expect(comp.filteredItems()[0].nome).toBe('Golpe Brutal');
     });
   });
 });

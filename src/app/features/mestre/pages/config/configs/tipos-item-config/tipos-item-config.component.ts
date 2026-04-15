@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
@@ -8,6 +8,8 @@ import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -15,10 +17,9 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
+import { FormsModule } from '@angular/forms';
 
-import { ConfigApiService } from '@core/services/api/config-api.service';
-import { CurrentGameService } from '@core/services/current-game.service';
-import { ToastService } from '@services/toast.service';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import {
   TipoItemConfig,
   CategoriaItem,
@@ -28,6 +29,7 @@ import {
   SUBCATEGORIA_POR_CATEGORIA,
   CATEGORIA_SEVERITY,
 } from '@core/models/tipo-item-config.model';
+import { TipoItemConfigService } from '@core/services/business/config/tipo-item-config.service';
 
 interface SelectOption<T> {
   label: string;
@@ -37,20 +39,27 @@ interface SelectOption<T> {
 /**
  * TiposItemConfigComponent — CRUD de Tipos de Item.
  *
- * Segue o mesmo padrão visual das 13 configurações existentes.
- * Exibe tabela com badge por categoria e formulário com select filtrado de subcategoria.
+ * Migrado para estender BaseConfigComponent.
+ * Mantém tabela customizada (rowGroupMode subheader por categoria) pois
+ * BaseConfigTableComponent não suporta agrupamento de linhas.
+ *
+ * Endpoint: /api/v1/configuracoes/tipos-item
  */
 @Component({
   selector: 'app-tipos-item-config',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    FormsModule,
     BadgeModule,
     ButtonModule,
     CardModule,
     CheckboxModule,
     ConfirmDialogModule,
     DialogModule,
+    IconFieldModule,
+    InputIconModule,
     InputNumberModule,
     InputTextModule,
     SelectModule,
@@ -84,24 +93,47 @@ interface SelectOption<T> {
         </div>
       }
 
-      <!-- Header -->
-      <div class="flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2 class="m-0 text-xl font-bold">Tipos de Item</h2>
-          <p class="text-sm text-color-secondary m-0">Configure os tipos de itens disponíveis (Espada, Arco, Poção, etc.)</p>
+      <!-- Header: título + busca + botão Novo -->
+      <div
+        class="flex flex-column md:flex-row align-items-start md:align-items-center
+               justify-content-between gap-3 mb-4"
+      >
+        <div class="flex flex-column gap-1">
+          <h2 class="text-2xl font-bold m-0">
+            <i class="pi pi-cog text-primary mr-2"></i>
+            Tipos de Item
+          </h2>
+          <p class="text-color-secondary text-sm m-0">
+            Configure os tipos de itens disponíveis (Espada, Arco, Poção, etc.)
+          </p>
         </div>
-        @if (hasGame()) {
+
+        <div class="flex align-items-center gap-2 flex-wrap">
+          <!-- Campo de busca -->
+          <p-icon-field iconPosition="left">
+            <p-inputicon class="pi pi-search" />
+            <input
+              pInputText
+              type="text"
+              placeholder="Buscar tipos de item..."
+              [(ngModel)]="searchTermLocal"
+              (ngModelChange)="searchQuery.set($event)"
+              class="w-14rem"
+            />
+          </p-icon-field>
+
+          <!-- Botão Novo -->
           <p-button
-            label="Novo Tipo"
+            label="+ Novo Tipo"
             icon="pi pi-plus"
             (onClick)="openDialog()"
           />
-        }
+        </div>
       </div>
 
-      <!-- Tabela -->
+      <!-- Tabela com agrupamento por categoria -->
       <p-table
-        [value]="tipos()"
+        [value]="filteredItems()"
         [loading]="loading()"
         [paginator]="true"
         [rows]="10"
@@ -113,18 +145,18 @@ interface SelectOption<T> {
         sortField="categoria"
         [sortOrder]="1"
       >
-        <ng-template pTemplate="header">
+        <ng-template #header>
           <tr>
             <th>Nome</th>
             <th>Categoria</th>
             <th>Subcategoria</th>
             <th style="width: 6rem">2 Mãos</th>
             <th style="width: 6rem">Ordem</th>
-            <th style="width: 8rem">Ações</th>
+            <th style="width: 8rem" class="text-center">Ações</th>
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="groupheader" let-tipo>
+        <ng-template #groupheader let-tipo>
           <tr pRowGroupHeader>
             <td colspan="6">
               <div class="flex align-items-center gap-2 py-1">
@@ -140,7 +172,7 @@ interface SelectOption<T> {
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-tipo>
+        <ng-template #body let-tipo>
           <tr>
             <td class="font-semibold">{{ tipo.nome }}</td>
             <td>
@@ -160,8 +192,8 @@ interface SelectOption<T> {
               }
             </td>
             <td class="text-center">{{ tipo.ordemExibicao }}</td>
-            <td>
-              <div class="flex gap-1">
+            <td class="text-center">
+              <div class="flex gap-1 justify-content-center">
                 <p-button
                   icon="pi pi-pencil"
                   [rounded]="true"
@@ -169,26 +201,37 @@ interface SelectOption<T> {
                   severity="secondary"
                   (onClick)="openDialog(tipo)"
                   pTooltip="Editar"
+                  tooltipPosition="top"
                 />
                 <p-button
                   icon="pi pi-trash"
                   [rounded]="true"
                   [text]="true"
                   severity="danger"
-                  (onClick)="confirmDelete(tipo.id)"
+                  (onClick)="confirmDelete(tipo.id!)"
                   pTooltip="Excluir"
+                  tooltipPosition="top"
                 />
               </div>
             </td>
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="emptymessage">
+        <ng-template #emptymessage>
           <tr>
-            <td colspan="6">
-              <div class="text-center p-4 text-color-secondary">
-                <i class="pi pi-inbox text-3xl mb-2 block"></i>
-                <p class="m-0">Nenhum tipo de item configurado</p>
+            <td colspan="6" class="p-0">
+              <div class="rpg-empty-state">
+                <i class="pi pi-inbox rpg-empty-state__icon"></i>
+                <p class="rpg-empty-state__title">Nenhum tipo de item configurado</p>
+                <p class="rpg-empty-state__subtitle">
+                  Clique em "+ Novo Tipo" para criar o primeiro registro.
+                </p>
+                <p-button
+                  label="+ Novo Tipo"
+                  icon="pi pi-plus"
+                  size="small"
+                  (onClick)="openDialog()"
+                />
               </div>
             </td>
           </tr>
@@ -205,19 +248,19 @@ interface SelectOption<T> {
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '36rem' }"
+      [style]="{ width: '38rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
 
           <!-- Nome -->
           <div class="flex flex-column gap-2">
-            <label for="nome" class="font-semibold">
+            <label for="tipo-nome" class="font-semibold">
               Nome <span class="text-red-400">*</span>
             </label>
             <input
               pInputText
-              id="nome"
+              id="tipo-nome"
               formControlName="nome"
               placeholder="Ex: Espada Longa, Poção de Cura..."
               [class.ng-invalid]="form.get('nome')?.invalid && form.get('nome')?.touched"
@@ -232,11 +275,11 @@ interface SelectOption<T> {
 
           <!-- Categoria -->
           <div class="flex flex-column gap-2">
-            <label for="categoria" class="font-semibold">
+            <label for="tipo-categoria" class="font-semibold">
               Categoria <span class="text-red-400">*</span>
             </label>
             <p-select
-              inputId="categoria"
+              inputId="tipo-categoria"
               formControlName="categoria"
               [options]="categoriaOptions"
               optionLabel="label"
@@ -252,9 +295,9 @@ interface SelectOption<T> {
           <!-- Subcategoria (filtrada por categoria) -->
           @if (subcategoriaOptions().length > 0) {
             <div class="flex flex-column gap-2">
-              <label for="subcategoria" class="font-semibold">Subcategoria</label>
+              <label for="tipo-subcategoria" class="font-semibold">Subcategoria</label>
               <p-select
-                inputId="subcategoria"
+                inputId="tipo-subcategoria"
                 formControlName="subcategoria"
                 [options]="subcategoriaOptions()"
                 optionLabel="label"
@@ -266,19 +309,19 @@ interface SelectOption<T> {
 
           <!-- Requer Duas Mãos -->
           <div class="flex align-items-center gap-2">
-            <p-checkbox inputId="requerDuasMaos" formControlName="requerDuasMaos" [binary]="true" />
-            <label for="requerDuasMaos" class="font-semibold cursor-pointer">
+            <p-checkbox inputId="tipo-requerDuasMaos" formControlName="requerDuasMaos" [binary]="true" />
+            <label for="tipo-requerDuasMaos" class="font-semibold cursor-pointer">
               Requer Duas Mãos
             </label>
           </div>
 
           <!-- Ordem -->
           <div class="flex flex-column gap-2">
-            <label for="ordemExibicao" class="font-semibold">
+            <label for="tipo-ordem" class="font-semibold">
               Ordem de Exibição <span class="text-red-400">*</span>
             </label>
             <p-input-number
-              inputId="ordemExibicao"
+              inputId="tipo-ordem"
               formControlName="ordemExibicao"
               [showButtons]="true"
               [min]="1"
@@ -287,10 +330,10 @@ interface SelectOption<T> {
 
           <!-- Descrição -->
           <div class="flex flex-column gap-2">
-            <label for="descricao" class="font-semibold">Descrição</label>
+            <label for="tipo-descricao" class="font-semibold">Descrição</label>
             <textarea
               pTextarea
-              id="descricao"
+              id="tipo-descricao"
               formControlName="descricao"
               [rows]="2"
               placeholder="Descrição opcional do tipo de item..."
@@ -320,26 +363,22 @@ interface SelectOption<T> {
     <p-confirmDialog />
   `,
 })
-export class TiposItemConfigComponent implements OnInit {
-  private readonly configApi = inject(ConfigApiService);
-  private readonly currentGameService = inject(CurrentGameService);
-  private readonly toastService = inject(ToastService);
+export class TiposItemConfigComponent extends BaseConfigComponent<
+  TipoItemConfig,
+  TipoItemConfigService
+> {
+  protected override service = inject(TipoItemConfigService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly fb = inject(FormBuilder);
-  private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly hasGame = this.currentGameService.hasCurrentGame;
-  protected readonly currentGameId = this.currentGameService.currentGameId;
-  protected readonly currentGameName = computed(() => this.currentGameService.currentGame()?.nome);
-
-  protected readonly tipos = signal<TipoItemConfig[]>([]);
+  // ---- Estado específico desta tela ----
   protected readonly loading = signal(false);
-  protected readonly dialogVisible = signal(false);
-  protected readonly editMode = signal(false);
-  protected readonly currentEditId = signal<number | null>(null);
+  protected readonly searchQuery = signal('');
+  protected searchTermLocal = '';
 
-  protected readonly categoriaOptions: SelectOption<CategoriaItem>[] = (Object.keys(CATEGORIA_LABELS) as CategoriaItem[])
-    .map((key) => ({ label: CATEGORIA_LABELS[key], value: key }));
+  // ---- Opções de categoria/subcategoria ----
+  protected readonly categoriaOptions: SelectOption<CategoriaItem>[] = (
+    Object.keys(CATEGORIA_LABELS) as CategoriaItem[]
+  ).map((key) => ({ label: CATEGORIA_LABELS[key], value: key }));
 
   protected readonly subcategoriaOptions = computed((): SelectOption<SubcategoriaItem>[] => {
     const categoria = this.form?.get('categoria')?.value as CategoriaItem | null;
@@ -350,65 +389,61 @@ export class TiposItemConfigComponent implements OnInit {
     }));
   });
 
-  protected form!: FormGroup;
+  // ---- Itens filtrados por busca ----
+  protected filteredItems = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.items();
+    return this.items().filter(
+      (t) =>
+        t.nome?.toLowerCase().includes(q) ||
+        getCategoriaLabel(t.categoria).toLowerCase().includes(q),
+    );
+  });
 
-  ngOnInit(): void {
-    this.form = this.buildForm();
-    if (this.hasGame()) {
-      this.loadData();
-    }
+  // ---- Métodos obrigatórios da base ----
+
+  protected getEntityName(): string {
+    return 'Tipo de Item';
   }
 
-  private buildForm(): FormGroup {
+  protected getEntityNamePlural(): string {
+    return 'Tipos de Item';
+  }
+
+  protected buildForm(): FormGroup {
     return this.fb.group({
-      nome: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      categoria: [null, [Validators.required]],
-      subcategoria: [null],
+      nome:          ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      categoria:     [null, [Validators.required]],
+      subcategoria:  [null],
       requerDuasMaos: [false],
       ordemExibicao: [1, [Validators.required, Validators.min(1)]],
-      descricao: ['', [Validators.maxLength(500)]],
+      descricao:     ['', [Validators.maxLength(500)]],
     });
   }
 
-  protected loadData(): void {
-    const jogoId = this.currentGameId();
-    if (!jogoId) return;
-    this.loading.set(true);
-    this.configApi.listTiposItem(jogoId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          this.tipos.set(data);
-          this.loading.set(false);
-        },
-        error: () => this.loading.set(false),
-      });
-  }
+  // ---- Dialog ----
 
-  protected openDialog(item?: TipoItemConfig): void {
-    this.form = this.buildForm();
+  override openDialog(item?: TipoItemConfig): void {
     if (item) {
+      // Reconstrói o form antes do patchValue para garantir estado limpo
+      this.form = this.buildForm();
       this.editMode.set(true);
       this.currentEditId.set(item.id);
       this.form.patchValue({
-        nome: item.nome,
-        categoria: item.categoria,
-        subcategoria: item.subcategoria ?? null,
+        nome:          item.nome,
+        categoria:     item.categoria,
+        subcategoria:  item.subcategoria ?? null,
         requerDuasMaos: item.requerDuasMaos,
         ordemExibicao: item.ordemExibicao,
-        descricao: item.descricao,
+        descricao:     item.descricao,
       });
     } else {
+      this.form = this.buildForm();
       this.editMode.set(false);
       this.currentEditId.set(null);
-      this.form.reset({ requerDuasMaos: false, ordemExibicao: this.tipos().length + 1 });
+      this.form.reset({ requerDuasMaos: false, ordemExibicao: this.items().length + 1 });
     }
     this.dialogVisible.set(true);
-  }
-
-  protected closeDialog(): void {
-    this.dialogVisible.set(false);
-    this.form.reset();
   }
 
   protected onDialogVisibleChange(visible: boolean): void {
@@ -419,7 +454,9 @@ export class TiposItemConfigComponent implements OnInit {
     this.form.get('subcategoria')?.setValue(null);
   }
 
-  protected save(): void {
+  // ---- Sobrescreve save para gerenciar loading local ----
+
+  override save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.toastService.warning('Preencha todos os campos obrigatórios', 'Atenção');
@@ -430,8 +467,8 @@ export class TiposItemConfigComponent implements OnInit {
     const data = this.form.value;
 
     const operation$ = this.editMode()
-      ? this.configApi.updateTipoItem(this.currentEditId()!, data)
-      : this.configApi.createTipoItem({ ...data, jogoId });
+      ? this.service.updateItem(this.currentEditId()!, data)
+      : this.service.createItem({ ...data, jogoId });
 
     this.loading.set(true);
     operation$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -441,40 +478,42 @@ export class TiposItemConfigComponent implements OnInit {
         this.closeDialog();
         this.loadData();
       },
-      error: (err) => {
-        this.loading.set(false);
-        const msg = err?.error?.message ?? 'Erro ao salvar tipo de item';
-        this.toastService.error(msg, 'Erro');
-      },
+      error: () => this.loading.set(false),
     });
   }
 
-  protected confirmDelete(id: number): void {
+  // ---- Sobrescreve confirmDelete para usar ConfirmationService ----
+
+  override confirmDelete(id: number): void {
     this.confirmationService.confirm({
       message: 'Tem certeza que deseja excluir este Tipo de Item? Esta ação não pode ser desfeita.',
       header: 'Confirmar Exclusão',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }
 
-  private delete(id: number): void {
-    this.configApi.deleteTipoItem(id)
+  // ---- Sobrescreve loadData para gerenciar loading local ----
+
+  override loadData(): void {
+    const jogoId = this.currentGameId();
+    if (!jogoId) return;
+    this.loading.set(true);
+    this.service.loadItems()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.toastService.success('Tipo de item excluído com sucesso', 'Sucesso');
-          this.loadData();
+        next: (data) => {
+          this.items.set(data);
+          this.loading.set(false);
         },
-        error: (err) => {
-          const msg = err?.error?.message ?? 'Erro ao excluir tipo de item';
-          this.toastService.error(msg, 'Erro');
-        },
+        error: () => this.loading.set(false),
       });
   }
+
+  // ---- Helpers de label ----
 
   protected getCategoriaLabel(categoria: CategoriaItem): string {
     return CATEGORIA_LABELS[categoria] ?? categoria;
@@ -489,6 +528,11 @@ export class TiposItemConfigComponent implements OnInit {
   }
 
   protected contarPorCategoria(categoria: CategoriaItem): number {
-    return this.tipos().filter((t) => t.categoria === categoria).length;
+    return this.items().filter((t) => t.categoria === categoria).length;
   }
+}
+
+// Helper puro usado no filtro (fora da classe para evitar referência ao this)
+function getCategoriaLabel(categoria: CategoriaItem): string {
+  return CATEGORIA_LABELS[categoria] ?? categoria;
 }

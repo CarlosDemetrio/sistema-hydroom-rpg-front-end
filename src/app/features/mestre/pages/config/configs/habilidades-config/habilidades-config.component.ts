@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { ConfirmationService } from 'primeng/api';
@@ -9,22 +9,28 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
-import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { ConfigApiService } from '@core/services/api/config-api.service';
-import { CurrentGameService } from '@core/services/current-game.service';
-import { ToastService } from '@services/toast.service';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
+import {
+  BaseConfigTableComponent,
+  ConfigTableColumn,
+} from '@shared/components/base-config/base-config-table.component';
 import { HabilidadeConfig } from '@core/models/habilidade-config.model';
+import { HabilidadeConfigService } from '@core/services/business/config/habilidade-config.service';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import { SKIP_ERROR_INTERCEPTOR } from '@core/tokens/skip-error.token';
 
 /**
  * HabilidadesConfigComponent — CRUD de Habilidades do Jogo (tela do Mestre).
  *
- * Diferença crítica: MESTRE e JOGADOR têm permissões simétricas.
- * Esta é a view do Mestre dentro do painel de configurações.
- * O Jogador acessa a mesma funcionalidade via /jogador/habilidades.
+ * Migrado para estender BaseConfigComponent + usar app-base-config-table.
+ * Mantém lógica específica:
+ * - erroConflito signal para feedback inline de 409
+ * - saving signal para loading do botão submit
+ * - truncar() helper para exibir danoEfeito na tabela
+ * - SKIP_ERROR_INTERCEPTOR em create/update para tratar 409 localmente
  *
  * Endpoint: /api/jogos/{jogoId}/config/habilidades
  */
@@ -40,9 +46,9 @@ import { SKIP_ERROR_INTERCEPTOR } from '@core/tokens/skip-error.token';
     DialogModule,
     InputNumberModule,
     InputTextModule,
-    TableModule,
     TextareaModule,
     TooltipModule,
+    BaseConfigTableComponent,
   ],
   providers: [ConfirmationService],
   template: `
@@ -69,97 +75,20 @@ import { SKIP_ERROR_INTERCEPTOR } from '@core/tokens/skip-error.token';
         </div>
       }
 
-      <!-- Header -->
-      <div class="flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2 class="m-0 text-xl font-bold">Habilidades</h2>
-          <p class="text-sm text-color-secondary m-0">
-            Cadastre ataques, técnicas e manobras disponíveis no jogo (ex: "Golpe Brutal — 2D6+FOR")
-          </p>
-        </div>
-        @if (hasGame()) {
-          <p-button
-            label="Nova Habilidade"
-            icon="pi pi-plus"
-            (onClick)="openDialog()"
-          />
-        }
-      </div>
-
-      <!-- Tabela -->
-      <p-table
-        [value]="habilidades()"
+      <app-base-config-table
+        [titulo]="'Habilidades'"
+        [subtitulo]="'Cadastre ataques, técnicas e manobras disponíveis no jogo (ex: Golpe Brutal — 2D6+FOR)'"
+        [labelNovo]="'Nova Habilidade'"
+        [items]="filteredItems()"
         [loading]="loading()"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[10, 25, 50]"
-        styleClass="p-datatable-sm"
-        [tableStyle]="{ 'min-width': '50rem' }"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="width: 5rem">Ordem</th>
-            <th>Nome</th>
-            <th>Dano / Efeito</th>
-            <th>Descrição</th>
-            <th style="width: 8rem">Ações</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-habilidade>
-          <tr>
-            <td class="text-center">{{ habilidade.ordemExibicao }}</td>
-            <td class="font-semibold">{{ habilidade.nome }}</td>
-            <td class="text-sm">
-              @if (habilidade.danoEfeito) {
-                <span [title]="habilidade.danoEfeito">
-                  {{ truncar(habilidade.danoEfeito, 60) }}
-                </span>
-              } @else {
-                <span class="text-color-secondary">—</span>
-              }
-            </td>
-            <td class="text-sm text-color-secondary">
-              @if (habilidade.descricao) {
-                <span [title]="habilidade.descricao">
-                  {{ truncar(habilidade.descricao, 60) }}
-                </span>
-              } @else {
-                <span>—</span>
-              }
-            </td>
-            <td>
-              <div class="flex gap-1">
-                <p-button
-                  icon="pi pi-pencil"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="secondary"
-                  (onClick)="openDialog(habilidade)"
-                  pTooltip="Editar"
-                />
-                <p-button
-                  icon="pi pi-trash"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="danger"
-                  (onClick)="confirmDelete(habilidade.id)"
-                  pTooltip="Excluir"
-                />
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="5">
-              <div class="text-center p-4 text-color-secondary">
-                <i class="pi pi-inbox text-3xl mb-2 block"></i>
-                <p class="m-0">Nenhuma habilidade cadastrada</p>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
+        [columns]="columns"
+        [canReorder]="false"
+        [rowsPerPage]="10"
+        (onCreate)="openDialogHabilidade()"
+        (onEdit)="openDialogHabilidade($event)"
+        (onDelete)="confirmDelete($event.id!)"
+        (onSearch)="searchQuery.set($event)"
+      />
 
     </p-card>
 
@@ -171,7 +100,7 @@ import { SKIP_ERROR_INTERCEPTOR } from '@core/tokens/skip-error.token';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '40rem' }"
+      [style]="{ width: '38rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="flex flex-column gap-4 p-2">
@@ -268,90 +197,88 @@ import { SKIP_ERROR_INTERCEPTOR } from '@core/tokens/skip-error.token';
     <p-confirmDialog />
   `,
 })
-export class HabilidadesConfigComponent implements OnInit {
-  private readonly configApi = inject(ConfigApiService);
-  private readonly currentGameService = inject(CurrentGameService);
-  private readonly toastService = inject(ToastService);
+export class HabilidadesConfigComponent extends BaseConfigComponent<
+  HabilidadeConfig,
+  HabilidadeConfigService
+> {
+  protected override service = inject(HabilidadeConfigService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly fb = inject(FormBuilder);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly configApi = inject(ConfigApiService);
 
-  protected readonly hasGame = this.currentGameService.hasCurrentGame;
-  protected readonly currentGameId = this.currentGameService.currentGameId;
-  protected readonly currentGameName = computed(() => this.currentGameService.currentGame()?.nome);
-
-  protected readonly habilidades = signal<HabilidadeConfig[]>([]);
-  protected readonly loading = signal(false);
+  // ---- Estado específico desta tela ----
   protected readonly saving = signal(false);
-  protected readonly dialogVisible = signal(false);
-  protected readonly editMode = signal(false);
-  protected readonly currentEditId = signal<number | null>(null);
   protected readonly erroConflito = signal(false);
+  protected readonly searchQuery = signal('');
+  protected readonly loading = signal(false);
 
-  protected form!: FormGroup;
+  // ---- Colunas da tabela ----
+  readonly columns: ConfigTableColumn[] = [
+    { field: 'ordemExibicao', header: 'Ordem',      width: '5rem' },
+    { field: 'nome',          header: 'Nome' },
+    { field: 'danoEfeito',    header: 'Dano / Efeito' },
+    { field: 'descricao',     header: 'Descrição' },
+  ];
 
-  ngOnInit(): void {
-    this.form = this.buildForm();
-    if (this.hasGame()) {
-      this.loadData();
-    }
+  // ---- Itens filtrados por busca ----
+  protected filteredItems = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.items();
+    return this.items().filter(
+      (h) =>
+        h.nome?.toLowerCase().includes(q) ||
+        (h.danoEfeito ?? '').toLowerCase().includes(q) ||
+        (h.descricao ?? '').toLowerCase().includes(q),
+    );
+  });
+
+  // ---- Métodos obrigatórios da base ----
+
+  protected getEntityName(): string {
+    return 'Habilidade';
   }
 
-  private buildForm(): FormGroup {
+  protected getEntityNamePlural(): string {
+    return 'Habilidades';
+  }
+
+  protected buildForm(): FormGroup {
     return this.fb.group({
-      nome: ['', [Validators.required, Validators.maxLength(100)]],
-      danoEfeito: ['', [Validators.maxLength(500)]],
-      descricao: ['', [Validators.maxLength(1000)]],
-      ordemExibicao: [0, [Validators.required, Validators.min(0)]],
+      nome:          ['', [Validators.required, Validators.maxLength(100)]],
+      danoEfeito:    ['', [Validators.maxLength(500)]],
+      descricao:     ['', [Validators.maxLength(1000)]],
+      ordemExibicao: [0,  [Validators.required, Validators.min(0)]],
     });
   }
 
-  protected loadData(): void {
-    const jogoId = this.currentGameId();
-    if (!jogoId) return;
-    this.loading.set(true);
-    this.configApi.listHabilidades(jogoId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          this.habilidades.set(data);
-          this.loading.set(false);
-        },
-        error: () => this.loading.set(false),
-      });
-  }
+  // ---- Dialog ----
 
-  protected openDialog(item?: HabilidadeConfig): void {
-    this.form = this.buildForm();
+  /** Wrapper para abrir o dialog, inicializando ordemExibicao automática em modo criação */
+  openDialogHabilidade(item?: HabilidadeConfig): void {
     this.erroConflito.set(false);
-    if (item) {
-      this.editMode.set(true);
-      this.currentEditId.set(item.id);
-      this.form.patchValue({
-        nome: item.nome,
-        danoEfeito: item.danoEfeito ?? '',
-        descricao: item.descricao ?? '',
-        ordemExibicao: item.ordemExibicao,
-      });
+    this.openDialog(item);
+    if (!item) {
+      this.form.patchValue({ ordemExibicao: this.items().length + 1 });
     } else {
-      this.editMode.set(false);
-      this.currentEditId.set(null);
-      this.form.reset({ ordemExibicao: this.habilidades().length + 1 });
+      // patchValue com conversão null→'' para danoEfeito e descricao
+      this.form.patchValue({
+        danoEfeito: item.danoEfeito ?? '',
+        descricao:  item.descricao ?? '',
+      });
     }
-    this.dialogVisible.set(true);
-  }
-
-  protected closeDialog(): void {
-    this.dialogVisible.set(false);
-    this.erroConflito.set(false);
-    this.form.reset();
   }
 
   protected onDialogVisibleChange(visible: boolean): void {
     if (!visible) this.closeDialog();
   }
 
-  protected save(): void {
+  override closeDialog(): void {
+    this.erroConflito.set(false);
+    super.closeDialog();
+  }
+
+  // ---- Sobrescreve save para lógica de 409 e SKIP_ERROR_INTERCEPTOR ----
+
+  override save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.toastService.warning('Preencha todos os campos obrigatórios', 'Atenção');
@@ -361,9 +288,9 @@ export class HabilidadesConfigComponent implements OnInit {
     const jogoId = this.currentGameId()!;
     const { nome, danoEfeito, descricao, ordemExibicao } = this.form.value;
     const dto = {
-      nome: nome.trim(),
-      danoEfeito: danoEfeito?.trim() || null,
-      descricao: descricao?.trim() || null,
+      nome:          nome.trim(),
+      danoEfeito:    danoEfeito?.trim() || null,
+      descricao:     descricao?.trim() || null,
       ordemExibicao,
     };
 
@@ -395,33 +322,38 @@ export class HabilidadesConfigComponent implements OnInit {
     });
   }
 
-  protected confirmDelete(id: number): void {
+  // ---- Sobrescreve confirmDelete para usar ConfirmationService ----
+
+  override confirmDelete(id: number): void {
     this.confirmationService.confirm({
       message: 'Tem certeza que deseja excluir esta Habilidade? Esta ação não pode ser desfeita.',
       header: 'Confirmar Exclusão',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
   }
 
-  private delete(id: number): void {
-    const jogoId = this.currentGameId()!;
-    this.configApi.deleteHabilidade(jogoId, id)
+  // ---- Sobrescreve loadData para gerenciar o loading local ----
+
+  override loadData(): void {
+    const jogoId = this.currentGameId();
+    if (!jogoId) return;
+    this.loading.set(true);
+    this.service.loadItems()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.toastService.success('Habilidade excluída com sucesso', 'Sucesso');
-          this.loadData();
+        next: (data) => {
+          this.items.set(data);
+          this.loading.set(false);
         },
-        error: (err) => {
-          const msg = err?.error?.message ?? 'Erro ao excluir habilidade';
-          this.toastService.error(msg, 'Erro');
-        },
+        error: () => this.loading.set(false),
       });
   }
+
+  // ---- Helper de truncamento para exibição na tabela ----
 
   protected truncar(texto: string, limite: number): string {
     if (!texto || texto.length <= limite) return texto;

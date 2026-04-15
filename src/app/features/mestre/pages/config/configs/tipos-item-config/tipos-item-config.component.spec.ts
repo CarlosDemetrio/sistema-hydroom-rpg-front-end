@@ -1,6 +1,7 @@
 /**
  * TiposItemConfigComponent — Spec
  *
+ * Migrado para BaseConfigComponent + TipoItemConfigService.
  * NOTA JIT: Usa overrideTemplate para evitar NG0950 em modo JIT no Vitest.
  * Foco: sinais, CRUD, filtro de subcategoria por categoria.
  */
@@ -12,7 +13,7 @@ import { vi } from 'vitest';
 import { ConfirmationService } from 'primeng/api';
 
 import { TiposItemConfigComponent } from './tipos-item-config.component';
-import { ConfigApiService } from '@core/services/api/config-api.service';
+import { TipoItemConfigService } from '@core/services/business/config/tipo-item-config.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { ToastService } from '@services/toast.service';
 import { TipoItemConfig } from '@core/models/tipo-item-config.model';
@@ -51,12 +52,19 @@ const tipoArmaduraMock: TipoItemConfig = {
 // Helpers de mock
 // ============================================================
 
-function criarConfigApiMock(tipos: TipoItemConfig[] = [tipoArmaMock, tipoArmaduraMock]) {
+function criarTipoItemServiceMock(
+  tipos: TipoItemConfig[] = [tipoArmaMock, tipoArmaduraMock],
+  temJogo = true,
+) {
+  const jogoAtual = temJogo ? { id: 10, nome: 'Campanha Teste', ativo: true } : null;
   return {
-    listTiposItem:  vi.fn().mockReturnValue(of(tipos)),
-    createTipoItem: vi.fn().mockReturnValue(of(tipoArmaMock)),
-    updateTipoItem: vi.fn().mockReturnValue(of(tipoArmaMock)),
-    deleteTipoItem: vi.fn().mockReturnValue(of(void 0)),
+    loadItems:      vi.fn().mockReturnValue(of(tipos)),
+    createItem:     vi.fn().mockReturnValue(of(tipoArmaMock)),
+    updateItem:     vi.fn().mockReturnValue(of(tipoArmaMock)),
+    deleteItem:     vi.fn().mockReturnValue(of(void 0)),
+    currentGameId:  () => (temJogo ? 10 : null),
+    hasCurrentGame: () => temJogo,
+    currentGame:    () => jogoAtual,
   };
 }
 
@@ -91,7 +99,7 @@ const TEMPLATE_STUB = `
     @if (!hasGame()) {
       <p id="sem-jogo">Nenhum jogo selecionado</p>
     }
-    @for (tipo of tipos(); track tipo.id) {
+    @for (tipo of items(); track tipo.id) {
       <span class="tipo-nome">{{ tipo.nome }}</span>
       <span class="tipo-categoria">{{ tipo.categoria }}</span>
     }
@@ -105,7 +113,7 @@ const TEMPLATE_STUB = `
 `;
 
 async function renderTipos(tipos: TipoItemConfig[] = [tipoArmaMock, tipoArmaduraMock], temJogo = true) {
-  const configApiMock          = criarConfigApiMock(tipos);
+  const tipoItemServiceMock    = criarTipoItemServiceMock(tipos, temJogo);
   const currentGameServiceMock = criarCurrentGameServiceMock(temJogo);
   const toastServiceMock       = criarToastServiceMock();
 
@@ -114,15 +122,15 @@ async function renderTipos(tipos: TipoItemConfig[] = [tipoArmaMock, tipoArmadura
       tb.overrideTemplate(TiposItemConfigComponent, TEMPLATE_STUB);
     },
     providers: [
-      { provide: ConfigApiService,  useValue: configApiMock },
-      { provide: CurrentGameService, useValue: currentGameServiceMock },
-      { provide: ToastService,       useValue: toastServiceMock },
+      { provide: TipoItemConfigService, useValue: tipoItemServiceMock },
+      { provide: CurrentGameService,    useValue: currentGameServiceMock },
+      { provide: ToastService,          useValue: toastServiceMock },
       ConfirmationService,
     ],
   });
 
   const confirmationService = result.fixture.componentRef.injector.get(ConfirmationService);
-  return { ...result, configApiMock, toastServiceMock, confirmationService };
+  return { ...result, tipoItemServiceMock, toastServiceMock, confirmationService };
 }
 
 // ============================================================
@@ -141,9 +149,9 @@ describe('TiposItemConfigComponent', () => {
 
   describe('carregamento de dados', () => {
     it('deve carregar tipos ao inicializar quando há jogo selecionado', async () => {
-      const { configApiMock } = await renderTipos();
+      const { tipoItemServiceMock } = await renderTipos();
 
-      expect(configApiMock.listTiposItem).toHaveBeenCalledWith(10);
+      expect(tipoItemServiceMock.loadItems).toHaveBeenCalled();
     });
 
     it('deve exibir tipos carregados', async () => {
@@ -154,9 +162,9 @@ describe('TiposItemConfigComponent', () => {
     });
 
     it('não deve carregar quando não há jogo selecionado', async () => {
-      const { configApiMock } = await renderTipos([], false);
+      const { tipoItemServiceMock } = await renderTipos([], false);
 
-      expect(configApiMock.listTiposItem).not.toHaveBeenCalled();
+      expect(tipoItemServiceMock.loadItems).not.toHaveBeenCalled();
     });
 
     it('deve exibir aviso de sem jogo quando hasGame é false', async () => {
@@ -167,16 +175,16 @@ describe('TiposItemConfigComponent', () => {
   });
 
   // ----------------------------------------------------------
-  // 2. Sinal tipos e estado inicial
+  // 2. Sinal items e estado inicial
   // ----------------------------------------------------------
 
   describe('sinais de estado', () => {
-    it('tipos deve inicializar com dados carregados', async () => {
+    it('items deve inicializar com dados carregados', async () => {
       const { fixture } = await renderTipos();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      expect(comp.tipos().length).toBe(2);
+      expect(comp.items().length).toBe(2);
     });
 
     it('loading deve ser false após carregar', async () => {
@@ -254,8 +262,8 @@ describe('TiposItemConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('save', () => {
-    it('deve chamar createTipoItem ao salvar novo tipo', async () => {
-      const { fixture, configApiMock } = await renderTipos();
+    it('deve chamar service.createItem ao salvar novo tipo', async () => {
+      const { fixture, tipoItemServiceMock } = await renderTipos();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -268,13 +276,13 @@ describe('TiposItemConfigComponent', () => {
       });
       comp.save();
 
-      expect(configApiMock.createTipoItem).toHaveBeenCalledWith(
+      expect(tipoItemServiceMock.createItem).toHaveBeenCalledWith(
         expect.objectContaining({ nome: 'Espada Curta', categoria: 'ARMA', jogoId: 10 })
       );
     });
 
-    it('deve chamar updateTipoItem ao salvar tipo existente', async () => {
-      const { fixture, configApiMock } = await renderTipos();
+    it('deve chamar service.updateItem ao salvar tipo existente', async () => {
+      const { fixture, tipoItemServiceMock } = await renderTipos();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -282,7 +290,7 @@ describe('TiposItemConfigComponent', () => {
       comp.form.patchValue({ nome: 'Espada Bastarda' });
       comp.save();
 
-      expect(configApiMock.updateTipoItem).toHaveBeenCalledWith(
+      expect(tipoItemServiceMock.updateItem).toHaveBeenCalledWith(
         1,
         expect.objectContaining({ nome: 'Espada Bastarda' })
       );
@@ -351,8 +359,8 @@ describe('TiposItemConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('exclusão', () => {
-    it('deve chamar deleteTipoItem ao confirmar exclusão', async () => {
-      const { fixture, configApiMock, confirmationService } = await renderTipos();
+    it('deve chamar service.deleteItem ao confirmar exclusão', async () => {
+      const { fixture, tipoItemServiceMock, confirmationService } = await renderTipos();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -362,7 +370,7 @@ describe('TiposItemConfigComponent', () => {
 
       comp.confirmDelete(1);
 
-      expect(configApiMock.deleteTipoItem).toHaveBeenCalledWith(1);
+      expect(tipoItemServiceMock.deleteItem).toHaveBeenCalledWith(1);
     });
   });
 
@@ -389,6 +397,47 @@ describe('TiposItemConfigComponent', () => {
       expect(comp.contarPorCategoria('ARMA')).toBe(1);
       expect(comp.contarPorCategoria('ARMADURA')).toBe(1);
       expect(comp.contarPorCategoria('CONSUMIVEL')).toBe(0);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // 8. filteredItems (busca)
+  // ----------------------------------------------------------
+
+  describe('filteredItems', () => {
+    it('deve retornar todos os itens quando searchQuery está vazio', async () => {
+      const { fixture } = await renderTipos();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.searchQuery.set('');
+      fixture.detectChanges();
+
+      expect(comp.filteredItems().length).toBe(2);
+    });
+
+    it('deve filtrar itens pelo nome', async () => {
+      const { fixture } = await renderTipos();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.searchQuery.set('espada');
+      fixture.detectChanges();
+
+      expect(comp.filteredItems().length).toBe(1);
+      expect(comp.filteredItems()[0].nome).toBe('Espada Longa');
+    });
+
+    it('deve filtrar por categoria (texto traduzido)', async () => {
+      const { fixture } = await renderTipos();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.searchQuery.set('arma');
+      fixture.detectChanges();
+
+      // Tanto 'Espada Longa' (Arma) quanto 'Armadura de Couro' (Armadura) contêm 'arma'
+      expect(comp.filteredItems().length).toBeGreaterThanOrEqual(1);
     });
   });
 });

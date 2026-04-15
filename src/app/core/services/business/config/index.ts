@@ -23,5 +23,11 @@ export * from './pontos-vantagem-config.service';
 // Categoria de Vantagem Service
 export * from './categoria-vantagem-config.service';
 
+// Habilidade Service
+export * from './habilidade-config.service';
+
+// Tipo Item Service
+export * from './tipo-item-config.service';
+
 // Facade Service
 export * from './config-facade.service';
