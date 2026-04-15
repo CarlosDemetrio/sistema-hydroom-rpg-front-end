@@ -620,11 +620,12 @@ export class FichaDetailComponent implements OnInit {
     if (!fichaId || !ficha || qtd < 1) return;
     const nivelAntes = ficha.nivel;
     this.salvandoXp.set(true);
-    this.fichasApiService.updateFicha(fichaId, { xp: ficha.xp + qtd }).subscribe({
+    this.fichasApiService.concederXp(fichaId, qtd).subscribe({
       next: (fichaAtualizada) => {
         this.dialogXpVisivel.set(false);
         this.quantidadeXp.set(0);
         this.salvandoXp.set(false);
+        this.toastService.success('XP concedido com sucesso!');
         if (fichaAtualizada.nivel > nivelAntes) {
           this.onLevelUp(nivelAntes, fichaAtualizada.nivel, fichaAtualizada.nome);
         }

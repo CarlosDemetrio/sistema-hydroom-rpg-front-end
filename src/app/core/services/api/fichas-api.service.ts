@@ -178,6 +178,15 @@ export class FichasApiService {
   }
 
   /**
+   * PUT /api/v1/fichas/{id}/xp
+   * Concede XP a uma ficha (Mestre only).
+   * A quantidade informada é somada ao XP atual pelo backend.
+   */
+  concederXp(fichaId: number, quantidade: number): Observable<Ficha> {
+    return this.http.put<Ficha>(`${this.baseUrl}/fichas/${fichaId}/xp`, { quantidade });
+  }
+
+  /**
    * POST /api/v1/fichas/{id}/vantagens/insolitus/{vantagemConfigId}
    * Concede um Insolitus a uma ficha (Mestre only). Sem custo de pontos.
    */
