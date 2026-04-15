@@ -68,6 +68,11 @@ export class SidebarComponent implements OnInit {
         label: 'Mestre',
         items: [
           {
+            label: 'Dashboard',
+            icon: 'pi pi-chart-bar',
+            command: () => this.router.navigate(['/mestre/dashboard'])
+          },
+          {
             label: 'Meus Jogos',
             icon: 'pi pi-book',
             command: () => this.router.navigate(['/mestre/jogos'])

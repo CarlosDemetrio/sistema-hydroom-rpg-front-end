@@ -65,6 +65,11 @@ export const routes: Routes = [
             loadComponent: () => import('./features/mestre/pages/jogo-form/jogo-form.component').then(m => m.JogoFormComponent)
           },
           {
+            path: 'dashboard',
+            loadComponent: () => import('./features/mestre/pages/dashboard/dashboard-mestre.component').then(m => m.DashboardMestreComponent),
+            canActivate: [currentGameGuard]
+          },
+          {
             path: 'npcs',
             loadComponent: () => import('./features/mestre/pages/npcs/npcs.component').then(m => m.NpcsComponent),
             canActivate: [currentGameGuard]
