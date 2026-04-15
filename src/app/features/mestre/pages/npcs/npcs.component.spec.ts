@@ -5,10 +5,12 @@ import { provideRouter } from '@angular/router';
 
 import { NpcsComponent } from './npcs.component';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { ConfigStore } from '@core/stores/config.store';
 import { ToastService } from '@services/toast.service';
 import { Ficha } from '@core/models/ficha.model';
+import { NpcDificuldadeConfig } from '@core/models/npc-dificuldade-config.model';
 
 // ============================================================
 // Mock data
@@ -50,6 +52,34 @@ const npcMock2: Ficha = {
 
 const jogoAtualMock = { id: 10, nome: 'Campanha Épica', ativo: true };
 
+const atributosMock = [
+  { id: 101, nome: 'Força',       abreviacao: 'FOR', jogoId: 10, descricao: null, formulaImpeto: null, descricaoImpeto: null, valorMinimo: 1, valorMaximo: 20, ordemExibicao: 1, dataCriacao: '', dataUltimaAtualizacao: '' },
+  { id: 102, nome: 'Agilidade',   abreviacao: 'AGI', jogoId: 10, descricao: null, formulaImpeto: null, descricaoImpeto: null, valorMinimo: 1, valorMaximo: 20, ordemExibicao: 2, dataCriacao: '', dataUltimaAtualizacao: '' },
+  { id: 103, nome: 'Inteligência',abreviacao: 'INT', jogoId: 10, descricao: null, formulaImpeto: null, descricaoImpeto: null, valorMinimo: 1, valorMaximo: 20, ordemExibicao: 3, dataCriacao: '', dataUltimaAtualizacao: '' },
+];
+
+const dificuldadeFisicaMock: NpcDificuldadeConfig = {
+  id: 1,
+  nome: 'Fraco',
+  foco: 'FISICO',
+  valoresAtributo: [
+    { atributoId: 101, atributoNome: 'Força',     atributoAbreviacao: 'FOR', valorBase: 5  },
+    { atributoId: 102, atributoNome: 'Agilidade', atributoAbreviacao: 'AGI', valorBase: 4  },
+    { atributoId: 103, atributoNome: 'Inteligência', atributoAbreviacao: 'INT', valorBase: 2 },
+  ],
+};
+
+const dificuldadeMagicaMock: NpcDificuldadeConfig = {
+  id: 2,
+  nome: 'Forte',
+  foco: 'MAGICO',
+  valoresAtributo: [
+    { atributoId: 101, atributoNome: 'Força',     atributoAbreviacao: 'FOR', valorBase: 3  },
+    { atributoId: 102, atributoNome: 'Agilidade', atributoAbreviacao: 'AGI', valorBase: 3  },
+    { atributoId: 103, atributoNome: 'Inteligência', atributoAbreviacao: 'INT', valorBase: 10 },
+  ],
+};
+
 // ============================================================
 // Mock factories
 // ============================================================
@@ -66,6 +96,13 @@ function criarFichaServiceMock(npcs: Ficha[] = [], npcRetornado: Ficha = npcMock
   return {
     loadNpcs: vi.fn().mockReturnValue(of(npcs)),
     criarNpc: vi.fn().mockReturnValue(of(npcRetornado)),
+  };
+}
+
+function criarConfigApiServiceMock(dificuldades: NpcDificuldadeConfig[] = [dificuldadeFisicaMock, dificuldadeMagicaMock]) {
+  return {
+    listNpcDificuldades: vi.fn().mockReturnValue(of(dificuldades)),
+    listAtributos:       vi.fn().mockReturnValue(of(atributosMock)),
   };
 }
 
@@ -96,25 +133,36 @@ async function renderNpcsComponent(overrides: {
   npcs?: Ficha[];
   npcRetornado?: Ficha;
   fichaServiceOverride?: Partial<ReturnType<typeof criarFichaServiceMock>>;
+  configApiServiceOverride?: Partial<ReturnType<typeof criarConfigApiServiceMock>>;
+  dificuldades?: NpcDificuldadeConfig[];
 } = {}) {
-  const { temJogo = true, npcs = [], npcRetornado = npcMock, fichaServiceOverride } = overrides;
+  const {
+    temJogo = true,
+    npcs = [],
+    npcRetornado = npcMock,
+    fichaServiceOverride,
+    configApiServiceOverride,
+    dificuldades = [dificuldadeFisicaMock, dificuldadeMagicaMock],
+  } = overrides;
 
-  const fichaService = { ...criarFichaServiceMock(npcs, npcRetornado), ...fichaServiceOverride };
+  const fichaService     = { ...criarFichaServiceMock(npcs, npcRetornado), ...fichaServiceOverride };
+  const configApiService = { ...criarConfigApiServiceMock(dificuldades), ...configApiServiceOverride };
   const currentGameService = criarCurrentGameServiceMock(temJogo);
-  const configStore = criarConfigStoreMock();
-  const toastService = criarToastServiceMock();
+  const configStore      = criarConfigStoreMock();
+  const toastService     = criarToastServiceMock();
 
   const result = await render(NpcsComponent, {
     providers: [
       provideRouter([]),
       { provide: FichaBusinessService, useValue: fichaService },
+      { provide: ConfigApiService,     useValue: configApiService },
       { provide: CurrentGameService,   useValue: currentGameService },
       { provide: ConfigStore,          useValue: configStore },
       { provide: ToastService,         useValue: toastService },
     ],
   });
 
-  return { ...result, fichaService, toastService };
+  return { ...result, fichaService, configApiService, toastService };
 }
 
 // ============================================================
@@ -197,6 +245,31 @@ describe('NpcsComponent', () => {
     });
   });
 
+  describe('carregamento de dificuldades', () => {
+    it('chama listNpcDificuldades ao inicializar quando há jogo selecionado', async () => {
+      const { configApiService } = await renderNpcsComponent();
+      expect(configApiService.listNpcDificuldades).toHaveBeenCalledWith(10);
+    });
+
+    it('não chama listNpcDificuldades quando não há jogo selecionado', async () => {
+      const { configApiService } = await renderNpcsComponent({ temJogo: false });
+      expect(configApiService.listNpcDificuldades).not.toHaveBeenCalled();
+    });
+
+    it('chama listAtributos ao inicializar quando há jogo selecionado', async () => {
+      const { configApiService } = await renderNpcsComponent();
+      expect(configApiService.listAtributos).toHaveBeenCalledWith(10);
+    });
+
+    it('não exibe campo dificuldade quando lista está vazia', async () => {
+      const { fixture } = await renderNpcsComponent({ dificuldades: [] });
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+      // O select de dificuldade é renderizado mas sem opções — aria-label presente
+      expect(screen.getByLabelText('Nível de Dificuldade do NPC')).toBeTruthy();
+    });
+  });
+
   describe('drawer de criação', () => {
     it('abre o drawer ao clicar em "Novo NPC"', async () => {
       await renderNpcsComponent({ npcs: [] });
@@ -213,11 +286,135 @@ describe('NpcsComponent', () => {
       fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
 
       expect(screen.getByLabelText('Nome do NPC')).toBeTruthy();
+      expect(screen.getByLabelText('Nível de Dificuldade do NPC')).toBeTruthy();
       expect(screen.getByLabelText('Raça do NPC')).toBeTruthy();
       expect(screen.getByLabelText('Classe do NPC')).toBeTruthy();
       expect(screen.getByLabelText('Gênero do NPC')).toBeTruthy();
       expect(screen.getByLabelText('Índole do NPC')).toBeTruthy();
       expect(screen.getByLabelText('Presença do NPC')).toBeTruthy();
+    });
+  });
+
+  describe('auto-preenchimento de atributos por dificuldade', () => {
+    it('auto-preenche os controles de atributo ao selecionar uma dificuldade', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as NpcsComponent;
+
+      // Simula seleção da dificuldade física
+      comp.onDificuldadeChange(dificuldadeFisicaMock.id);
+      fixture.detectChanges();
+
+      expect(comp.form.get('atributo_101')?.value).toBe(5);
+      expect(comp.form.get('atributo_102')?.value).toBe(4);
+      expect(comp.form.get('atributo_103')?.value).toBe(2);
+    });
+
+    it('atualiza corretamente ao trocar de dificuldade', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as NpcsComponent;
+
+      comp.onDificuldadeChange(dificuldadeFisicaMock.id);
+      fixture.detectChanges();
+      expect(comp.form.get('atributo_103')?.value).toBe(2);
+
+      // Troca para dificuldade mágica
+      comp.onDificuldadeChange(dificuldadeMagicaMock.id);
+      fixture.detectChanges();
+      expect(comp.form.get('atributo_103')?.value).toBe(10);
+    });
+
+    it('permite editar manualmente os valores após auto-preenchimento', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as NpcsComponent;
+
+      // Auto-preenche via dificuldade
+      comp.onDificuldadeChange(dificuldadeFisicaMock.id);
+      fixture.detectChanges();
+      expect(comp.form.get('atributo_101')?.value).toBe(5);
+
+      // Sobrescreve manualmente
+      comp.form.get('atributo_101')?.setValue(12);
+      fixture.detectChanges();
+
+      expect(comp.form.get('atributo_101')?.value).toBe(12);
+      // Outros atributos permanecem com o valor da dificuldade
+      expect(comp.form.get('atributo_102')?.value).toBe(4);
+    });
+
+    it('limpa dificuldadeSelecionada ao passar null para onDificuldadeChange', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as NpcsComponent;
+
+      comp.onDificuldadeChange(dificuldadeFisicaMock.id);
+      fixture.detectChanges();
+      expect(comp.dificuldadeSelecionada()).not.toBeNull();
+
+      comp.onDificuldadeChange(null);
+      fixture.detectChanges();
+      expect(comp.dificuldadeSelecionada()).toBeNull();
+    });
+
+    it('exibe informação de foco após selecionar dificuldade física', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as NpcsComponent;
+      comp.onDificuldadeChange(dificuldadeFisicaMock.id);
+      fixture.detectChanges();
+
+      expect(screen.getByText(/Foco: Físico/)).toBeTruthy();
+    });
+
+    it('exibe informação de foco após selecionar dificuldade mágica', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as NpcsComponent;
+      comp.onDificuldadeChange(dificuldadeMagicaMock.id);
+      fixture.detectChanges();
+
+      expect(screen.getByText(/Foco: Mágico/)).toBeTruthy();
+    });
+  });
+
+  describe('submit sem dificuldade selecionada', () => {
+    it('submete o formulário normalmente sem dificuldade (apenas nome preenchido)', async () => {
+      const { fichaService, fixture } = await renderNpcsComponent({ npcs: [] });
+
+      fireEvent.click(screen.getByRole('button', { name: /Novo NPC/i }));
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance as NpcsComponent;
+      // Sem selecionar dificuldade — apenas nome
+      comp.form.patchValue({ nome: 'Esqueleto Guerreiro' });
+      fixture.detectChanges();
+
+      fireEvent.click(screen.getByRole('button', { name: /Criar NPC/i }));
+
+      expect(fichaService.criarNpc).toHaveBeenCalledWith(10, expect.objectContaining({
+        jogoId: 10,
+        nome: 'Esqueleto Guerreiro',
+      }));
     });
   });
 

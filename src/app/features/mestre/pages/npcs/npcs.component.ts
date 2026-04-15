@@ -5,14 +5,18 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
+import { DividerModule } from 'primeng/divider';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { Ficha } from '@core/models/ficha.model';
+import { NpcDificuldadeConfig } from '@core/models/npc-dificuldade-config.model';
 import { NpcCreateDto } from '@core/models/dtos/ficha.dto';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
+import { ConfigApiService } from '@core/services/api/config-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { ConfigStore } from '@core/stores/config.store';
 import { ToastService } from '@services/toast.service';
@@ -26,8 +30,10 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
  * SMART COMPONENT — injeta serviços diretamente.
  *
  * Endpoints:
- * - GET  /api/v1/jogos/{jogoId}/npcs  — carregado via FichaBusinessService.loadNpcs()
- * - POST /api/v1/jogos/{jogoId}/npcs  — criado via FichaBusinessService.criarNpc()
+ * - GET  /api/v1/jogos/{jogoId}/npcs              — carregado via FichaBusinessService.loadNpcs()
+ * - POST /api/v1/jogos/{jogoId}/npcs              — criado via FichaBusinessService.criarNpc()
+ * - GET  /api/jogos/{jogoId}/config/npc-dificuldades — via ConfigApiService.listNpcDificuldades()
+ * - GET  /api/v1/configuracoes/atributos?jogoId=  — via ConfigApiService.listAtributos()
  */
 @Component({
   selector: 'app-npcs',
@@ -38,6 +44,8 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
     ButtonModule,
     CardModule,
     DialogModule,
+    DividerModule,
+    InputNumberModule,
     InputTextModule,
     SelectModule,
     TableModule,
@@ -172,7 +180,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '30rem', maxWidth: '95vw' }"
+      [style]="{ width: '38rem', maxWidth: '95vw' }"
     >
       <form [formGroup]="form" (ngSubmit)="salvar()">
         <div class="flex flex-column gap-4 p-2">
@@ -195,6 +203,29 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                 @if (form.get('nome')?.errors?.['required']) { Campo obrigatório }
                 @if (form.get('nome')?.errors?.['minlength']) { Mínimo de 2 caracteres }
                 @if (form.get('nome')?.errors?.['maxlength']) { Máximo de 100 caracteres }
+              </small>
+            }
+          </div>
+
+          <!-- Nível de Dificuldade -->
+          <div class="flex flex-column gap-2">
+            <label for="npc-dificuldade" class="font-semibold">Nível de Dificuldade</label>
+            <p-select
+              inputId="npc-dificuldade"
+              formControlName="dificuldadeId"
+              [options]="dificuldadesOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione um nível (opcional)"
+              [showClear]="true"
+              class="w-full"
+              aria-label="Nível de Dificuldade do NPC"
+              (onChange)="onDificuldadeChange($event.value)"
+            ></p-select>
+            @if (dificuldadeSelecionada()) {
+              <small class="text-color-secondary">
+                <i class="pi pi-info-circle mr-1"></i>
+                Foco: {{ dificuldadeSelecionada()!.foco === 'FISICO' ? 'Físico' : 'Mágico' }} — atributos preenchidos automaticamente (editáveis)
               </small>
             }
           </div>
@@ -279,6 +310,41 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
             ></p-select>
           </div>
 
+          <!-- Seção: Atributos Base -->
+          @if (atributosForm.length > 0) {
+            <p-divider></p-divider>
+            <div>
+              <p class="font-semibold m-0 mb-3">
+                <i class="pi pi-sliders-h mr-2 text-primary"></i>
+                Atributos Base
+              </p>
+              <div class="grid">
+                @for (atributo of atributosForm; track atributo.atributoId) {
+                  <div class="col-6 md:col-4">
+                    <div class="flex flex-column gap-1">
+                      <label
+                        [for]="'npc-attr-' + atributo.atributoId"
+                        class="text-sm font-medium"
+                        [title]="atributo.atributoNome"
+                      >
+                        {{ atributo.atributoAbreviacao }}
+                      </label>
+                      <p-inputnumber
+                        [inputId]="'npc-attr-' + atributo.atributoId"
+                        [formControlName]="'atributo_' + atributo.atributoId"
+                        [min]="0"
+                        [max]="999"
+                        [showButtons]="false"
+                        inputStyleClass="w-full text-center"
+                        [aria-label]="atributo.atributoNome"
+                      ></p-inputnumber>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
         </div>
 
         <div class="flex justify-content-end gap-2 mt-5 pt-4 border-top-1 surface-border">
@@ -305,6 +371,7 @@ export class NpcsComponent implements OnInit {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private fichaService = inject(FichaBusinessService);
+  private configApiService = inject(ConfigApiService);
   private currentGameService = inject(CurrentGameService);
   private configStore = inject(ConfigStore);
   private toastService = inject(ToastService);
@@ -314,6 +381,12 @@ export class NpcsComponent implements OnInit {
   isLoading = signal(false);
   isSaving = signal(false);
   drawerVisible = signal(false);
+
+  dificuldades = signal<NpcDificuldadeConfig[]>([]);
+  dificuldadeSelecionada = signal<NpcDificuldadeConfig | null>(null);
+
+  /** Atributos exibidos na seção "Atributos Base" (sincronizados com o form) */
+  atributosForm: Array<{ atributoId: number; atributoNome: string; atributoAbreviacao: string }> = [];
 
   // Current game
   hasGame = this.currentGameService.hasCurrentGame;
@@ -341,19 +414,28 @@ export class NpcsComponent implements OnInit {
     this.configStore.presencas().map(p => ({ label: p.nome, value: p.id }))
   );
 
+  dificuldadesOptions = computed(() =>
+    this.dificuldades().map(d => ({
+      label: `${d.nome} (${d.foco === 'FISICO' ? 'Físico' : 'Mágico'})`,
+      value: d.id,
+    }))
+  );
+
   // Form
   form: FormGroup = this.fb.group({
-    nome:      ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    racaId:    [null],
-    classeId:  [null],
-    generoId:  [null],
-    indoleId:  [null],
-    presencaId:[null],
+    nome:         ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    dificuldadeId:[null],
+    racaId:       [null],
+    classeId:     [null],
+    generoId:     [null],
+    indoleId:     [null],
+    presencaId:   [null],
   });
 
   ngOnInit(): void {
     if (this.hasGame()) {
       this.carregarNpcs();
+      this.carregarDificuldadesEAtributos();
     }
   }
 
@@ -376,9 +458,61 @@ export class NpcsComponent implements OnInit {
       });
   }
 
+  carregarDificuldadesEAtributos(): void {
+    const jogoId = this.currentGameId();
+    if (!jogoId) return;
+
+    // Carrega dificuldades e atributos em paralelo
+    this.configApiService.listNpcDificuldades(jogoId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (lista) => this.dificuldades.set(lista),
+        // falha silenciosa — campo de dificuldade fica oculto, não bloqueia o formulário
+      });
+
+    this.configApiService.listAtributos(jogoId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (atributos) => {
+          this.atributosForm = atributos.map(a => ({
+            atributoId: a.id,
+            atributoNome: a.nome,
+            atributoAbreviacao: a.abreviacao,
+          }));
+          // Adiciona um FormControl por atributo
+          for (const atributo of this.atributosForm) {
+            this.form.addControl(`atributo_${atributo.atributoId}`, this.fb.control(null));
+          }
+        },
+        // falha silenciosa — seção de atributos fica vazia, não bloqueia o formulário
+      });
+  }
+
+  onDificuldadeChange(dificuldadeId: number | null): void {
+    if (!dificuldadeId) {
+      this.dificuldadeSelecionada.set(null);
+      return;
+    }
+
+    const dificuldade = this.dificuldades().find(d => d.id === dificuldadeId) ?? null;
+    this.dificuldadeSelecionada.set(dificuldade);
+
+    if (!dificuldade) return;
+
+    // Auto-preenche os atributos com os valores base da dificuldade selecionada
+    for (const valorAtributo of dificuldade.valoresAtributo) {
+      const controlName = `atributo_${valorAtributo.atributoId}`;
+      const control = this.form.get(controlName);
+      if (control) {
+        control.setValue(valorAtributo.valorBase);
+      }
+    }
+  }
+
   abrirDrawer(): void {
     this.form.reset();
     this.form.markAsUntouched();
+    this.dificuldadeSelecionada.set(null);
     this.drawerVisible.set(true);
   }
 
@@ -386,6 +520,7 @@ export class NpcsComponent implements OnInit {
     this.drawerVisible.set(false);
     this.form.reset();
     this.form.markAsUntouched();
+    this.dificuldadeSelecionada.set(null);
   }
 
   onDrawerVisibleChange(visible: boolean): void {

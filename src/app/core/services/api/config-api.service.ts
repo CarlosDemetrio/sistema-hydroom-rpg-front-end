@@ -1,3 +1,4 @@
+import { NpcDificuldadeConfig } from '@core/models/npc-dificuldade-config.model';
 import { ClassePontosConfig, ClassePontosConfigRequest } from '@core/models/classe-pontos-config.model';
 import { ClasseVantagemPreDefinida, ClasseVantagemPreDefinidaRequest } from '@core/models/classe-vantagem-predefinida.model';
 import { HabilidadeConfig, CreateHabilidadeConfigDto, UpdateHabilidadeConfigDto } from '@core/models/habilidade-config.model';
@@ -799,6 +800,13 @@ export class ConfigApiService {
 
   removeClasseEquipamentoInicial(classeId: number, id: number): Observable<void> {
     return this.http.delete<void>(`${this.configUrl}/classes/${classeId}/equipamentos-iniciais/${id}`);
+  }
+
+  // ===== Níveis de Dificuldade de NPC =====
+  // Base: /api/jogos/{jogoId}/config/npc-dificuldades  (sem /v1/ — mesmo padrão de CategoriaVantagem)
+
+  listNpcDificuldades(jogoId: number): Observable<NpcDificuldadeConfig[]> {
+    return this.http.get<NpcDificuldadeConfig[]>(`/api/jogos/${jogoId}/config/npc-dificuldades`);
   }
 
   // ===== Habilidades =====
