@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
-import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -16,16 +15,17 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { ConfigApiService } from '@core/services/api/config-api.service';
-import { CurrentGameService } from '@core/services/current-game.service';
-import { ToastService } from '@services/toast.service';
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
+import { RaridadeItemConfigService } from '@core/services/business/config/raridade-item-config.service';
 
 /**
  * RaridadesItemConfigComponent — CRUD de Raridades de Item.
  *
- * Segue o mesmo padrão visual das 13 configurações existentes.
- * Sem BaseConfigComponent (endpoint não segue o padrão /configuracoes/{tipo}?jogoId=).
+ * Migrado para estender BaseConfigComponent.
+ * Mantém tabela customizada (exibe coluna de cor e bônus de atributo/derivado).
+ *
+ * Endpoint: /api/v1/configuracoes/raridades-item
  */
 @Component({
   selector: 'app-raridades-item-config',
@@ -33,7 +33,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    BadgeModule,
+    FormsModule,
     ButtonModule,
     CardModule,
     CheckboxModule,
@@ -89,15 +89,15 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 
       <!-- Tabela -->
       <p-table
-        [value]="raridades()"
-        [loading]="loading()"
+        [value]="items()"
+        [loading]="loadingTable()"
         [paginator]="true"
         [rows]="10"
         [rowsPerPageOptions]="[10, 25, 50]"
         styleClass="p-datatable-sm"
         [tableStyle]="{ 'min-width': '50rem' }"
       >
-        <ng-template pTemplate="header">
+        <ng-template #header>
           <tr>
             <th style="width: 6rem">Cor</th>
             <th>Nome</th>
@@ -108,7 +108,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
             <th style="width: 8rem">Ações</th>
           </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-raridade>
+        <ng-template #body let-raridade>
           <tr>
             <td>
               <div class="flex align-items-center gap-2">
@@ -152,25 +152,36 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
                   severity="secondary"
                   (onClick)="openDialog(raridade)"
                   pTooltip="Editar"
+                  tooltipPosition="top"
                 />
                 <p-button
                   icon="pi pi-trash"
                   [rounded]="true"
                   [text]="true"
                   severity="danger"
-                  (onClick)="confirmDelete(raridade.id)"
+                  (onClick)="confirmDelete(raridade.id!)"
                   pTooltip="Excluir"
+                  tooltipPosition="top"
                 />
               </div>
             </td>
           </tr>
         </ng-template>
-        <ng-template pTemplate="emptymessage">
+        <ng-template #emptymessage>
           <tr>
             <td colspan="7">
-              <div class="text-center p-4 text-color-secondary">
-                <i class="pi pi-inbox text-3xl mb-2 block"></i>
-                <p class="m-0">Nenhuma raridade configurada</p>
+              <div class="rpg-empty-state">
+                <i class="pi pi-inbox rpg-empty-state__icon"></i>
+                <p class="rpg-empty-state__title">Nenhuma raridade configurada</p>
+                <p class="rpg-empty-state__subtitle">
+                  Clique em "Nova Raridade" para criar o primeiro registro.
+                </p>
+                <p-button
+                  label="Nova Raridade"
+                  icon="pi pi-plus"
+                  size="small"
+                  (onClick)="openDialog()"
+                />
               </div>
             </td>
           </tr>
@@ -194,12 +205,12 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 
           <!-- Nome -->
           <div class="flex flex-column gap-2">
-            <label for="nome" class="font-semibold">
+            <label for="raridade-nome" class="font-semibold">
               Nome <span class="text-red-400">*</span>
             </label>
             <input
               pInputText
-              id="nome"
+              id="raridade-nome"
               formControlName="nome"
               placeholder="Ex: Comum, Raro, Épico..."
               [class.ng-invalid]="form.get('nome')?.invalid && form.get('nome')?.touched"
@@ -231,7 +242,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
               <!-- Input hex manual — fonte primária do valor -->
               <input
                 pInputText
-                id="cor"
+                id="raridade-cor"
                 formControlName="cor"
                 placeholder="#9d9d9d"
                 style="font-family: monospace; flex: 1; min-width: 8rem;"
@@ -262,8 +273,8 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 
           <!-- Jogador pode adicionar -->
           <div class="flex align-items-center gap-2">
-            <p-checkbox inputId="podeJogadorAdicionar" formControlName="podeJogadorAdicionar" [binary]="true" />
-            <label for="podeJogadorAdicionar" class="font-semibold cursor-pointer">
+            <p-checkbox inputId="raridade-podeJogadorAdicionar" formControlName="podeJogadorAdicionar" [binary]="true" />
+            <label for="raridade-podeJogadorAdicionar" class="font-semibold cursor-pointer">
               Jogador pode adicionar itens desta raridade
             </label>
           </div>
@@ -279,7 +290,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
                 <div class="flex flex-column gap-1">
                   <label class="text-xs text-color-secondary">Mínimo</label>
                   <p-input-number
-                    inputId="bonusAtributoMin"
+                    inputId="raridade-bonusAtributoMin"
                     formControlName="bonusAtributoMin"
                     [showButtons]="true"
                     [min]="0"
@@ -290,7 +301,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
                 <div class="flex flex-column gap-1">
                   <label class="text-xs text-color-secondary">Máximo</label>
                   <p-input-number
-                    inputId="bonusAtributoMax"
+                    inputId="raridade-bonusAtributoMax"
                     formControlName="bonusAtributoMax"
                     [showButtons]="true"
                     [min]="0"
@@ -308,7 +319,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
                 <div class="flex flex-column gap-1">
                   <label class="text-xs text-color-secondary">Mínimo</label>
                   <p-input-number
-                    inputId="bonusDerivadoMin"
+                    inputId="raridade-bonusDerivadoMin"
                     formControlName="bonusDerivadoMin"
                     [showButtons]="true"
                     [min]="0"
@@ -319,7 +330,7 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
                 <div class="flex flex-column gap-1">
                   <label class="text-xs text-color-secondary">Máximo</label>
                   <p-input-number
-                    inputId="bonusDerivadoMax"
+                    inputId="raridade-bonusDerivadoMax"
                     formControlName="bonusDerivadoMax"
                     [showButtons]="true"
                     [min]="0"
@@ -331,11 +342,11 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 
           <!-- Ordem -->
           <div class="flex flex-column gap-2">
-            <label for="ordemExibicao" class="font-semibold">
+            <label for="raridade-ordemExibicao" class="font-semibold">
               Ordem de Exibição <span class="text-red-400">*</span>
             </label>
             <p-input-number
-              inputId="ordemExibicao"
+              inputId="raridade-ordemExibicao"
               formControlName="ordemExibicao"
               [showButtons]="true"
               [min]="1"
@@ -344,10 +355,10 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 
           <!-- Descrição -->
           <div class="flex flex-column gap-2">
-            <label for="descricao" class="font-semibold">Descrição</label>
+            <label for="raridade-descricao" class="font-semibold">Descrição</label>
             <textarea
               pTextarea
-              id="descricao"
+              id="raridade-descricao"
               formControlName="descricao"
               [rows]="2"
               placeholder="Descrição opcional da raridade..."
@@ -377,23 +388,15 @@ import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
     <p-confirmDialog />
   `,
 })
-export class RaridadesItemConfigComponent implements OnInit {
-  private readonly configApi = inject(ConfigApiService);
-  private readonly currentGameService = inject(CurrentGameService);
-  private readonly toastService = inject(ToastService);
+export class RaridadesItemConfigComponent extends BaseConfigComponent<
+  RaridadeItemConfig,
+  RaridadeItemConfigService
+> {
+  protected override service = inject(RaridadeItemConfigService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly fb = inject(FormBuilder);
-  private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly hasGame = this.currentGameService.hasCurrentGame;
-  protected readonly currentGameId = this.currentGameService.currentGameId;
-  protected readonly currentGameName = computed(() => this.currentGameService.currentGame()?.nome);
-
-  protected readonly raridades = signal<RaridadeItemConfig[]>([]);
-  protected readonly loading = signal(false);
-  protected readonly dialogVisible = signal(false);
-  protected readonly editMode = signal(false);
-  protected readonly currentEditId = signal<number | null>(null);
+  // ---- Estado local de loading da tabela ----
+  protected readonly loadingTable = signal(false);
 
   /**
    * Valor reativo da cor para disparar recomputação dos computeds de preview.
@@ -428,28 +431,18 @@ export class RaridadesItemConfigComponent implements OnInit {
     return luminance > 0.5 ? '#000000' : '#ffffff';
   });
 
-  protected form!: FormGroup;
+  // ---- Métodos obrigatórios da base ----
 
-  ngOnInit(): void {
-    this.form = this.buildForm();
-    this.subscribeCorChanges();
-    if (this.hasGame()) {
-      this.loadData();
-    }
+  protected getEntityName(): string {
+    return 'Raridade';
   }
 
-  /**
-   * Assina mudanças no control 'cor' para manter corFormValue sincronizado.
-   * Isso permite que corPreview e corPickerValue reajam reativamente.
-   */
-  private subscribeCorChanges(): void {
-    this.form.get('cor')?.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((valor: string) => this.corFormValue.set(valor ?? '#9d9d9d'));
+  protected getEntityNamePlural(): string {
+    return 'Raridades de Item';
   }
 
-  private buildForm(): FormGroup {
-    return this.fb.group({
+  protected buildForm(): FormGroup {
+    const form = this.fb.group({
       nome: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       cor: ['#9d9d9d', [Validators.required, Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
       ordemExibicao: [1, [Validators.required, Validators.min(1)]],
@@ -460,26 +453,19 @@ export class RaridadesItemConfigComponent implements OnInit {
       bonusDerivadoMax: [null],
       descricao: ['', [Validators.maxLength(500)]],
     });
-  }
 
-  protected loadData(): void {
-    const jogoId = this.currentGameId();
-    if (!jogoId) return;
-    this.loading.set(true);
-    this.configApi.listRaridadesItem(jogoId)
+    // Assina mudanças no control 'cor' para manter corFormValue sincronizado
+    form.get('cor')?.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          this.raridades.set(data);
-          this.loading.set(false);
-        },
-        error: () => this.loading.set(false),
-      });
+      .subscribe((valor: string) => this.corFormValue.set(valor ?? '#9d9d9d'));
+
+    return form;
   }
 
-  protected openDialog(item?: RaridadeItemConfig): void {
+  // ---- Dialog ----
+
+  override openDialog(item?: RaridadeItemConfig): void {
     this.form = this.buildForm();
-    this.subscribeCorChanges();
     if (item) {
       this.editMode.set(true);
       this.currentEditId.set(item.id);
@@ -498,15 +484,10 @@ export class RaridadesItemConfigComponent implements OnInit {
     } else {
       this.editMode.set(false);
       this.currentEditId.set(null);
-      this.form.reset({ cor: '#9d9d9d', ordemExibicao: this.raridades().length + 1, podeJogadorAdicionar: false });
+      this.form.reset({ cor: '#9d9d9d', ordemExibicao: this.items().length + 1, podeJogadorAdicionar: false });
       this.corFormValue.set('#9d9d9d');
     }
     this.dialogVisible.set(true);
-  }
-
-  protected closeDialog(): void {
-    this.dialogVisible.set(false);
-    this.form.reset();
   }
 
   protected onDialogVisibleChange(visible: boolean): void {
@@ -524,21 +505,22 @@ export class RaridadesItemConfigComponent implements OnInit {
     this.form.get('cor')?.markAsTouched();
   }
 
-  protected save(): void {
+  // ---- Sobrescreve save para gerenciar loading local ----
+
+  override save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.toastService.warning('Preencha todos os campos obrigatórios', 'Atenção');
       return;
     }
 
-    const jogoId = this.currentGameId()!;
     const data = this.form.value;
 
     const operation$ = this.editMode()
-      ? this.configApi.updateRaridadeItem(this.currentEditId()!, data)
-      : this.configApi.createRaridadeItem({ ...data, jogoId });
+      ? this.service.updateItem(this.currentEditId()!, data)
+      : this.service.createItem(data);
 
-    this.loading.set(true);
+    this.loadingTable.set(true);
     operation$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         const action = this.editMode() ? 'atualizada' : 'criada';
@@ -546,15 +528,30 @@ export class RaridadesItemConfigComponent implements OnInit {
         this.closeDialog();
         this.loadData();
       },
-      error: (err) => {
-        this.loading.set(false);
-        const msg = err?.error?.message ?? 'Erro ao salvar raridade';
-        this.toastService.error(msg, 'Erro');
-      },
+      error: () => this.loadingTable.set(false),
     });
   }
 
-  protected confirmDelete(id: number): void {
+  // ---- Sobrescreve loadData para gerenciar loading local ----
+
+  override loadData(): void {
+    const jogoId = this.currentGameId();
+    if (!jogoId) return;
+    this.loadingTable.set(true);
+    this.service.loadItems()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.items.set(data);
+          this.loadingTable.set(false);
+        },
+        error: () => this.loadingTable.set(false),
+      });
+  }
+
+  // ---- Sobrescreve confirmDelete para usar ConfirmationService ----
+
+  override confirmDelete(id: number): void {
     this.confirmationService.confirm({
       message: 'Tem certeza que deseja excluir esta Raridade? Esta ação não pode ser desfeita.',
       header: 'Confirmar Exclusão',
@@ -564,20 +561,5 @@ export class RaridadesItemConfigComponent implements OnInit {
       acceptButtonProps: { severity: 'danger' },
       accept: () => this.delete(id),
     });
-  }
-
-  private delete(id: number): void {
-    this.configApi.deleteRaridadeItem(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.toastService.success('Raridade excluída com sucesso', 'Sucesso');
-          this.loadData();
-        },
-        error: (err) => {
-          const msg = err?.error?.message ?? 'Erro ao excluir raridade';
-          this.toastService.error(msg, 'Erro');
-        },
-      });
   }
 }

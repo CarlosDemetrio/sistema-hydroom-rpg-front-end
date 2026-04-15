@@ -1,6 +1,7 @@
 /**
  * RaridadesItemConfigComponent — Spec
  *
+ * Migrado para BaseConfigComponent + RaridadeItemConfigService.
  * NOTA JIT: Usa overrideTemplate para evitar NG0950 em modo JIT no Vitest.
  * Foco: sinais, CRUD, color picker preview, toggle podeJogadorAdicionar.
  */
@@ -12,7 +13,7 @@ import { vi } from 'vitest';
 import { ConfirmationService } from 'primeng/api';
 
 import { RaridadesItemConfigComponent } from './raridades-item-config.component';
-import { ConfigApiService } from '@core/services/api/config-api.service';
+import { RaridadeItemConfigService } from '@core/services/business/config/raridade-item-config.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { ToastService } from '@services/toast.service';
 import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
@@ -57,12 +58,19 @@ const raridadeRaroMock: RaridadeItemConfig = {
 // Helpers de mock
 // ============================================================
 
-function criarConfigApiMock(raridades: RaridadeItemConfig[] = [raridadeComumMock, raridadeRaroMock]) {
+function criarRaridadeServiceMock(
+  raridades: RaridadeItemConfig[] = [raridadeComumMock, raridadeRaroMock],
+  temJogo = true,
+) {
+  const jogoAtual = temJogo ? { id: 10, nome: 'Campanha Teste', ativo: true } : null;
   return {
-    listRaridadesItem:  vi.fn().mockReturnValue(of(raridades)),
-    createRaridadeItem: vi.fn().mockReturnValue(of(raridadeComumMock)),
-    updateRaridadeItem: vi.fn().mockReturnValue(of(raridadeComumMock)),
-    deleteRaridadeItem: vi.fn().mockReturnValue(of(void 0)),
+    loadItems:    vi.fn().mockReturnValue(of(raridades)),
+    createItem:   vi.fn().mockReturnValue(of(raridadeComumMock)),
+    updateItem:   vi.fn().mockReturnValue(of(raridadeComumMock)),
+    deleteItem:   vi.fn().mockReturnValue(of(void 0)),
+    currentGameId:  () => (temJogo ? 10 : null),
+    hasCurrentGame: () => temJogo,
+    currentGame:    () => jogoAtual,
   };
 }
 
@@ -88,7 +96,7 @@ function criarToastServiceMock() {
   };
 }
 
-// Template stub mínimo
+// Template stub mínimo — evita NG0950
 const TEMPLATE_STUB = `
   <div id="raridades-config-stub">
     @if (hasGame()) {
@@ -97,7 +105,7 @@ const TEMPLATE_STUB = `
     @if (!hasGame()) {
       <p id="sem-jogo">Nenhum jogo selecionado</p>
     }
-    @for (r of raridades(); track r.id) {
+    @for (r of items(); track r.id) {
       <span class="raridade-nome">{{ r.nome }}</span>
       <span class="raridade-cor">{{ r.cor }}</span>
     }
@@ -112,8 +120,11 @@ const TEMPLATE_STUB = `
   </div>
 `;
 
-async function renderRaridades(raridades: RaridadeItemConfig[] = [raridadeComumMock, raridadeRaroMock], temJogo = true) {
-  const configApiMock          = criarConfigApiMock(raridades);
+async function renderRaridades(
+  raridades: RaridadeItemConfig[] = [raridadeComumMock, raridadeRaroMock],
+  temJogo = true,
+) {
+  const raridadeServiceMock    = criarRaridadeServiceMock(raridades, temJogo);
   const currentGameServiceMock = criarCurrentGameServiceMock(temJogo);
   const toastServiceMock       = criarToastServiceMock();
 
@@ -122,15 +133,15 @@ async function renderRaridades(raridades: RaridadeItemConfig[] = [raridadeComumM
       tb.overrideTemplate(RaridadesItemConfigComponent, TEMPLATE_STUB);
     },
     providers: [
-      { provide: ConfigApiService,  useValue: configApiMock },
-      { provide: CurrentGameService, useValue: currentGameServiceMock },
-      { provide: ToastService,       useValue: toastServiceMock },
+      { provide: RaridadeItemConfigService, useValue: raridadeServiceMock },
+      { provide: CurrentGameService,        useValue: currentGameServiceMock },
+      { provide: ToastService,              useValue: toastServiceMock },
       ConfirmationService,
     ],
   });
 
   const confirmationService = result.fixture.componentRef.injector.get(ConfirmationService);
-  return { ...result, configApiMock, toastServiceMock, confirmationService };
+  return { ...result, raridadeServiceMock, toastServiceMock, confirmationService };
 }
 
 // ============================================================
@@ -149,9 +160,9 @@ describe('RaridadesItemConfigComponent', () => {
 
   describe('carregamento de dados', () => {
     it('deve carregar raridades ao inicializar quando há jogo selecionado', async () => {
-      const { configApiMock } = await renderRaridades();
+      const { raridadeServiceMock } = await renderRaridades();
 
-      expect(configApiMock.listRaridadesItem).toHaveBeenCalledWith(10);
+      expect(raridadeServiceMock.loadItems).toHaveBeenCalled();
     });
 
     it('deve exibir raridades carregadas', async () => {
@@ -162,9 +173,9 @@ describe('RaridadesItemConfigComponent', () => {
     });
 
     it('não deve carregar quando não há jogo selecionado', async () => {
-      const { configApiMock } = await renderRaridades([], false);
+      const { raridadeServiceMock } = await renderRaridades([], false);
 
-      expect(configApiMock.listRaridadesItem).not.toHaveBeenCalled();
+      expect(raridadeServiceMock.loadItems).not.toHaveBeenCalled();
     });
 
     it('deve exibir aviso de sem jogo quando hasGame é false', async () => {
@@ -179,20 +190,20 @@ describe('RaridadesItemConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('sinais de estado', () => {
-    it('raridades deve ter 2 itens após carregamento', async () => {
+    it('items deve ter 2 raridades após carregamento', async () => {
       const { fixture } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      expect(comp.raridades().length).toBe(2);
+      expect(comp.items().length).toBe(2);
     });
 
-    it('loading deve ser false após carregar', async () => {
+    it('loadingTable deve ser false após carregar', async () => {
       const { fixture } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      expect(comp.loading()).toBe(false);
+      expect(comp.loadingTable()).toBe(false);
     });
 
     it('dialogVisible deve inicializar como false', async () => {
@@ -202,6 +213,14 @@ describe('RaridadesItemConfigComponent', () => {
 
       expect(comp.dialogVisible()).toBe(false);
     });
+
+    it('editMode deve inicializar como false', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      expect(comp.editMode()).toBe(false);
+    });
   });
 
   // ----------------------------------------------------------
@@ -209,7 +228,7 @@ describe('RaridadesItemConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('color picker — PrimeNG p-colorpicker', () => {
-    it('corPreview deve retornar fallback para cor inválida no formulário', async () => {
+    it('corPreview deve retornar fallback para cor inválida', async () => {
       const { fixture } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
@@ -239,8 +258,6 @@ describe('RaridadesItemConfigComponent', () => {
       const comp = fixture.componentInstance as any;
 
       comp.openDialog();
-
-      // p-colorpicker emite o valor sem '#' (ex: 'ff0000')
       comp.onColorPickerNgModelChange('ff0000');
       fixture.detectChanges();
 
@@ -256,8 +273,6 @@ describe('RaridadesItemConfigComponent', () => {
       comp.onColorPickerNgModelChange('ff0000');
       fixture.detectChanges();
 
-      // corFormValue deve ser atualizado via valueChanges do form control
-      // (a subscrição dispara automaticamente)
       expect(comp.corPreview()).toBe('#FF0000');
     });
 
@@ -270,7 +285,6 @@ describe('RaridadesItemConfigComponent', () => {
       comp.corFormValue.set('#0070DD');
       fixture.detectChanges();
 
-      // corPickerValue = corPreview sem '#'
       expect(comp.corPickerValue()).toBe('0070DD');
     });
 
@@ -303,11 +317,10 @@ describe('RaridadesItemConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog(raridadeRaroMock); // cor = '#0070dd'
+      comp.openDialog(raridadeRaroMock);
       fixture.detectChanges();
 
       expect(comp.corFormValue()).toBe('#0070dd');
-      // corPickerValue remove o '#' — mantém o case original da string
       expect(comp.corPickerValue()).toBe('0070dd');
     });
 
@@ -316,7 +329,7 @@ describe('RaridadesItemConfigComponent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      comp.openDialog(); // sem item = criação
+      comp.openDialog();
       fixture.detectChanges();
 
       expect(comp.corFormValue()).toBe('#9d9d9d');
@@ -328,7 +341,6 @@ describe('RaridadesItemConfigComponent', () => {
       const comp = fixture.componentInstance as any;
 
       comp.openDialog();
-      // Não deve lançar erro
       expect(() => comp.onColorPickerNgModelChange('')).not.toThrow();
     });
   });
@@ -338,7 +350,7 @@ describe('RaridadesItemConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('openDialog', () => {
-    it('deve abrir dialog em modo criação', async () => {
+    it('deve abrir dialog em modo criação quando chamado sem argumento', async () => {
       const { fixture } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
@@ -364,15 +376,27 @@ describe('RaridadesItemConfigComponent', () => {
       expect(comp.form.get('cor')?.value).toBe('#0070dd');
       expect(comp.form.get('podeJogadorAdicionar')?.value).toBe(false);
     });
+
+    it('deve fechar dialog ao chamar closeDialog', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      comp.closeDialog();
+      fixture.detectChanges();
+
+      expect(comp.dialogVisible()).toBe(false);
+    });
   });
 
   // ----------------------------------------------------------
-  // 5. save
+  // 5. save — criação e edição
   // ----------------------------------------------------------
 
   describe('save', () => {
-    it('deve chamar createRaridadeItem ao salvar nova raridade', async () => {
-      const { fixture, configApiMock } = await renderRaridades();
+    it('deve chamar service.createItem ao salvar nova raridade', async () => {
+      const { fixture, raridadeServiceMock } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -385,13 +409,13 @@ describe('RaridadesItemConfigComponent', () => {
       });
       comp.save();
 
-      expect(configApiMock.createRaridadeItem).toHaveBeenCalledWith(
-        expect.objectContaining({ nome: 'Incomum', cor: '#1eff00', jogoId: 10 })
+      expect(raridadeServiceMock.createItem).toHaveBeenCalledWith(
+        expect.objectContaining({ nome: 'Incomum', cor: '#1eff00' })
       );
     });
 
-    it('deve chamar updateRaridadeItem ao salvar raridade existente', async () => {
-      const { fixture, configApiMock } = await renderRaridades();
+    it('deve chamar service.updateItem ao salvar raridade existente', async () => {
+      const { fixture, raridadeServiceMock } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -399,7 +423,7 @@ describe('RaridadesItemConfigComponent', () => {
       comp.form.patchValue({ nome: 'Comum+' });
       comp.save();
 
-      expect(configApiMock.updateRaridadeItem).toHaveBeenCalledWith(
+      expect(raridadeServiceMock.updateItem).toHaveBeenCalledWith(
         1,
         expect.objectContaining({ nome: 'Comum+' })
       );
@@ -416,6 +440,21 @@ describe('RaridadesItemConfigComponent', () => {
 
       expect(toastServiceMock.warning).toHaveBeenCalled();
     });
+
+    it('deve exibir toast de sucesso após criar raridade', async () => {
+      const { fixture, toastServiceMock } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      comp.form.patchValue({ nome: 'Épico', cor: '#a335ee', ordemExibicao: 4 });
+      comp.save();
+
+      expect(toastServiceMock.success).toHaveBeenCalledWith(
+        expect.stringContaining('criada'),
+        'Sucesso'
+      );
+    });
   });
 
   // ----------------------------------------------------------
@@ -423,8 +462,8 @@ describe('RaridadesItemConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('exclusão', () => {
-    it('deve chamar deleteRaridadeItem ao confirmar exclusão', async () => {
-      const { fixture, configApiMock, confirmationService } = await renderRaridades();
+    it('deve chamar service.deleteItem ao confirmar exclusão', async () => {
+      const { fixture, raridadeServiceMock, confirmationService } = await renderRaridades();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -434,7 +473,22 @@ describe('RaridadesItemConfigComponent', () => {
 
       comp.confirmDelete(1);
 
-      expect(configApiMock.deleteRaridadeItem).toHaveBeenCalledWith(1);
+      expect(raridadeServiceMock.deleteItem).toHaveBeenCalledWith(1);
+    });
+
+    it('deve recarregar lista após exclusão', async () => {
+      const { fixture, raridadeServiceMock, confirmationService } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      const callCountBefore = raridadeServiceMock.loadItems.mock.calls.length;
+
+      vi.spyOn(confirmationService, 'confirm').mockImplementation(({ accept }: { accept?: () => void }) => {
+        accept?.();
+      });
+
+      comp.confirmDelete(1);
+
+      expect(raridadeServiceMock.loadItems.mock.calls.length).toBeGreaterThan(callCountBefore);
     });
   });
 });
