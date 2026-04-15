@@ -4,10 +4,8 @@ import {
   computed,
   inject,
   signal,
-  OnInit,
-  DestroyRef,
 } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService } from 'primeng/api';
@@ -26,9 +24,9 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
 import { ConfigApiService } from '@core/services/api/config-api.service';
-import { CurrentGameService } from '@core/services/current-game.service';
-import { ToastService } from '@services/toast.service';
+import { ItemConfigService } from '@core/services/business/config/item-config.service';
 import {
   ItemConfigResumo,
   ItemConfigResponse,
@@ -41,9 +39,7 @@ import {
   TIPO_EFEITO_LABELS,
   TIPO_REQUISITO_LABELS,
 } from '@core/models/item-config.model';
-import {
-  RaridadeItemConfig,
-} from '@core/models/raridade-item-config.model';
+import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 import {
   TipoItemConfig,
   CATEGORIA_LABELS,
@@ -62,10 +58,10 @@ interface SelectOption {
 /**
  * ItensConfigComponent — Catálogo de Itens do Jogo.
  *
- * Tela de configuração para ItemConfig com:
- * - Listagem com filtros por raridade, categoria e nome
- * - Formulário em 3 abas: Dados Básicos, Efeitos, Requisitos
- * - Sub-recursos ItemEfeito e ItemRequisito gerenciados inline
+ * Migrado para estender BaseConfigComponent.
+ * Mantém tabela customizada (filtros, sub-recursos, abas).
+ *
+ * Endpoint: /api/v1/configuracoes/itens
  */
 @Component({
   selector: 'app-itens-config',
@@ -174,14 +170,14 @@ interface SelectOption {
       <!-- Tabela -->
       <p-table
         [value]="itensFiltrados()"
-        [loading]="loading()"
+        [loading]="loadingTable()"
         [paginator]="true"
         [rows]="10"
         [rowsPerPageOptions]="[10, 25, 50]"
         styleClass="p-datatable-sm"
         [tableStyle]="{ 'min-width': '60rem' }"
       >
-        <ng-template pTemplate="header">
+        <ng-template #header>
           <tr>
             <th>Raridade</th>
             <th>Nome</th>
@@ -193,7 +189,7 @@ interface SelectOption {
             <th style="width: 8rem">Ações</th>
           </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-item>
+        <ng-template #body let-item>
           <tr>
             <td>
               <div class="flex align-items-center gap-2">
@@ -233,31 +229,41 @@ interface SelectOption {
                   severity="secondary"
                   (onClick)="editItem(item)"
                   pTooltip="Editar"
+                  tooltipPosition="top"
                 />
                 <p-button
                   icon="pi pi-trash"
                   [rounded]="true"
                   [text]="true"
                   severity="danger"
-                  (onClick)="confirmDelete(item.id)"
+                  (onClick)="confirmDelete(item.id!)"
                   pTooltip="Excluir"
+                  tooltipPosition="top"
                 />
               </div>
             </td>
           </tr>
         </ng-template>
-        <ng-template pTemplate="emptymessage">
+        <ng-template #emptymessage>
           <tr>
             <td colspan="8">
-              <div class="text-center p-4 text-color-secondary">
-                <i class="pi pi-inbox text-3xl mb-2 block"></i>
-                <p class="m-0">
+              <div class="rpg-empty-state">
+                <i class="pi pi-inbox rpg-empty-state__icon"></i>
+                <p class="rpg-empty-state__title">
                   @if (filtroAtivo()) {
                     Nenhum item encontrado com os filtros aplicados
                   } @else {
                     Nenhum item configurado
                   }
                 </p>
+                @if (!filtroAtivo()) {
+                  <p-button
+                    label="Novo Item"
+                    icon="pi pi-plus"
+                    size="small"
+                    (onClick)="openDialog()"
+                  />
+                }
               </div>
             </td>
           </tr>
@@ -303,12 +309,12 @@ interface SelectOption {
                 <div class="grid">
                   <div class="col-6">
                     <div class="flex flex-column gap-2">
-                      <label for="nome" class="font-semibold">
+                      <label for="item-nome" class="font-semibold">
                         Nome <span class="text-red-400">*</span>
                       </label>
                       <input
                         pInputText
-                        id="nome"
+                        id="item-nome"
                         formControlName="nome"
                         placeholder="Nome do item..."
                         [class.ng-invalid]="form.get('nome')?.invalid && form.get('nome')?.touched"
@@ -374,11 +380,11 @@ interface SelectOption {
                   </div>
                   <div class="col-6">
                     <div class="flex flex-column gap-2">
-                      <label for="nivelMinimo" class="font-semibold">
+                      <label for="item-nivelMinimo" class="font-semibold">
                         Nível Mínimo <span class="text-red-400">*</span>
                       </label>
                       <p-input-number
-                        inputId="nivelMinimo"
+                        inputId="item-nivelMinimo"
                         formControlName="nivelMinimo"
                         [showButtons]="true"
                         [min]="1"
@@ -391,11 +397,11 @@ interface SelectOption {
                 <div class="grid">
                   <div class="col-6">
                     <div class="flex flex-column gap-2">
-                      <label for="peso" class="font-semibold">
+                      <label for="item-peso" class="font-semibold">
                         Peso (kg) <span class="text-red-400">*</span>
                       </label>
                       <p-input-number
-                        inputId="peso"
+                        inputId="item-peso"
                         formControlName="peso"
                         [showButtons]="true"
                         [min]="0"
@@ -407,9 +413,9 @@ interface SelectOption {
                   </div>
                   <div class="col-6">
                     <div class="flex flex-column gap-2">
-                      <label for="valor" class="font-semibold">Valor (po)</label>
+                      <label for="item-valor" class="font-semibold">Valor (po)</label>
                       <p-input-number
-                        inputId="valor"
+                        inputId="item-valor"
                         formControlName="valor"
                         [showButtons]="true"
                         [min]="0"
@@ -422,12 +428,12 @@ interface SelectOption {
                 <div class="grid">
                   <div class="col-6">
                     <div class="flex flex-column gap-2">
-                      <label for="duracaoPadrao" class="font-semibold">
+                      <label for="item-duracaoPadrao" class="font-semibold">
                         Durabilidade Padrão
                         <span class="text-color-secondary text-xs ml-1">(null = indestrutível)</span>
                       </label>
                       <p-input-number
-                        inputId="duracaoPadrao"
+                        inputId="item-duracaoPadrao"
                         formControlName="duracaoPadrao"
                         [showButtons]="true"
                         [min]="1"
@@ -436,11 +442,11 @@ interface SelectOption {
                   </div>
                   <div class="col-6">
                     <div class="flex flex-column gap-2">
-                      <label for="ordemExibicao" class="font-semibold">
+                      <label for="item-ordemExibicao" class="font-semibold">
                         Ordem de Exibição <span class="text-red-400">*</span>
                       </label>
                       <p-input-number
-                        inputId="ordemExibicao"
+                        inputId="item-ordemExibicao"
                         formControlName="ordemExibicao"
                         [showButtons]="true"
                         [min]="1"
@@ -451,10 +457,10 @@ interface SelectOption {
 
                 <!-- Propriedades -->
                 <div class="flex flex-column gap-2">
-                  <label for="propriedades" class="font-semibold">Propriedades</label>
+                  <label for="item-propriedades" class="font-semibold">Propriedades</label>
                   <input
                     pInputText
-                    id="propriedades"
+                    id="item-propriedades"
                     formControlName="propriedades"
                     placeholder="Ex: versátil, finura, arremesso"
                   />
@@ -462,10 +468,10 @@ interface SelectOption {
 
                 <!-- Descrição -->
                 <div class="flex flex-column gap-2">
-                  <label for="descricao" class="font-semibold">Descrição</label>
+                  <label for="item-descricao" class="font-semibold">Descrição</label>
                   <textarea
                     pTextarea
-                    id="descricao"
+                    id="item-descricao"
                     formControlName="descricao"
                     [rows]="3"
                     placeholder="Descrição do item..."
@@ -646,7 +652,7 @@ interface SelectOption {
                           <span class="font-semibold text-sm">{{ req.alvo }}</span>
                         }
                         @if (req.valorMinimo != null) {
-                          <span class="text-sm text-color-secondary">≥ {{ req.valorMinimo }}</span>
+                          <span class="text-sm text-color-secondary">&#8805; {{ req.valorMinimo }}</span>
                         }
                       </div>
                       <p-button
@@ -717,38 +723,32 @@ interface SelectOption {
     <p-confirmDialog />
   `,
 })
-export class ItensConfigComponent implements OnInit {
+export class ItensConfigComponent extends BaseConfigComponent<
+  ItemConfigResumo,
+  ItemConfigService
+> {
+  protected override service = inject(ItemConfigService);
   private readonly configApi = inject(ConfigApiService);
-  private readonly currentGameService = inject(CurrentGameService);
-  private readonly toastService = inject(ToastService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly fb = inject(FormBuilder);
-  private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly hasGame = this.currentGameService.hasCurrentGame;
-  protected readonly currentGameId = this.currentGameService.currentGameId;
-  protected readonly currentGameName = computed(() => this.currentGameService.currentGame()?.nome);
+  // ---- Estado local de loading da tabela ----
+  protected readonly loadingTable = signal(false);
 
-  // Estado principal
-  protected readonly itens = signal<ItemConfigResumo[]>([]);
-  protected readonly loading = signal(false);
-  protected readonly dialogVisible = signal(false);
-  protected readonly editMode = signal(false);
-  protected readonly currentEditId = signal<number | null>(null);
+  // ---- Estado do dialog ----
   protected readonly activeTab = signal('dados');
 
-  // Sub-recursos do item em edição
+  // ---- Sub-recursos do item em edição ----
   protected readonly efeitos = signal<ItemEfeitoResponse[]>([]);
   protected readonly requisitos = signal<ItemRequisitoResponse[]>([]);
 
-  // Dados de apoio
+  // ---- Dados de apoio ----
   protected readonly raridades = signal<RaridadeItemConfig[]>([]);
   protected readonly tipos = signal<TipoItemConfig[]>([]);
   protected readonly atributos = signal<AtributoConfig[]>([]);
   protected readonly aptidoes = signal<AptidaoConfig[]>([]);
   protected readonly bonusConfigs = signal<BonusConfig[]>([]);
 
-  // Filtros
+  // ---- Filtros ----
   protected filtroRaridadeId: number | null = null;
   protected filtroCategoria: CategoriaItem | null = null;
   protected filtroBusca = '';
@@ -758,7 +758,7 @@ export class ItensConfigComponent implements OnInit {
     busca: string;
   }>({ raridadeId: null, categoria: null, busca: '' });
 
-  // Formulário de novo efeito
+  // ---- Formulário de novo efeito ----
   protected novoEfeitoTipo = signal<TipoItemEfeito | null>(null);
   protected novoEfeitoAtributoId = signal<number | null>(null);
   protected novoEfeitoAptidaoId = signal<number | null>(null);
@@ -767,12 +767,12 @@ export class ItensConfigComponent implements OnInit {
   protected novoEfeitoFormula = signal<string>('');
   protected novoEfeitoDescricao = signal<string>('');
 
-  // Formulário de novo requisito
+  // ---- Formulário de novo requisito ----
   protected novoRequisitoTipo = signal<TipoRequisito | null>(null);
   protected novoRequisitoAlvo = signal<string>('');
   protected novoRequisitoValorMinimo = signal<number | null>(null);
 
-  // Options para selects
+  // ---- Options para selects ----
   protected readonly tipoEfeitoOptions: SelectOption[] = (Object.keys(TIPO_EFEITO_LABELS) as TipoItemEfeito[])
     .map((k) => ({ label: TIPO_EFEITO_LABELS[k], value: k }));
 
@@ -782,7 +782,7 @@ export class ItensConfigComponent implements OnInit {
   protected readonly categoriaFilterOptions = (Object.keys(CATEGORIA_LABELS) as CategoriaItem[])
     .map((k) => ({ label: CATEGORIA_LABELS[k], value: k }));
 
-  // Computed options
+  // ---- Computed options ----
   protected readonly raridadesOptions = computed(() =>
     this.raridades().map((r) => ({ label: r.nome, value: r.id, cor: r.cor }))
   );
@@ -829,7 +829,7 @@ export class ItensConfigComponent implements OnInit {
 
   protected readonly itensFiltrados = computed(() => {
     const f = this.filtrosAplicados();
-    return this.itens().filter((item) => {
+    return this.items().filter((item) => {
       if (f.raridadeId != null && item.raridadeId !== f.raridadeId) return false;
       if (f.categoria != null && item.categoria !== f.categoria) return false;
       if (f.busca && !item.nome.toLowerCase().includes(f.busca.toLowerCase())) return false;
@@ -847,44 +847,47 @@ export class ItensConfigComponent implements OnInit {
     return true;
   });
 
-  protected form!: FormGroup;
+  // ---- Métodos obrigatórios da base ----
 
-  ngOnInit(): void {
-    this.form = this.buildForm();
-    if (this.hasGame()) {
-      this.loadData();
-      this.loadApoio();
-    }
+  protected getEntityName(): string {
+    return 'Item';
   }
 
-  private buildForm(): FormGroup {
+  protected getEntityNamePlural(): string {
+    return 'Itens';
+  }
+
+  protected buildForm(): FormGroup {
     return this.fb.group({
-      nome: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      raridadeId: [null, [Validators.required]],
-      tipoId: [null, [Validators.required]],
-      peso: [0, [Validators.required, Validators.min(0)]],
-      valor: [null],
+      nome:          ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      raridadeId:    [null, [Validators.required]],
+      tipoId:        [null, [Validators.required]],
+      peso:          [0, [Validators.required, Validators.min(0)]],
+      valor:         [null],
       duracaoPadrao: [null],
-      nivelMinimo: [1, [Validators.required, Validators.min(1)]],
-      propriedades: [''],
-      descricao: ['', [Validators.maxLength(2000)]],
+      nivelMinimo:   [1, [Validators.required, Validators.min(1)]],
+      propriedades:  [''],
+      descricao:     ['', [Validators.maxLength(2000)]],
       ordemExibicao: [1, [Validators.required, Validators.min(1)]],
     });
   }
 
-  protected loadData(): void {
+  // ---- Sobrescreve loadData para gerenciar loading local e carregar apoio ----
+
+  override loadData(): void {
     const jogoId = this.currentGameId();
     if (!jogoId) return;
-    this.loading.set(true);
-    this.configApi.listItens(jogoId, 0, 200)
+    this.loadingTable.set(true);
+    this.service.loadItems()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (page) => {
-          this.itens.set(page.content);
-          this.loading.set(false);
+        next: (data) => {
+          this.items.set(data);
+          this.loadingTable.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => this.loadingTable.set(false),
       });
+    this.loadApoio();
   }
 
   private loadApoio(): void {
@@ -907,24 +910,26 @@ export class ItensConfigComponent implements OnInit {
       .subscribe({ next: (data) => this.bonusConfigs.set(data) });
   }
 
-  protected openDialog(): void {
+  // ---- openDialog ----
+
+  override openDialog(): void {
     this.form = this.buildForm();
     this.editMode.set(false);
     this.currentEditId.set(null);
     this.activeTab.set('dados');
     this.efeitos.set([]);
     this.requisitos.set([]);
-    this.form.reset({ nivelMinimo: 1, peso: 0, ordemExibicao: this.itens().length + 1 });
+    this.form.reset({ nivelMinimo: 1, peso: 0, ordemExibicao: this.items().length + 1 });
     this.dialogVisible.set(true);
   }
 
   protected editItem(item: ItemConfigResumo): void {
-    this.loading.set(true);
-    this.configApi.getItem(item.id)
+    this.loadingTable.set(true);
+    this.service.getItem(item.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (full: ItemConfigResponse) => {
-          this.loading.set(false);
+          this.loadingTable.set(false);
           this.editMode.set(true);
           this.currentEditId.set(full.id);
           this.activeTab.set('dados');
@@ -932,24 +937,24 @@ export class ItensConfigComponent implements OnInit {
           this.requisitos.set(full.requisitos ?? []);
           this.form = this.buildForm();
           this.form.patchValue({
-            nome: full.nome,
-            raridadeId: full.raridadeId,
-            tipoId: full.tipoId,
-            peso: full.peso,
-            valor: full.valor,
+            nome:          full.nome,
+            raridadeId:    full.raridadeId,
+            tipoId:        full.tipoId,
+            peso:          full.peso,
+            valor:         full.valor,
             duracaoPadrao: full.duracaoPadrao,
-            nivelMinimo: full.nivelMinimo,
-            propriedades: full.propriedades,
-            descricao: full.descricao,
+            nivelMinimo:   full.nivelMinimo,
+            propriedades:  full.propriedades,
+            descricao:     full.descricao,
             ordemExibicao: full.ordemExibicao,
           });
           this.dialogVisible.set(true);
         },
-        error: () => this.loading.set(false),
+        error: () => this.loadingTable.set(false),
       });
   }
 
-  protected closeDialog(): void {
+  override closeDialog(): void {
     this.dialogVisible.set(false);
     this.form.reset();
     this.resetEfeitoForm();
@@ -960,7 +965,9 @@ export class ItensConfigComponent implements OnInit {
     if (!visible) this.closeDialog();
   }
 
-  protected save(): void {
+  // ---- Sobrescreve save ----
+
+  override save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.toastService.warning('Preencha todos os campos obrigatórios', 'Atenção');
@@ -971,10 +978,10 @@ export class ItensConfigComponent implements OnInit {
     const data = this.form.value;
 
     const operation$ = this.editMode()
-      ? this.configApi.updateItem(this.currentEditId()!, data)
-      : this.configApi.createItem({ ...data, jogoId });
+      ? this.service.updateItem(this.currentEditId()!, data)
+      : this.service.createItem({ ...data, jogoId });
 
-    this.loading.set(true);
+    this.loadingTable.set(true);
     operation$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         const action = this.editMode() ? 'atualizado' : 'criado';
@@ -982,15 +989,13 @@ export class ItensConfigComponent implements OnInit {
         this.closeDialog();
         this.loadData();
       },
-      error: (err) => {
-        this.loading.set(false);
-        const msg = err?.error?.message ?? 'Erro ao salvar item';
-        this.toastService.error(msg, 'Erro');
-      },
+      error: () => this.loadingTable.set(false),
     });
   }
 
-  protected confirmDelete(id: number): void {
+  // ---- Sobrescreve confirmDelete para usar ConfirmationService ----
+
+  override confirmDelete(id: number): void {
     this.confirmationService.confirm({
       message: 'Tem certeza que deseja excluir este Item? Esta ação não pode ser desfeita.',
       header: 'Confirmar Exclusão',
@@ -998,23 +1003,8 @@ export class ItensConfigComponent implements OnInit {
       acceptLabel: 'Sim, excluir',
       rejectLabel: 'Cancelar',
       acceptButtonProps: { severity: 'danger' },
-      accept: () => this.deleteItem(id),
+      accept: () => this.delete(id),
     });
-  }
-
-  private deleteItem(id: number): void {
-    this.configApi.deleteItem(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.toastService.success('Item excluído com sucesso', 'Sucesso');
-          this.loadData();
-        },
-        error: (err) => {
-          const msg = err?.error?.message ?? 'Erro ao excluir item';
-          this.toastService.error(msg, 'Erro');
-        },
-      });
   }
 
   // ===== Efeitos =====
@@ -1032,12 +1022,12 @@ export class ItensConfigComponent implements OnInit {
     if (!itemId) return;
 
     const dto: ItemEfeitoRequest = {
-      tipoEfeito: this.novoEfeitoTipo()!,
-      atributoAlvoId: this.novoEfeitoAtributoId(),
-      aptidaoAlvoId: this.novoEfeitoAptidaoId(),
-      bonusAlvoId: this.novoEfeitoBonusId(),
-      valorFixo: this.novoEfeitoValorFixo(),
-      formula: this.novoEfeitoFormula() || null,
+      tipoEfeito:      this.novoEfeitoTipo()!,
+      atributoAlvoId:  this.novoEfeitoAtributoId(),
+      aptidaoAlvoId:   this.novoEfeitoAptidaoId(),
+      bonusAlvoId:     this.novoEfeitoBonusId(),
+      valorFixo:       this.novoEfeitoValorFixo(),
+      formula:         this.novoEfeitoFormula() || null,
       descricaoEfeito: this.novoEfeitoDescricao() || null,
     };
 
@@ -1082,9 +1072,9 @@ export class ItensConfigComponent implements OnInit {
     if (!itemId || !this.novoRequisitoTipo()) return;
 
     const dto: ItemRequisitoRequest = {
-      tipo: this.novoRequisitoTipo()!,
-      alvo: this.novoRequisitoAlvo() || null,
-      valorMinimo: this.novoRequisitoValorMinimo(),
+      tipo:         this.novoRequisitoTipo()!,
+      alvo:         this.novoRequisitoAlvo() || null,
+      valorMinimo:  this.novoRequisitoValorMinimo(),
     };
 
     this.configApi.addItemRequisito(itemId, dto)
@@ -1122,8 +1112,8 @@ export class ItensConfigComponent implements OnInit {
   protected aplicarFiltros(): void {
     this.filtrosAplicados.set({
       raridadeId: this.filtroRaridadeId,
-      categoria: this.filtroCategoria,
-      busca: this.filtroBusca,
+      categoria:  this.filtroCategoria,
+      busca:      this.filtroBusca,
     });
   }
 

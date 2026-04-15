@@ -1,6 +1,7 @@
 /**
  * ItensConfigComponent — Spec
  *
+ * Migrado para BaseConfigComponent + ItemConfigService.
  * NOTA JIT: Usa overrideTemplate para evitar NG0950 em modo JIT no Vitest.
  * Foco: carregamento de dados, filtros, CRUD básico, efeitos e requisitos.
  */
@@ -12,10 +13,16 @@ import { vi } from 'vitest';
 import { ConfirmationService } from 'primeng/api';
 
 import { ItensConfigComponent } from './itens-config.component';
+import { ItemConfigService } from '@core/services/business/config/item-config.service';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { ToastService } from '@services/toast.service';
-import { ItemConfigResumo, ItemConfigResponse, ItemEfeitoResponse, ItemRequisitoResponse, PageResponse } from '@core/models/item-config.model';
+import {
+  ItemConfigResumo,
+  ItemConfigResponse,
+  ItemEfeitoResponse,
+  ItemRequisitoResponse,
+} from '@core/models/item-config.model';
 import { RaridadeItemConfig } from '@core/models/raridade-item-config.model';
 import { TipoItemConfig } from '@core/models/tipo-item-config.model';
 
@@ -75,33 +82,37 @@ const itemFullMock: ItemConfigResponse = {
   dataCriacao: '2024-01-01', dataUltimaAtualizacao: '2024-01-01',
 };
 
-const pageMock: PageResponse<ItemConfigResumo> = {
-  content: [itemResumoMock, itemResumoMock2],
-  totalElements: 2,
-  totalPages: 1,
-  size: 10,
-  number: 0,
-};
-
 // ============================================================
 // Helpers de mock
 // ============================================================
 
+function criarItemServiceMock(
+  itens: ItemConfigResumo[] = [itemResumoMock, itemResumoMock2],
+  temJogo = true,
+) {
+  const jogoAtual = temJogo ? { id: 10, nome: 'Campanha Teste', ativo: true } : null;
+  return {
+    loadItems:      vi.fn().mockReturnValue(of(itens)),
+    createItem:     vi.fn().mockReturnValue(of(itemResumoMock)),
+    updateItem:     vi.fn().mockReturnValue(of(itemFullMock)),
+    deleteItem:     vi.fn().mockReturnValue(of(void 0)),
+    getItem:        vi.fn().mockReturnValue(of(itemFullMock)),
+    currentGameId:  () => (temJogo ? 10 : null),
+    hasCurrentGame: () => temJogo,
+    currentGame:    () => jogoAtual,
+  };
+}
+
 function criarConfigApiMock() {
   return {
-    listItens:          vi.fn().mockReturnValue(of(pageMock)),
-    getItem:            vi.fn().mockReturnValue(of(itemFullMock)),
-    createItem:         vi.fn().mockReturnValue(of(itemFullMock)),
-    updateItem:         vi.fn().mockReturnValue(of(itemFullMock)),
-    deleteItem:         vi.fn().mockReturnValue(of(void 0)),
-    listRaridadesItem:  vi.fn().mockReturnValue(of([raridadeMock])),
-    listTiposItem:      vi.fn().mockReturnValue(of([tipoMock])),
-    listAtributos:      vi.fn().mockReturnValue(of([])),
-    listAptidoes:       vi.fn().mockReturnValue(of([])),
-    listBonus:          vi.fn().mockReturnValue(of([])),
-    addItemEfeito:      vi.fn().mockReturnValue(of(efeitoMock)),
-    removeItemEfeito:   vi.fn().mockReturnValue(of(void 0)),
-    addItemRequisito:   vi.fn().mockReturnValue(of(requisitoMock)),
+    listRaridadesItem:   vi.fn().mockReturnValue(of([raridadeMock])),
+    listTiposItem:       vi.fn().mockReturnValue(of([tipoMock])),
+    listAtributos:       vi.fn().mockReturnValue(of([])),
+    listAptidoes:        vi.fn().mockReturnValue(of([])),
+    listBonus:           vi.fn().mockReturnValue(of([])),
+    addItemEfeito:       vi.fn().mockReturnValue(of(efeitoMock)),
+    removeItemEfeito:    vi.fn().mockReturnValue(of(void 0)),
+    addItemRequisito:    vi.fn().mockReturnValue(of(requisitoMock)),
     removeItemRequisito: vi.fn().mockReturnValue(of(void 0)),
   };
 }
@@ -159,6 +170,7 @@ const TEMPLATE_STUB = `
 `;
 
 async function renderItens(temJogo = true) {
+  const itemServiceMock        = criarItemServiceMock(undefined, temJogo);
   const configApiMock          = criarConfigApiMock();
   const currentGameServiceMock = criarCurrentGameServiceMock(temJogo);
   const toastServiceMock       = criarToastServiceMock();
@@ -168,15 +180,16 @@ async function renderItens(temJogo = true) {
       tb.overrideTemplate(ItensConfigComponent, TEMPLATE_STUB);
     },
     providers: [
-      { provide: ConfigApiService,  useValue: configApiMock },
-      { provide: CurrentGameService, useValue: currentGameServiceMock },
-      { provide: ToastService,       useValue: toastServiceMock },
+      { provide: ItemConfigService,   useValue: itemServiceMock },
+      { provide: ConfigApiService,    useValue: configApiMock },
+      { provide: CurrentGameService,  useValue: currentGameServiceMock },
+      { provide: ToastService,        useValue: toastServiceMock },
       ConfirmationService,
     ],
   });
 
   const confirmationService = result.fixture.componentRef.injector.get(ConfirmationService);
-  return { ...result, configApiMock, toastServiceMock, confirmationService };
+  return { ...result, itemServiceMock, configApiMock, toastServiceMock, confirmationService };
 }
 
 // ============================================================
@@ -195,9 +208,9 @@ describe('ItensConfigComponent', () => {
 
   describe('carregamento de dados', () => {
     it('deve carregar itens ao inicializar quando há jogo selecionado', async () => {
-      const { configApiMock } = await renderItens();
+      const { itemServiceMock } = await renderItens();
 
-      expect(configApiMock.listItens).toHaveBeenCalledWith(10, 0, 200);
+      expect(itemServiceMock.loadItems).toHaveBeenCalled();
     });
 
     it('deve carregar dados de apoio ao inicializar', async () => {
@@ -218,9 +231,9 @@ describe('ItensConfigComponent', () => {
     });
 
     it('não deve carregar quando não há jogo selecionado', async () => {
-      const { configApiMock } = await renderItens(false);
+      const { itemServiceMock } = await renderItens(false);
 
-      expect(configApiMock.listItens).not.toHaveBeenCalled();
+      expect(itemServiceMock.loadItems).not.toHaveBeenCalled();
     });
 
     it('deve exibir aviso de sem jogo', async () => {
@@ -235,20 +248,20 @@ describe('ItensConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('sinais de estado', () => {
-    it('itens deve ter 2 itens após carregamento', async () => {
+    it('items deve ter 2 itens após carregamento', async () => {
       const { fixture } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      expect(comp.itens().length).toBe(2);
+      expect(comp.items().length).toBe(2);
     });
 
-    it('loading deve ser false após carregar', async () => {
+    it('loadingTable deve ser false após carregar', async () => {
       const { fixture } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
-      expect(comp.loading()).toBe(false);
+      expect(comp.loadingTable()).toBe(false);
     });
 
     it('dialogVisible deve inicializar como false', async () => {
@@ -316,7 +329,7 @@ describe('ItensConfigComponent', () => {
 
   describe('editItem', () => {
     it('deve carregar item completo e abrir dialog em modo edição', async () => {
-      const { fixture, configApiMock } = await renderItens();
+      const { fixture, itemServiceMock } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -324,7 +337,7 @@ describe('ItensConfigComponent', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(configApiMock.getItem).toHaveBeenCalledWith(1);
+      expect(itemServiceMock.getItem).toHaveBeenCalledWith(1);
       expect(comp.editMode()).toBe(true);
       expect(comp.currentEditId()).toBe(1);
       expect(comp.efeitos().length).toBe(1);
@@ -351,8 +364,8 @@ describe('ItensConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('save', () => {
-    it('deve chamar createItem ao salvar novo item', async () => {
-      const { fixture, configApiMock } = await renderItens();
+    it('deve chamar service.createItem ao salvar novo item', async () => {
+      const { fixture, itemServiceMock } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -363,13 +376,13 @@ describe('ItensConfigComponent', () => {
       });
       comp.save();
 
-      expect(configApiMock.createItem).toHaveBeenCalledWith(
+      expect(itemServiceMock.createItem).toHaveBeenCalledWith(
         expect.objectContaining({ nome: 'Adaga', jogoId: 10 })
       );
     });
 
-    it('deve chamar updateItem ao salvar item existente', async () => {
-      const { fixture, configApiMock } = await renderItens();
+    it('deve chamar service.updateItem ao salvar item existente', async () => {
+      const { fixture, itemServiceMock } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -378,7 +391,7 @@ describe('ItensConfigComponent', () => {
       comp.form.patchValue({ nome: 'Espada Bastarda' });
       comp.save();
 
-      expect(configApiMock.updateItem).toHaveBeenCalledWith(
+      expect(itemServiceMock.updateItem).toHaveBeenCalledWith(
         1,
         expect.objectContaining({ nome: 'Espada Bastarda' })
       );
@@ -394,6 +407,24 @@ describe('ItensConfigComponent', () => {
       comp.save();
 
       expect(toastServiceMock.warning).toHaveBeenCalled();
+    });
+
+    it('deve exibir toast de sucesso após criar item', async () => {
+      const { fixture, toastServiceMock } = await renderItens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      comp.form.patchValue({
+        nome: 'Adaga', raridadeId: 1, tipoId: 1,
+        peso: 0.5, nivelMinimo: 1, ordemExibicao: 1,
+      });
+      comp.save();
+
+      expect(toastServiceMock.success).toHaveBeenCalledWith(
+        expect.stringContaining('criado'),
+        'Sucesso'
+      );
     });
   });
 
@@ -480,7 +511,7 @@ describe('ItensConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('efeitos', () => {
-    it('deve chamar addItemEfeito ao adicionar efeito', async () => {
+    it('deve chamar configApi.addItemEfeito ao adicionar efeito', async () => {
       const { fixture, configApiMock } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
@@ -519,7 +550,7 @@ describe('ItensConfigComponent', () => {
       expect(comp.podeAdicionarEfeito()).toBe(false);
     });
 
-    it('deve chamar removeItemEfeito ao remover efeito', async () => {
+    it('deve chamar configApi.removeItemEfeito ao remover efeito', async () => {
       const { fixture, configApiMock } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
@@ -537,7 +568,7 @@ describe('ItensConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('requisitos', () => {
-    it('deve chamar addItemRequisito ao adicionar requisito', async () => {
+    it('deve chamar configApi.addItemRequisito ao adicionar requisito', async () => {
       const { fixture, configApiMock } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
@@ -555,7 +586,7 @@ describe('ItensConfigComponent', () => {
       );
     });
 
-    it('deve chamar removeItemRequisito ao remover requisito', async () => {
+    it('deve chamar configApi.removeItemRequisito ao remover requisito', async () => {
       const { fixture, configApiMock } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
@@ -573,8 +604,8 @@ describe('ItensConfigComponent', () => {
   // ----------------------------------------------------------
 
   describe('exclusão', () => {
-    it('deve chamar deleteItem ao confirmar exclusão', async () => {
-      const { fixture, configApiMock, confirmationService } = await renderItens();
+    it('deve chamar service.deleteItem ao confirmar exclusão', async () => {
+      const { fixture, itemServiceMock, confirmationService } = await renderItens();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const comp = fixture.componentInstance as any;
 
@@ -584,7 +615,22 @@ describe('ItensConfigComponent', () => {
 
       comp.confirmDelete(1);
 
-      expect(configApiMock.deleteItem).toHaveBeenCalledWith(1);
+      expect(itemServiceMock.deleteItem).toHaveBeenCalledWith(1);
+    });
+
+    it('deve recarregar lista após exclusão', async () => {
+      const { fixture, itemServiceMock, confirmationService } = await renderItens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+      const callCountBefore = itemServiceMock.loadItems.mock.calls.length;
+
+      vi.spyOn(confirmationService, 'confirm').mockImplementation(({ accept }: { accept?: () => void }) => {
+        accept?.();
+      });
+
+      comp.confirmDelete(1);
+
+      expect(itemServiceMock.loadItems.mock.calls.length).toBeGreaterThan(callCountBefore);
     });
   });
 
