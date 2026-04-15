@@ -123,7 +123,6 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                 <th>Nome</th>
                 <th>Participantes</th>
                 <th>Status</th>
-                <th>Data Criação</th>
                 <th class="text-center">Ações</th>
               </tr>
             </ng-template>
@@ -147,7 +146,6 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                     [severity]="jogo.ativo ? 'success' : 'secondary'"
                   ></p-tag>
                 </td>
-                <td>—</td>
                 <td class="text-center">
                   <div class="flex gap-2 justify-content-center">
                     <p-button
@@ -180,7 +178,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
 
             <ng-template #emptymessage>
               <tr>
-                <td colspan="5" class="text-center p-4">
+                <td colspan="4" class="text-center p-4">
                   Nenhum jogo encontrado
                 </td>
               </tr>

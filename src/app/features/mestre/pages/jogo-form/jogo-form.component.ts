@@ -173,7 +173,7 @@ export class JogoFormComponent implements OnInit {
       ).subscribe({
         next: () => {
           this.toastService.success('Jogo atualizado com sucesso!');
-          setTimeout(() => this.router.navigate(['/mestre/jogos']), 1500);
+          this.router.navigate(['/mestre/jogos']);
         },
         error: () => {
           this.toastService.error('Erro ao atualizar jogo');
@@ -190,7 +190,7 @@ export class JogoFormComponent implements OnInit {
       ).subscribe({
         next: () => {
           this.toastService.success('Jogo criado com sucesso!');
-          setTimeout(() => this.router.navigate(['/mestre/jogos']), 1500);
+          this.router.navigate(['/mestre/jogos']);
         },
         error: () => {
           this.toastService.error('Erro ao criar jogo');

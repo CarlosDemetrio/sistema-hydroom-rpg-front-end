@@ -1,7 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -35,7 +34,6 @@ import { JogoBusinessService } from '@core/services/business/jogo-business.servi
   imports: [
     RouterOutlet,
     FormsModule,
-    ButtonModule,
     SelectModule,
     TagModule,
     TooltipModule,
@@ -47,37 +45,15 @@ import { JogoBusinessService } from '@core/services/business/jogo-business.servi
       <div class="surface-card shadow-2 p-4 mb-4">
         <div class="flex flex-column gap-3">
 
-          <!-- Linha 1: Título e botões de ação -->
-          <div class="flex align-items-center justify-content-between gap-3">
-            <div>
-              <h1 class="text-3xl font-bold m-0 mb-1">
-                <i class="pi pi-cog text-primary mr-2"></i>
-                Configurações do Sistema
-              </h1>
-              <p class="text-color-secondary m-0 text-sm">
-                Configure as regras e mecânicas do seu jogo
-              </p>
-            </div>
-
-            <!-- Botões de ação -->
-            <div class="flex gap-2 flex-shrink-0">
-              <p-button
-                icon="pi pi-download"
-                label="Exportar"
-                [outlined]="true"
-                [disabled]="!hasCurrentGame()"
-                pTooltip="Exportar configurações do jogo atual"
-                tooltipPosition="bottom"
-              ></p-button>
-              <p-button
-                icon="pi pi-upload"
-                label="Importar"
-                [outlined]="true"
-                [disabled]="!hasCurrentGame()"
-                pTooltip="Importar configurações para o jogo atual"
-                tooltipPosition="bottom"
-              ></p-button>
-            </div>
+          <!-- Título -->
+          <div>
+            <h1 class="text-3xl font-bold m-0 mb-1">
+              <i class="pi pi-cog text-primary mr-2"></i>
+              Configurações do Sistema
+            </h1>
+            <p class="text-color-secondary m-0 text-sm">
+              Configure as regras e mecânicas do seu jogo
+            </p>
           </div>
 
           <!-- Linha 2: Seletor de jogo — sempre visível -->
