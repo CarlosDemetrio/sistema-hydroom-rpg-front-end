@@ -26,7 +26,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { ToastService } from '@services/toast.service';
 import { ClasseEquipamentoInicial, CreateClasseEquipamentoInicialDto } from '@core/models/classe-equipamento-inicial.model';
-import { ItemConfigResumo, PageResponse } from '@core/models/item-config.model';
+import { ItemConfigResumo } from '@core/models/item-config.model';
 
 interface ItemOption {
   label: string;

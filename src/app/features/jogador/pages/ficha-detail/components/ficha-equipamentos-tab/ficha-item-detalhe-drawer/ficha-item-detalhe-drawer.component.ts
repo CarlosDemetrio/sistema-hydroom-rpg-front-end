@@ -86,7 +86,7 @@ import { FichaItemViewModel, AlterarDurabilidadeRequest } from '@core/models/fic
                 <span class="text-color-secondary">Quantidade:</span>
                 <span class="ml-1 font-medium">{{ i.quantidade }}</span>
               </div>
-              @if (i.duracaoPadrao != null) {
+              @if (i.duracaoPadrao !== null && i.duracaoPadrao !== undefined) {
                 <div class="col-span-2">
                   <span class="text-color-secondary">Durabilidade:</span>
                   <span class="ml-1 font-medium">
@@ -97,7 +97,7 @@ import { FichaItemViewModel, AlterarDurabilidadeRequest } from '@core/models/fic
             </div>
 
             <!-- Barra de durabilidade -->
-            @if (i.duracaoPadrao != null) {
+            @if (i.duracaoPadrao !== null && i.duracaoPadrao !== undefined) {
               @let percDur =
                 i.duracaoPadrao > 0
                   ? ((i.duracaoAtual ?? 0) / i.duracaoPadrao) * 100
@@ -105,8 +105,12 @@ import { FichaItemViewModel, AlterarDurabilidadeRequest } from '@core/models/fic
               <p-progressBar
                 [value]="percDur"
                 [style]="{ height: '8px' }"
-                [severity]="
-                  percDur < 25 ? 'danger' : percDur < 50 ? 'warn' : 'success'
+                [color]="
+                  percDur < 25
+                    ? 'var(--p-red-500)'
+                    : percDur < 50
+                      ? 'var(--p-orange-500)'
+                      : 'var(--p-green-500)'
                 "
                 [attr.aria-label]="
                   'Durabilidade: ' + i.duracaoAtual + ' de ' + i.duracaoPadrao
@@ -133,7 +137,7 @@ import { FichaItemViewModel, AlterarDurabilidadeRequest } from '@core/models/fic
           </div>
 
           <!-- Edicao de durabilidade (apenas Mestre) -->
-          @if (isMestre() && i.duracaoPadrao != null) {
+          @if (isMestre() && i.duracaoPadrao !== null && i.duracaoPadrao !== undefined) {
             <p-divider />
             <div class="flex flex-col gap-2">
               <span class="text-sm font-semibold">Editar Durabilidade</span>

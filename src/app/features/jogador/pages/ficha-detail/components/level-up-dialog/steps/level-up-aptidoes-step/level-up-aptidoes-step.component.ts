@@ -120,14 +120,20 @@ export class LevelUpAptidoesStepComponent {
   /** AptidaoConfig[] do ConfigStore — necessário para lookup de tipoAptidaoNome. */
   configAptidoes = input.required<AptidaoConfig[]>();
 
-  distribuicaoChanged = output<Record<number, number>>();
+  distribuicaoChanged = output<Partial<Record<number, number>>>();
 
-  protected pontosAdicionados = signal<Record<number, number>>({});
+  protected pontosAdicionados = signal<Partial<Record<number, number>>>({});
 
   protected pontosRestantes = computed(
-    () =>
-      this.pontosDisponiveis() -
-      Object.values(this.pontosAdicionados()).reduce((a, b) => a + b, 0)
+    () => {
+      const pontosAdicionados = this.pontosAdicionados();
+      const totalDistribuido = Object.values(pontosAdicionados).reduce<number>(
+        (total, valor) => total + (valor ?? 0),
+        0
+      );
+
+      return this.pontosDisponiveis() - totalDistribuido;
+    }
   );
 
   protected aptidoesPorTipo = computed<GrupoAptidao[]>(() => {
@@ -151,7 +157,7 @@ export class LevelUpAptidoesStepComponent {
 
   protected removerPonto(id: number): void {
     if ((this.pontosAdicionados()[id] ?? 0) <= 0) return;
-    this.pontosAdicionados.update((m) => ({ ...m, [id]: m[id] - 1 }));
+    this.pontosAdicionados.update((m) => ({ ...m, [id]: (m[id] ?? 0) - 1 }));
     this.distribuicaoChanged.emit(this.pontosAdicionados());
   }
 }

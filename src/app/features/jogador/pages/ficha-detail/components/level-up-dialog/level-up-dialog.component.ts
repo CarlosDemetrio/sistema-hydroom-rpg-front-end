@@ -179,7 +179,7 @@ export class LevelUpDialogComponent {
   protected stepAtivo = signal(0);
   protected salvando = signal(false);
   protected distribuicaoAtributos = signal<Record<string, number>>({});
-  protected distribuicaoAptidoes = signal<Record<number, number>>({});
+  protected distribuicaoAptidoes = signal<Partial<Record<number, number>>>({});
 
   protected pontosAtributoPendentes = computed(
     () =>
@@ -188,9 +188,15 @@ export class LevelUpDialogComponent {
   );
 
   protected pontosAptidaoPendentes = computed(
-    () =>
-      this.pontosAptidaoDisponiveis() -
-      Object.values(this.distribuicaoAptidoes()).reduce((a, b) => a + b, 0)
+    () => {
+      const distribuicaoAptidoes = this.distribuicaoAptidoes();
+      const totalDistribuido = Object.values(distribuicaoAptidoes).reduce<number>(
+        (total, valor) => total + (valor ?? 0),
+        0
+      );
+
+      return this.pontosAptidaoDisponiveis() - totalDistribuido;
+    }
   );
 
   // ---- Handlers ----

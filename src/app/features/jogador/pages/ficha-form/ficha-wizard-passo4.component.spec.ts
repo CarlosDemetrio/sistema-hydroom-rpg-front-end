@@ -461,3 +461,7 @@
 //   });
 //
 // });
+
+describe('FichaWizardComponent - Passo 4 (Aptidoes)', () => {
+  it.todo('reativar a suite do passo 4 quando a migracao JIT for concluida');
+});

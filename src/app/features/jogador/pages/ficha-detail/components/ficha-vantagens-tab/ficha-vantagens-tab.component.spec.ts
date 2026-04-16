@@ -440,7 +440,7 @@ describe('FichaVantagensTabComponent', () => {
 
       const badgeDebug = fixture.debugElement.query(By.css('p-badge'));
       expect(badgeDebug).toBeTruthy();
-      expect(badgeDebug.componentInstance.severity).toBe('success');
+      expect(badgeDebug.componentInstance.severity()).toBe('success');
     });
 
     it('deve exibir badge com severity="secondary" quando pontosVantagemRestantes = 0', async () => {
@@ -451,7 +451,7 @@ describe('FichaVantagensTabComponent', () => {
 
       const badgeDebug = fixture.debugElement.query(By.css('p-badge'));
       expect(badgeDebug).toBeTruthy();
-      expect(badgeDebug.componentInstance.severity).toBe('secondary');
+      expect(badgeDebug.componentInstance.severity()).toBe('secondary');
     });
   });
 

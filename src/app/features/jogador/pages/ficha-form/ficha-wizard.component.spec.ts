@@ -1322,3 +1322,7 @@
 //   });
 //
 // });
+
+describe('FichaWizardComponent', () => {
+  it.todo('reativar a suite principal do wizard quando a migracao JIT for concluida');
+});

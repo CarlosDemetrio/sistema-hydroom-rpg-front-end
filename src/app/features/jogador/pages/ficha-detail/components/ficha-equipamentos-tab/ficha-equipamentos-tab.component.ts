@@ -62,8 +62,12 @@ import { FichaItemAdicionarDialogComponent } from './ficha-item-adicionar-dialog
         store.capacidadeCarga() > 0
           ? (store.pesoTotal() / store.capacidadeCarga()) * 100
           : 0;
-      @let sevPeso =
-        percPeso < 50 ? 'success' : percPeso < 80 ? 'warn' : 'danger';
+        @let corPeso =
+          percPeso < 50
+            ? 'var(--p-green-500)'
+            : percPeso < 80
+              ? 'var(--p-orange-500)'
+              : 'var(--p-red-500)';
 
       <div class="mb-2">
         <div class="flex justify-content-between align-items-center mb-1">
@@ -81,7 +85,7 @@ import { FichaItemAdicionarDialogComponent } from './ficha-item-adicionar-dialog
         </div>
         <p-progressBar
           [value]="percPeso"
-          [severity]="sevPeso"
+          [color]="corPeso"
           styleClass="h-1rem"
           [attr.aria-label]="
             'Peso: ' + store.pesoTotal() + ' de ' + store.capacidadeCarga() + ' kg'

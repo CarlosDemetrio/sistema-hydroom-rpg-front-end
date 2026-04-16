@@ -77,8 +77,16 @@ export const SUBCATEGORIA_POR_CATEGORIA: Record<CategoriaItem, SubcategoriaItem[
   AVENTURA: ['OUTROS'],
 };
 
+export type TagSeverity =
+  | 'success'
+  | 'info'
+  | 'warn'
+  | 'danger'
+  | 'secondary'
+  | 'contrast';
+
 /** Cores das categorias para badges */
-export const CATEGORIA_SEVERITY: Record<CategoriaItem, string> = {
+export const CATEGORIA_SEVERITY: Record<CategoriaItem, TagSeverity> = {
   ARMA: 'danger',
   ARMADURA: 'secondary',
   ACESSORIO: 'warn',

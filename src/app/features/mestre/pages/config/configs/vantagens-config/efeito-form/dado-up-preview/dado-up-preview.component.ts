@@ -65,7 +65,7 @@ import { DadoProspeccaoConfig } from '@core/models/config.models';
               <span class="font-bold text-lg">d{{ dado.numeroFaces }}</span>
               <span class="text-xs text-color-secondary">Nível {{ i + 1 }}</span>
               @if (isDadoCap(i)) {
-                <p-tag value="máx" severity="warning" [style]="{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }" />
+                  <p-tag value="máx" severity="warn" [style]="{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }" />
               }
             </div>
           }

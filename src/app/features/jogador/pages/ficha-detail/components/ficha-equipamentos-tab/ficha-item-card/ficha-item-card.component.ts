@@ -81,7 +81,7 @@ import { FichaItemViewModel } from '@core/models/ficha-item.model';
       </div>
 
       <!-- Barra de durabilidade (apenas se duracaoPadrao definido) -->
-      @if (item().duracaoPadrao != null) {
+      @if (item().duracaoPadrao !== null && item().duracaoPadrao !== undefined) {
         @let percDur =
           item().duracaoPadrao! > 0
             ? ((item().duracaoAtual ?? 0) / item().duracaoPadrao!) * 100
@@ -102,8 +102,12 @@ import { FichaItemViewModel } from '@core/models/ficha-item.model';
           <p-progressBar
             [value]="percDur"
             [style]="{ height: '5px' }"
-            [severity]="
-              percDur < 25 ? 'danger' : percDur < 50 ? 'warn' : 'success'
+            [color]="
+              percDur < 25
+                ? 'var(--p-red-500)'
+                : percDur < 50
+                  ? 'var(--p-orange-500)'
+                  : 'var(--p-green-500)'
             "
             [attr.aria-label]="
               'Durabilidade: ' +
