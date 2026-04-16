@@ -443,8 +443,8 @@ export class FichaWizardComponent implements OnInit {
     { label: 'Descricao' },
     { label: 'Atributos' },
     { label: 'Aptidoes' },
+    { label: 'Vantagens' },
     { label: 'Revisao' },
-    { label: 'Conclusao' },
   ];
 
   // ============================================================
