@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SlicePipe } from '@angular/common';
+import { SlicePipe, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -30,6 +30,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
   standalone: true,
   imports: [
     SlicePipe,
+    DatePipe,
     FormsModule,
     TableModule,
     CardModule,
@@ -123,6 +124,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                 <th>Nome</th>
                 <th>Participantes</th>
                 <th>Status</th>
+                <th>Data Criação</th>
                 <th class="text-center">Ações</th>
               </tr>
             </ng-template>
@@ -145,6 +147,13 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                     [value]="jogo.ativo ? 'Ativo' : 'Inativo'"
                     [severity]="jogo.ativo ? 'success' : 'secondary'"
                   ></p-tag>
+                </td>
+                <td>
+                  @if (jogo.criadoEm) {
+                    {{ jogo.criadoEm | date:'dd/MM/yyyy' }}
+                  } @else {
+                    <span class="text-color-secondary">—</span>
+                  }
                 </td>
                 <td class="text-center">
                   <div class="flex gap-2 justify-content-center">
@@ -178,7 +187,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
 
             <ng-template #emptymessage>
               <tr>
-                <td colspan="4" class="text-center p-4">
+                <td colspan="5" class="text-center p-4">
                   Nenhum jogo encontrado
                 </td>
               </tr>

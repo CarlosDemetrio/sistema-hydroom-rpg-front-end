@@ -20,6 +20,7 @@ export interface JogoResumo {
   totalParticipantes: number;
   ativo: boolean;
   meuRole: RoleJogo;
+  criadoEm?: string;
 }
 
 /**
