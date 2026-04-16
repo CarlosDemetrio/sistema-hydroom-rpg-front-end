@@ -8,14 +8,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { ConfirmationService } from 'primeng/api';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
 import { CurrentGameService } from '@core/services/current-game.service';
 import { AuthService } from '@services/auth.service';
-import { ToastService } from '@services/toast.service';
 import { Ficha } from '@core/models';
 
 @Component({
@@ -29,11 +26,9 @@ import { Ficha } from '@core/models';
     TagModule,
     SkeletonModule,
     TooltipModule,
-    ConfirmDialogModule,
     IconFieldModule,
     InputIconModule,
   ],
-  providers: [ConfirmationService],
   template: `
     <div class="p-4">
 
@@ -189,6 +184,8 @@ import { Ficha } from '@core/models';
                     <h3 class="font-bold text-xl m-0 mb-1" style="font-family: var(--rpg-font-display)">
                       {{ ficha.nome }}
                     </h3>
+
+                    <!-- Badges de status -->
                     @if (ficha.status === 'RASCUNHO') {
                       <p-tag
                         value="Incompleta"
@@ -202,6 +199,35 @@ import { Ficha } from '@core/models';
                         [attr.aria-label]="'Continuar criando ' + ficha.nome"
                       />
                     }
+                    @if (ficha.status === 'ATIVA') {
+                      <p-tag
+                        value="Ativa"
+                        severity="success"
+                        [rounded]="true"
+                        [attr.aria-label]="'Status: Ativa — ' + ficha.nome"
+                      />
+                    }
+                    @if (ficha.status === 'MORTA') {
+                      <p-tag
+                        value="Morta"
+                        severity="danger"
+                        [rounded]="true"
+                        pTooltip="Este personagem morreu"
+                        tooltipPosition="top"
+                        [attr.aria-label]="'Status: Morta — ' + ficha.nome"
+                      />
+                    }
+                    @if (ficha.status === 'ABANDONADA') {
+                      <p-tag
+                        value="Abandonada"
+                        severity="secondary"
+                        [rounded]="true"
+                        pTooltip="Este personagem foi abandonado"
+                        tooltipPosition="top"
+                        [attr.aria-label]="'Status: Abandonada — ' + ficha.nome"
+                      />
+                    }
+
                     <!-- Badge NPC: Aliado (acesso granular concedido) -->
                     @if (ficha.isNpc && ficha.jogadorTemAcessoStats === true) {
                       <p-tag
@@ -262,7 +288,7 @@ import { Ficha } from '@core/models';
                   </div>
                 </div>
 
-                <!-- Divisor -->
+                <!-- Ações -->
                 <div class="border-top-1 surface-border mt-auto pt-3">
                   <div class="flex gap-2" (click)="$event.stopPropagation()">
                     <!-- NPC com stats revelados: "Ver Ficha Completa" -->
@@ -277,7 +303,7 @@ import { Ficha } from '@core/models';
                         (onClick)="verFicha(ficha.id!)"
                       />
                     }
-                    <!-- NPC sem acesso: apenas nome/info básica visível -->
+                    <!-- Fichas do jogador: sempre mostrar "Ver Ficha" -->
                     @else if (!ficha.isNpc) {
                       <p-button
                         label="Ver Ficha"
@@ -288,23 +314,19 @@ import { Ficha } from '@core/models';
                         (onClick)="verFicha(ficha.id!)"
                       />
                     }
-                    <p-button
-                      label="Editar"
-                      icon="pi pi-pencil"
-                      severity="secondary"
-                      [outlined]="true"
-                      size="small"
-                      class="flex-1"
-                      (onClick)="editarFicha(ficha.id!)"
-                    />
-                    <p-button
-                      icon="pi pi-trash"
-                      severity="danger"
-                      [text]="true"
-                      [rounded]="true"
-                      pTooltip="Excluir ficha"
-                      (onClick)="confirmarExclusao(ficha)"
-                    />
+                    <!-- Editar: apenas para fichas editáveis (não MORTA/ABANDONADA) -->
+                    @if (canEdit(ficha)) {
+                      <p-button
+                        label="Editar"
+                        icon="pi pi-pencil"
+                        severity="secondary"
+                        [outlined]="true"
+                        size="small"
+                        class="flex-1"
+                        [attr.aria-label]="'Editar ficha ' + ficha.nome"
+                        (onClick)="editarFicha(ficha.id!)"
+                      />
+                    }
                   </div>
                 </div>
               </div>
@@ -314,8 +336,6 @@ import { Ficha } from '@core/models';
       }
 
     </div>
-
-    <p-confirmDialog />
   `,
 })
 export class FichasListComponent {
@@ -323,8 +343,6 @@ export class FichasListComponent {
   private currentGameService = inject(CurrentGameService);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private confirmationService = inject(ConfirmationService);
-  private toastService = inject(ToastService);
   private destroyRef = inject(DestroyRef);
 
   searchTerm = signal('');
@@ -378,26 +396,11 @@ export class FichasListComponent {
     this.router.navigate(['/jogador/fichas', id, 'edit']);
   }
 
-  confirmarExclusao(ficha: Ficha): void {
-    this.confirmationService.confirm({
-      message: `Tem certeza que deseja excluir a ficha "${ficha.nome}"? Esta ação não pode ser desfeita.`,
-      header: 'Confirmar Exclusão',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sim, excluir',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => this.excluirFicha(ficha.id!),
-    });
-  }
-
-  excluirFicha(id: number): void {
-    this.fichaService.deleteFicha(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.toastService.success('Ficha excluída com sucesso');
-      },
-      error: () => {
-        this.toastService.error('Erro ao excluir ficha');
-      },
-    });
+  /**
+   * Retorna true apenas se a ficha pode ser editada pelo Jogador.
+   * Fichas com status MORTA ou ABANDONADA são estados finais — não editáveis.
+   */
+  canEdit(ficha: Ficha): boolean {
+    return ficha.status !== 'MORTA' && ficha.status !== 'ABANDONADA';
   }
 }
