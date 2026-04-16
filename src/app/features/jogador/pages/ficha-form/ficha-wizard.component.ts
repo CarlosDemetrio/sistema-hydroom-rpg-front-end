@@ -470,7 +470,11 @@ export class FichaWizardComponent implements OnInit {
     }
 
     // Verificar retomada de rascunho
-    const fichaIdParam = this.route.snapshot.queryParamMap.get('fichaId');
+    // Prioridade: path param (:id) > queryParam (?fichaId=N)
+    // Path param e usado pela rota /fichas/:id/edit; queryParam pela retomada de rascunho
+    const fichaIdParam =
+      this.route.snapshot.paramMap.get('id') ??
+      this.route.snapshot.queryParamMap.get('fichaId');
     if (fichaIdParam) {
       const id = +fichaIdParam;
       this.fichaId.set(id);
