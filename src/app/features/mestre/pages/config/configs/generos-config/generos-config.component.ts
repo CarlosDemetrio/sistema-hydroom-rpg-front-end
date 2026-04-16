@@ -17,6 +17,7 @@ import {
   BaseConfigTableComponent,
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { GeneroConfig } from '@core/models';
 import { GeneroConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
@@ -37,9 +38,11 @@ import { uniqueNameValidator } from '@shared/validators/config-validators';
     TextareaModule,
     TooltipModule,
     BaseConfigTableComponent,
+    PageHeaderComponent,
   ],
   providers: [ConfirmationService],
   template: `
+    <app-page-header title="Gêneros" backRoute="/mestre/config" />
     <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {

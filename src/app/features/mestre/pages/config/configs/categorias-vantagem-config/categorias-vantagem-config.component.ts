@@ -19,6 +19,7 @@ import {
   BaseConfigTableComponent,
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { CategoriaVantagem } from '@core/models/config.models';
 import { CategoriaVantagemConfigService } from '@core/services/business/config';
 import { ConfigStore } from '@core/stores/config.store';
@@ -41,9 +42,11 @@ import { ConfigStore } from '@core/stores/config.store';
     TextareaModule,
     TooltipModule,
     BaseConfigTableComponent,
+    PageHeaderComponent,
   ],
   providers: [ConfirmationService],
   template: `
+    <app-page-header title="Categorias de Vantagem" backRoute="/mestre/config" />
     <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {

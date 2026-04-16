@@ -28,6 +28,7 @@ import {
   SUBCATEGORIA_LABELS,
   SUBCATEGORIA_POR_CATEGORIA,
   CATEGORIA_SEVERITY,
+  TagSeverity,
 } from '@core/models/tipo-item-config.model';
 import { TipoItemConfigService } from '@core/services/business/config/tipo-item-config.service';
 
@@ -519,7 +520,7 @@ export class TiposItemConfigComponent extends BaseConfigComponent<
     return CATEGORIA_LABELS[categoria] ?? categoria;
   }
 
-  protected getCategoriaSeverity(categoria: CategoriaItem): string {
+  protected getCategoriaSeverity(categoria: CategoriaItem): TagSeverity {
     return CATEGORIA_SEVERITY[categoria] ?? 'secondary';
   }
 

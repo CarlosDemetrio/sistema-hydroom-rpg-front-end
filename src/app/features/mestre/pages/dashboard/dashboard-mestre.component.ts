@@ -7,7 +7,6 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -15,6 +14,7 @@ import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { JogosApiService } from '@core/services/api/jogos-api.service';
 import { DashboardMestre } from '@core/models/jogo.model';
 import { CurrentGameService } from '@core/services/current-game.service';
@@ -33,12 +33,12 @@ import { EmptyStateComponent } from '@shared/components/empty-state.component';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DatePipe,
     ButtonModule,
     CardModule,
     SkeletonModule,
     TableModule,
     TagModule,
+    TooltipModule,
     EmptyStateComponent,
   ],
   template: `

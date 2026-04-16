@@ -18,6 +18,7 @@ import {
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
 import { FormulaEditorComponent } from '@shared/components/formula-editor/formula-editor.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { AtributoConfig } from '@core/models';
 import { AtributoConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
@@ -55,9 +56,11 @@ import {
     TooltipModule,
     BaseConfigTableComponent,
     FormulaEditorComponent,
+    PageHeaderComponent,
   ],
   providers: [ConfirmationService],
   template: `
+    <app-page-header title="Atributos" backRoute="/mestre/config" />
     <p-card class="card-rpg card-rpg--accented">
 
       <!-- Indicador de jogo -->

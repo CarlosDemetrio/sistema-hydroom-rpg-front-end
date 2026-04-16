@@ -22,6 +22,7 @@ import {
   BaseConfigTableComponent,
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ClassePersonagem, BonusConfig, AptidaoConfig } from '@core/models';
 import { ClassePontosConfig, ClassePontosConfigRequest } from '@core/models/classe-pontos-config.model';
 import { ClasseVantagemPreDefinida, ClasseVantagemPreDefinidaRequest } from '@core/models/classe-vantagem-predefinida.model';
@@ -53,9 +54,11 @@ import { ClasseEquipInicialComponent } from './classe-equipamento-inicial/classe
     SelectModule,
     BaseConfigTableComponent,
     ClasseEquipInicialComponent,
+    PageHeaderComponent,
   ],
   providers: [ConfirmationService],
   template: `
+    <app-page-header title="Classes" backRoute="/mestre/config" />
     <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {
@@ -641,7 +644,11 @@ export class ClassesConfigComponent extends BaseConfigComponent<
   /** jogoId pendente para carregar itens quando a aba equipamentos for aberta */
   private _pendingJogoIdParaItens: number | null = null;
 
-  protected onTabChange(tabValue: string): void {
+  protected onTabChange(tabValue: string | number | undefined): void {
+    if (typeof tabValue !== 'string') {
+      return;
+    }
+
     this.activeTab.set(tabValue);
     if (tabValue === 'equipamentos-iniciais' && this._pendingJogoIdParaItens) {
       // Dar um tick para o ViewChild ser renderizado

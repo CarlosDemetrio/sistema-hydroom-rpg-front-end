@@ -17,6 +17,7 @@ import {
   BaseConfigTableComponent,
   ConfigTableColumn,
 } from '@shared/components/base-config/base-config-table.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { BonusConfig } from '@core/models';
 import { BonusConfigService } from '@core/services/business/config';
 import { ConfigApiService } from '@core/services/api/config-api.service';
@@ -40,9 +41,11 @@ import {
     TextareaModule,
     TooltipModule,
     BaseConfigTableComponent,
+    PageHeaderComponent,
   ],
   providers: [ConfirmationService],
   template: `
+    <app-page-header title="Bônus" backRoute="/mestre/config" />
     <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {

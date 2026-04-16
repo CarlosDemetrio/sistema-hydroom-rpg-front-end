@@ -25,6 +25,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { BaseConfigComponent } from '@shared/components/base-config/base-config.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ConfigApiService } from '@core/services/api/config-api.service';
 import { ItemConfigService } from '@core/services/business/config/item-config.service';
 import {
@@ -45,6 +46,7 @@ import {
   CATEGORIA_LABELS,
   CATEGORIA_SEVERITY,
   CategoriaItem,
+  TagSeverity,
 } from '@core/models/tipo-item-config.model';
 import { AtributoConfig } from '@core/models/atributo-config.model';
 import { AptidaoConfig } from '@core/models/aptidao-config.model';
@@ -84,9 +86,11 @@ interface SelectOption {
     TagModule,
     TextareaModule,
     TooltipModule,
+    PageHeaderComponent,
   ],
   providers: [ConfirmationService],
   template: `
+    <app-page-header title="Itens" backRoute="/mestre/config" />
     <p-card class="card-rpg card-rpg--accented">
 
       @if (hasGame()) {
@@ -210,7 +214,7 @@ interface SelectOption {
             </td>
             <td class="text-sm">{{ item.peso }} kg</td>
             <td class="text-sm text-color-secondary">
-              {{ item.valor != null ? (item.valor + ' po') : '—' }}
+              {{ item.valor !== null && item.valor !== undefined ? (item.valor + ' po') : '—' }}
             </td>
             <td class="text-center text-sm">{{ item.nivelMinimo }}</td>
             <td class="text-center">
@@ -1130,7 +1134,7 @@ export class ItensConfigComponent extends BaseConfigComponent<
     return CATEGORIA_LABELS[categoria] ?? categoria;
   }
 
-  protected getCategoriaSeverity(categoria: CategoriaItem): string {
+  protected getCategoriaSeverity(categoria: CategoriaItem): TagSeverity {
     return CATEGORIA_SEVERITY[categoria] ?? 'secondary';
   }
 

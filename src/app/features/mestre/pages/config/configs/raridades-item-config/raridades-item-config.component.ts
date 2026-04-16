@@ -129,14 +129,20 @@ import { RaridadeItemConfigService } from '@core/services/business/config/rarida
               }
             </td>
             <td class="text-sm text-color-secondary">
-              @if (raridade.bonusAtributoMin != null || raridade.bonusAtributoMax != null) {
+              @if (
+                raridade.bonusAtributoMin !== null && raridade.bonusAtributoMin !== undefined ||
+                raridade.bonusAtributoMax !== null && raridade.bonusAtributoMax !== undefined
+              ) {
                 {{ raridade.bonusAtributoMin ?? 0 }} – {{ raridade.bonusAtributoMax ?? 0 }}
               } @else {
                 —
               }
             </td>
             <td class="text-sm text-color-secondary">
-              @if (raridade.bonusDerivadoMin != null || raridade.bonusDerivadoMax != null) {
+              @if (
+                raridade.bonusDerivadoMin !== null && raridade.bonusDerivadoMin !== undefined ||
+                raridade.bonusDerivadoMax !== null && raridade.bonusDerivadoMax !== undefined
+              ) {
                 {{ raridade.bonusDerivadoMin ?? 0 }} – {{ raridade.bonusDerivadoMax ?? 0 }}
               } @else {
                 —
@@ -457,7 +463,7 @@ export class RaridadesItemConfigComponent extends BaseConfigComponent<
     // Assina mudanças no control 'cor' para manter corFormValue sincronizado
     form.get('cor')?.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((valor: string) => this.corFormValue.set(valor ?? '#9d9d9d'));
+      .subscribe((valor: string | null) => this.corFormValue.set(valor ?? '#9d9d9d'));
 
     return form;
   }
