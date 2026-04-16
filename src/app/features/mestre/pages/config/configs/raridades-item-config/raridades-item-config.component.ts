@@ -236,10 +236,11 @@ import { RaridadeItemConfigService } from '@core/services/business/config/rarida
             </label>
 
             <div class="flex align-items-center gap-3 flex-wrap">
-              <!-- PrimeNG ColorPicker — bidirecional com o input hex -->
+              <!-- PrimeNG ColorPicker — standalone para evitar conflito com formGroup pai -->
               <p-colorpicker
                 [ngModel]="corPickerValue()"
                 (ngModelChange)="onColorPickerNgModelChange($event)"
+                [ngModelOptions]="{ standalone: true }"
                 [inline]="false"
                 appendTo="body"
                 aria-label="Seletor de cor"

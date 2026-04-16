@@ -491,4 +491,42 @@ describe('RaridadesItemConfigComponent', () => {
       expect(raridadeServiceMock.loadItems.mock.calls.length).toBeGreaterThan(callCountBefore);
     });
   });
+
+  // ----------------------------------------------------------
+  // 7. BUG-005 — p-colorpicker não deve causar NG01350
+  // ----------------------------------------------------------
+
+  describe('BUG-005 — ngModel standalone no p-colorpicker', () => {
+    it('deve renderizar sem RuntimeError NG01350 (p-colorpicker com ngModelOptions standalone)', async () => {
+      // Verifica que o componente carrega sem lançar NG01350.
+      // Antes da correção, [ngModel] dentro de [formGroup] sem standalone causava RuntimeError.
+      await expect(renderRaridades()).resolves.toBeDefined();
+    });
+
+    it('openDialog deve abrir o dialog e o p-colorpicker não deve conflitar com o formGroup', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      // Deve abrir sem lançar erro
+      expect(() => comp.openDialog()).not.toThrow();
+      fixture.detectChanges();
+
+      // Form deve estar em estado válido (cor padrão é válida)
+      expect(comp.form.get('cor')?.value).toBe('#9d9d9d');
+    });
+
+    it('onColorPickerNgModelChange deve atualizar o form sem conflito de registro de controle', async () => {
+      const { fixture } = await renderRaridades();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDialog();
+      // Simula interação com o p-colorpicker (que usa ngModel standalone)
+      expect(() => comp.onColorPickerNgModelChange('a335ee')).not.toThrow();
+      fixture.detectChanges();
+
+      expect(comp.form.get('cor')?.value).toBe('#A335EE');
+    });
+  });
 });

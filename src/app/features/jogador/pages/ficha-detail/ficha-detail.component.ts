@@ -131,7 +131,7 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
     <!-- Main Content -->
     @if (!loading() && !erro() && ficha() && resumo()) {
       <!-- Ficha Header (sticky on desktop) -->
-      <div class="ficha-header-sticky">
+      <div class="ficha-header-sticky surface-card shadow-2">
         <app-ficha-header
           [ficha]="ficha()!"
           [resumo]="resumo()!"
@@ -446,12 +446,13 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
     .ficha-header-sticky {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 100;
     }
 
     @media (max-width: 768px) {
       .ficha-header-sticky {
         position: static;
+        z-index: auto;
       }
     }
   `],

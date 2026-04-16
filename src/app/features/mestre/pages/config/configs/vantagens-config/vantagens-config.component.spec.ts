@@ -1320,4 +1320,100 @@ describe('VantagensConfigComponent — aba pré-requisitos', () => {
     });
   });
 
+  // ----------------------------------------------------------
+  // BUG-005 — p-checkbox Insólitus não deve causar NG01350
+  // ----------------------------------------------------------
+
+  describe('BUG-005 — ngModel standalone no p-checkbox Insólitus', () => {
+    it('deve renderizar sem RuntimeError NG01350', async () => {
+      await expect(renderVantagens()).resolves.toBeDefined();
+    });
+
+    it('openDrawer deve setar isInsolitus corretamente para vantagem INSOLITUS', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemInsolitusMock);
+      fixture.detectChanges();
+
+      expect(comp.isInsolitus()).toBe(true);
+    });
+
+    it('openDrawer deve setar isInsolitus como false para vantagem normal', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      fixture.detectChanges();
+
+      expect(comp.isInsolitus()).toBe(false);
+    });
+
+    it('isInsolitus signal deve poder ser alterado sem conflito com formGroup', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      fixture.detectChanges();
+
+      // Simula toggle do checkbox (que usa ngModel standalone)
+      expect(() => comp.isInsolitus.set(true)).not.toThrow();
+      fixture.detectChanges();
+
+      expect(comp.isInsolitus()).toBe(true);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // BUG-009 — effect() setupInsolitusEffect sem allowSignalWrites
+  // ----------------------------------------------------------
+
+  describe('BUG-009 — effect sem allowSignalWrites deprecado', () => {
+    it('effect de isInsolitus deve atualizar tipoVantagem no form sem warnings', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      fixture.detectChanges();
+
+      // Seta isInsolitus para true — o effect deve patchear o form
+      comp.isInsolitus.set(true);
+      fixture.detectChanges();
+
+      expect(comp.form.get('tipoVantagem')?.value).toBe('INSOLITUS');
+    });
+
+    it('effect deve desabilitar formulaCusto quando isInsolitus = true', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemTCOMock);
+      fixture.detectChanges();
+
+      comp.isInsolitus.set(true);
+      fixture.detectChanges();
+
+      expect(comp.form.get('formulaCusto')?.disabled).toBe(true);
+    });
+
+    it('effect deve reabilitar formulaCusto quando isInsolitus = false', async () => {
+      const { fixture } = await renderVantagens();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comp = fixture.componentInstance as any;
+
+      comp.openDrawer(vantagemInsolitusMock);
+      fixture.detectChanges();
+
+      comp.isInsolitus.set(false);
+      fixture.detectChanges();
+
+      expect(comp.form.get('formulaCusto')?.enabled).toBe(true);
+    });
+  });
+
 });

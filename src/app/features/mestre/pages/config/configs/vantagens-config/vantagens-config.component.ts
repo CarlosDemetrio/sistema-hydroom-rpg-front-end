@@ -218,6 +218,7 @@ interface TipoPreRequisitoOpcao {
                     <p-checkbox
                       inputId="isInsolitus"
                       [(ngModel)]="isInsolitus"
+                      [ngModelOptions]="{ standalone: true }"
                       [binary]="true"
                       data-testid="checkbox-insolitus"
                     />
@@ -785,7 +786,7 @@ export class VantagensConfigComponent extends BaseConfigComponent<
         } else {
           formulaCusto?.enable();
         }
-      }, { allowSignalWrites: true });
+      });
     });
   }
 
