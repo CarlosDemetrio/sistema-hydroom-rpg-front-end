@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -150,6 +150,8 @@ export class HeaderComponent implements OnInit {
   private jogoService = inject(JogoBusinessService);
   private router = inject(Router);
 
+  menuToggle = output<void>();
+
   currentRole = signal<'MESTRE' | 'JOGADOR'>('JOGADOR');
   userMenuItems = signal<MenuItem[]>([]);
   availableGames = this.currentGameService.availableGames;
@@ -225,6 +227,7 @@ export class HeaderComponent implements OnInit {
   }
 
   onMenuToggle() {
+    this.menuToggle.emit();
   }
 
   navigateHome() {
