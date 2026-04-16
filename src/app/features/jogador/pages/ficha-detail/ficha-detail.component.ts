@@ -46,6 +46,7 @@ import { FichaEquipamentosTabComponent } from './components/ficha-equipamentos-t
 import { FichaGaleriaTabComponent } from './components/ficha-galeria-tab/ficha-galeria-tab.component';
 import { FichaHeaderComponent } from './components/ficha-header/ficha-header.component';
 import { FichaResumoTabComponent } from './components/ficha-resumo-tab/ficha-resumo-tab.component';
+import { FichaSessaoTabComponent } from './components/ficha-sessao-tab/ficha-sessao-tab.component';
 import { FichaVantagensTabComponent } from './components/ficha-vantagens-tab/ficha-vantagens-tab.component';
 import { NpcVisibilidadeComponent } from './components/npc-visibilidade/npc-visibilidade.component';
 import { ProspeccaoComponent } from './components/prospeccao/prospeccao.component';
@@ -77,6 +78,7 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
     FichaGaleriaTabComponent,
     FichaHeaderComponent,
     FichaResumoTabComponent,
+    FichaSessaoTabComponent,
     FichaVantagensTabComponent,
     NpcVisibilidadeComponent,
     ProspeccaoComponent,
@@ -183,6 +185,9 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
                 <p-tab [value]="7">
                   <i class="pi pi-images mr-2"></i>Galeria
                 </p-tab>
+                <p-tab [value]="8">
+                  <i class="pi pi-shield mr-2"></i>Sessao
+                </p-tab>
               </p-tablist>
 
               <p-tabpanels>
@@ -286,6 +291,17 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
                       [userRole]="userRole()"
                       [userId]="userIdNumber()"
                       [fichaJogadorId]="ficha()?.jogadorId ?? null"
+                    />
+                  }
+                </p-tabpanel>
+
+                <!-- Aba 8: Sessao (vida, essencia, membros do corpo em combate) -->
+                <p-tabpanel [value]="8">
+                  @if (fichaId() && resumo()) {
+                    <app-ficha-sessao-tab
+                      [fichaId]="fichaId()!"
+                      [resumo]="resumo()!"
+                      [isMestre]="isMestre()"
                     />
                   }
                 </p-tabpanel>

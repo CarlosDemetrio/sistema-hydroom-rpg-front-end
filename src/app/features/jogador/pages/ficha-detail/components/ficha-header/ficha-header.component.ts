@@ -60,6 +60,11 @@ import { Ficha, FichaResumo } from '@models/ficha.model';
               severity="info"
               [attr.aria-label]="'Nível ' + ficha().nivel"
             />
+            <p-tag
+              [value]="statusLabel()"
+              [severity]="statusSeverity()"
+              [attr.aria-label]="'Status da ficha: ' + statusLabel()"
+            />
             @if (ficha().isNpc) {
               <p-tag value="NPC" severity="warn" />
             }
@@ -293,6 +298,30 @@ export class FichaHeaderComponent {
   resetarClick = output<void>();
   /** Emitido ao clicar no badge de pontos pendentes. */
   abrirLevelUpDialog = output<void>();
+
+  /** Label legível do status da ficha. */
+  protected statusLabel = computed<string>(() => {
+    const status = this.ficha().status;
+    switch (status) {
+      case 'RASCUNHO':   return 'Rascunho';
+      case 'ATIVA':      return 'Ativa';
+      case 'MORTA':      return 'Morta';
+      case 'ABANDONADA': return 'Abandonada';
+      default:           return 'Ativa';
+    }
+  });
+
+  /** Severity do p-tag de status. COMPLETA (legado) tratada como ATIVA. */
+  protected statusSeverity = computed<'warn' | 'success' | 'danger' | 'secondary'>(() => {
+    const status = this.ficha().status;
+    switch (status) {
+      case 'RASCUNHO':   return 'warn';
+      case 'ATIVA':      return 'success';
+      case 'MORTA':      return 'danger';
+      case 'ABANDONADA': return 'secondary';
+      default:           return 'success';
+    }
+  });
 
   /** Indica se há pontos pendentes para distribuir. */
   protected temPontosPendentes = computed(() =>
