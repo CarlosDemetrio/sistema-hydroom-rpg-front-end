@@ -9,6 +9,7 @@ import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { UnauthorizedComponent } from './pages/unauthorized/unauthorized.component';
 import { OAuthCallbackComponent } from './pages/oauth-callback/oauth-callback.component';
 import { MainLayoutComponent } from './shared/layout/main-layout.component';
+import { MestreLayoutComponent } from './features/mestre/mestre-layout.component';
 export const routes: Routes = [
   {
     path: 'login',
@@ -48,37 +49,47 @@ export const routes: Routes = [
             redirectTo: 'jogos',
             pathMatch: 'full'
           },
+
+          // Rotas com MestreLayoutComponent (sidebar contextual do Mestre)
           {
-            path: 'jogos',
-            loadComponent: () => import('./features/mestre/pages/jogos-list/jogos-list.component').then(m => m.JogosListComponent)
+            path: '',
+            component: MestreLayoutComponent,
+            children: [
+              {
+                path: 'jogos',
+                loadComponent: () => import('./features/mestre/pages/jogos-list/jogos-list.component').then(m => m.JogosListComponent)
+              },
+              {
+                path: 'jogos/novo',
+                loadComponent: () => import('./features/mestre/pages/jogo-form/jogo-form.component').then(m => m.JogoFormComponent)
+              },
+              {
+                path: 'jogos/:id',
+                loadComponent: () => import('./features/mestre/pages/jogo-detail/jogo-detail.component').then(m => m.JogoDetailComponent)
+              },
+              {
+                path: 'jogos/:id/edit',
+                loadComponent: () => import('./features/mestre/pages/jogo-form/jogo-form.component').then(m => m.JogoFormComponent)
+              },
+              {
+                path: 'dashboard',
+                loadComponent: () => import('./features/mestre/pages/dashboard/dashboard-mestre.component').then(m => m.DashboardMestreComponent),
+                canActivate: [currentGameGuard]
+              },
+              {
+                path: 'npcs',
+                loadComponent: () => import('./features/mestre/pages/npcs/npcs.component').then(m => m.NpcsComponent),
+                canActivate: [currentGameGuard]
+              },
+              {
+                path: 'prospeccao-pendentes',
+                loadComponent: () => import('./features/mestre/pages/prospeccao-pendentes/prospeccao-pendentes.component').then(m => m.ProspeccaoPendentesComponent),
+                canActivate: [currentGameGuard]
+              },
+            ]
           },
-          {
-            path: 'jogos/novo',
-            loadComponent: () => import('./features/mestre/pages/jogo-form/jogo-form.component').then(m => m.JogoFormComponent)
-          },
-          {
-            path: 'jogos/:id',
-            loadComponent: () => import('./features/mestre/pages/jogo-detail/jogo-detail.component').then(m => m.JogoDetailComponent)
-          },
-          {
-            path: 'jogos/:id/edit',
-            loadComponent: () => import('./features/mestre/pages/jogo-form/jogo-form.component').then(m => m.JogoFormComponent)
-          },
-          {
-            path: 'dashboard',
-            loadComponent: () => import('./features/mestre/pages/dashboard/dashboard-mestre.component').then(m => m.DashboardMestreComponent),
-            canActivate: [currentGameGuard]
-          },
-          {
-            path: 'npcs',
-            loadComponent: () => import('./features/mestre/pages/npcs/npcs.component').then(m => m.NpcsComponent),
-            canActivate: [currentGameGuard]
-          },
-          {
-            path: 'prospeccao-pendentes',
-            loadComponent: () => import('./features/mestre/pages/prospeccao-pendentes/prospeccao-pendentes.component').then(m => m.ProspeccaoPendentesComponent),
-            canActivate: [currentGameGuard]
-          },
+
+          // Rotas de ficha — sem sidebar contextual do Mestre (layout global)
           {
             path: 'fichas/criar',
             loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent),
@@ -94,6 +105,8 @@ export const routes: Routes = [
             path: 'fichas/:id',
             loadComponent: () => import('./features/jogador/pages/ficha-detail/ficha-detail.component').then(m => m.FichaDetailComponent)
           },
+
+          // Rota de config — usa ConfigLayoutComponent próprio
           {
             path: 'config',
             loadComponent: () => import('./features/mestre/pages/config/config-layout.component').then(m => m.ConfigLayoutComponent),
