@@ -1,7 +1,10 @@
+import { Component, Input } from '@angular/core';
 import { render, screen, fireEvent } from '@testing-library/angular';
+import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { provideRouter } from '@angular/router';
+import { ConfirmationService } from 'primeng/api';
 
 import { NpcsComponent } from './npcs.component';
 import { FichaBusinessService } from '@core/services/business/ficha-business.service';
@@ -11,6 +14,17 @@ import { ConfigStore } from '@core/stores/config.store';
 import { ToastService } from '@services/toast.service';
 import { Ficha } from '@core/models/ficha.model';
 import { NpcDificuldadeConfig } from '@core/models/npc-dificuldade-config.model';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
+
+@Component({
+  selector: 'app-page-header',
+  standalone: true,
+  template: '<div data-testid="page-header-stub">{{ title }}</div>',
+})
+class PageHeaderStubComponent {
+  @Input() title = '';
+  @Input() backRoute: string | null = null;
+}
 
 // ============================================================
 // Mock data
@@ -94,8 +108,9 @@ function criarCurrentGameServiceMock(temJogo = true) {
 
 function criarFichaServiceMock(npcs: Ficha[] = [], npcRetornado: Ficha = npcMock) {
   return {
-    loadNpcs: vi.fn().mockReturnValue(of(npcs)),
-    criarNpc: vi.fn().mockReturnValue(of(npcRetornado)),
+    loadNpcs:    vi.fn().mockReturnValue(of(npcs)),
+    criarNpc:    vi.fn().mockReturnValue(of(npcRetornado)),
+    deleteFicha: vi.fn().mockReturnValue(of(undefined)),
   };
 }
 
@@ -152,6 +167,12 @@ async function renderNpcsComponent(overrides: {
   const toastService     = criarToastServiceMock();
 
   const result = await render(NpcsComponent, {
+    configureTestBed: (tb) => {
+      tb.overrideComponent(NpcsComponent, {
+        remove: { imports: [PageHeaderComponent] },
+        add: { imports: [PageHeaderStubComponent] },
+      });
+    },
     providers: [
       provideRouter([]),
       { provide: FichaBusinessService, useValue: fichaService },
@@ -159,10 +180,14 @@ async function renderNpcsComponent(overrides: {
       { provide: CurrentGameService,   useValue: currentGameService },
       { provide: ConfigStore,          useValue: configStore },
       { provide: ToastService,         useValue: toastService },
+      ConfirmationService,
     ],
   });
 
-  return { ...result, fichaService, configApiService, toastService };
+  // ConfirmationService do injector do componente (providers: [ConfirmationService])
+  const confirmationService = result.fixture.componentRef.injector.get(ConfirmationService);
+
+  return { ...result, fichaService, configApiService, toastService, confirmationService };
 }
 
 // ============================================================
@@ -170,6 +195,9 @@ async function renderNpcsComponent(overrides: {
 // ============================================================
 
 describe('NpcsComponent', () => {
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
 
   describe('renderização inicial', () => {
     it('exibe título "NPCs"', async () => {
@@ -534,6 +562,93 @@ describe('NpcsComponent', () => {
       });
 
       expect(toastService.error).toHaveBeenCalledWith('Erro ao carregar NPCs');
+    });
+  });
+
+  describe('botão Voltar (PageHeader)', () => {
+    it('exibe o botão Voltar no cabeçalho', async () => {
+      const { fixture } = await renderNpcsComponent();
+      const botaoVoltar = fixture.nativeElement.querySelector('app-page-header');
+      expect(botaoVoltar).not.toBeNull();
+    });
+  });
+
+  describe('exclusão de NPC', () => {
+    it('exibe botão de exclusão na tabela quando há NPCs', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [npcMock] });
+      fixture.detectChanges();
+
+      // Verifica via atributo aria-label gerado dinamicamente
+      const botaoExcluir = fixture.nativeElement.querySelector('[aria-label="Excluir NPC Goblin Chefe"]');
+      expect(botaoExcluir).not.toBeNull();
+    });
+
+    it('exibe botão de exclusão para cada NPC na lista', async () => {
+      const { fixture } = await renderNpcsComponent({ npcs: [npcMock, npcMock2] });
+      fixture.detectChanges();
+
+      const botoesExcluir = fixture.nativeElement.querySelectorAll('[aria-label^="Excluir NPC"]');
+      expect(botoesExcluir.length).toBe(2);
+    });
+
+    it('chama confirmationService.confirm ao clicar em excluir', async () => {
+      const { fixture, confirmationService } = await renderNpcsComponent({ npcs: [npcMock] });
+      fixture.detectChanges();
+
+      const confirmSpy = vi.spyOn(confirmationService, 'confirm');
+      fixture.componentInstance.confirmarExclusao(npcMock);
+
+      expect(confirmSpy).toHaveBeenCalledTimes(1);
+      expect(confirmSpy).toHaveBeenCalledWith(expect.objectContaining({
+        message: expect.stringContaining('Goblin Chefe'),
+      }));
+    });
+
+    it('não chama deleteFicha antes da confirmação', async () => {
+      const { fixture, fichaService, confirmationService } = await renderNpcsComponent({ npcs: [npcMock] });
+      fixture.detectChanges();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(confirmationService, 'confirm').mockImplementation((() => {}) as any);
+      fixture.componentInstance.confirmarExclusao(npcMock);
+
+      expect(fichaService.deleteFicha).not.toHaveBeenCalled();
+    });
+
+    it('chama deleteFicha com o id correto após confirmação', async () => {
+      const { fixture, fichaService, confirmationService } = await renderNpcsComponent({ npcs: [npcMock] });
+      fixture.detectChanges();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(confirmationService, 'confirm').mockImplementation(((config: any) => { config.accept?.(); }) as any);
+      fixture.componentInstance.confirmarExclusao(npcMock);
+
+      expect(fichaService.deleteFicha).toHaveBeenCalledWith(npcMock.id);
+    });
+
+    it('remove o NPC da lista após exclusão com sucesso', async () => {
+      const { fixture, confirmationService } = await renderNpcsComponent({ npcs: [npcMock, npcMock2] });
+      fixture.detectChanges();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(confirmationService, 'confirm').mockImplementation(((config: any) => { config.accept?.(); }) as any);
+      fixture.componentInstance.confirmarExclusao(npcMock);
+      fixture.detectChanges();
+
+      const npcsRestantes = fixture.componentInstance.npcs();
+      expect(npcsRestantes.length).toBe(1);
+      expect(npcsRestantes[0].id).toBe(npcMock2.id);
+    });
+
+    it('exibe toast de sucesso após excluir NPC', async () => {
+      const { fixture, toastService, confirmationService } = await renderNpcsComponent({ npcs: [npcMock] });
+      fixture.detectChanges();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(confirmationService, 'confirm').mockImplementation(((config: any) => { config.accept?.(); }) as any);
+      fixture.componentInstance.confirmarExclusao(npcMock);
+
+      expect(toastService.success).toHaveBeenCalledWith(expect.stringContaining('Goblin Chefe'));
     });
   });
 

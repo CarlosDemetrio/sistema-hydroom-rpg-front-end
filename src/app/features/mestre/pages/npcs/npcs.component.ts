@@ -2,8 +2,10 @@ import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, compute
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -22,6 +24,7 @@ import { ConfigStore } from '@core/stores/config.store';
 import { ToastService } from '@services/toast.service';
 import { EmptyStateComponent } from '@shared/components/empty-state.component';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.component';
+import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 
 /**
  * NPCs Component (Mestre)
@@ -43,6 +46,7 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
     ReactiveFormsModule,
     ButtonModule,
     CardModule,
+    ConfirmDialogModule,
     DialogModule,
     DividerModule,
     InputNumberModule,
@@ -53,24 +57,15 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
     TooltipModule,
     EmptyStateComponent,
     LoadingSpinnerComponent,
+    PageHeaderComponent,
   ],
+  providers: [ConfirmationService],
   template: `
     <div class="p-4">
 
       <!-- Page Header -->
-      <div class="flex justify-content-between align-items-center mb-4">
-        <div>
-          <h1 class="text-3xl font-bold m-0 mb-2">
-            <i class="pi pi-users text-primary mr-2"></i>
-            NPCs
-          </h1>
-          <p class="text-color-secondary m-0">
-            Personagens não-jogadores do jogo
-            @if (currentGameName()) {
-              <span class="font-semibold text-primary"> — {{ currentGameName() }}</span>
-            }
-          </p>
-        </div>
+      <div class="flex justify-content-between align-items-center">
+        <app-page-header title="NPCs" backRoute="/mestre/jogos" />
         <p-button
           label="Novo NPC"
           icon="pi pi-plus"
@@ -78,6 +73,13 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
           [disabled]="!hasGame()"
         ></p-button>
       </div>
+
+      @if (currentGameName()) {
+        <p class="text-color-secondary m-0 mb-4">
+          Personagens não-jogadores do jogo
+          <span class="font-semibold text-primary"> — {{ currentGameName() }}</span>
+        </p>
+      }
 
       <!-- Aviso: sem jogo selecionado -->
       @if (!hasGame()) {
@@ -155,6 +157,16 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
                       tooltipPosition="top"
                       (onClick)="verFicha(npc.id)"
                     ></p-button>
+                    <p-button
+                      icon="pi pi-trash"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="danger"
+                      pTooltip="Excluir NPC"
+                      tooltipPosition="top"
+                      (onClick)="confirmarExclusao(npc)"
+                      [attr.aria-label]="'Excluir NPC ' + npc.nome"
+                    ></p-button>
                   </td>
                 </tr>
               </ng-template>
@@ -171,6 +183,9 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner.comp
       }
 
     </div>
+
+    <!-- Confirm Dialog: Exclusão de NPC -->
+    <p-confirmDialog></p-confirmDialog>
 
     <!-- Dialog: Criar NPC -->
     <p-dialog
@@ -375,6 +390,7 @@ export class NpcsComponent implements OnInit {
   private currentGameService = inject(CurrentGameService);
   private configStore = inject(ConfigStore);
   private toastService = inject(ToastService);
+  private confirmationService = inject(ConfirmationService);
 
   // State
   npcs = signal<Ficha[]>([]);
@@ -562,6 +578,29 @@ export class NpcsComponent implements OnInit {
         error: () => {
           this.isSaving.set(false);
           this.toastService.error('Erro ao criar NPC');
+        },
+      });
+  }
+
+  confirmarExclusao(npc: Ficha): void {
+    this.confirmationService.confirm({
+      message: `Tem certeza que deseja excluir o NPC "${npc.nome}"?`,
+      header: 'Confirmar Exclusão',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sim, excluir',
+      rejectLabel: 'Cancelar',
+      acceptButtonProps: { severity: 'danger' },
+      accept: () => this.excluirNpc(npc),
+    });
+  }
+
+  excluirNpc(npc: Ficha): void {
+    this.fichaService.deleteFicha(npc.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.npcs.update(lista => lista.filter(n => n.id !== npc.id));
+          this.toastService.success(`NPC "${npc.nome}" excluído com sucesso`);
         },
       });
   }
