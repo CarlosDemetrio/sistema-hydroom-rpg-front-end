@@ -3,6 +3,8 @@ import { Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from '@services/auth.service';
+import { CurrentGameService } from '@core/services/current-game.service';
+import { ParticipanteBusinessService } from '@core/services/business/participante-business.service';
 
 /**
  * Sidebar Component (SMART)
@@ -40,16 +42,32 @@ import { AuthService } from '@services/auth.service';
 export class SidebarComponent implements OnInit {
   authService = inject(AuthService);
   private router = inject(Router);
+  private currentGameService = inject(CurrentGameService);
+  private participanteService = inject(ParticipanteBusinessService);
 
   menuItems = signal<MenuItem[]>([]);
 
   ngOnInit() {
-    this.updateMenuItems();
+    const isMestre = this.authService.isMestre();
+    const jogoId = this.currentGameService.currentGameId();
+
+    if (isMestre && jogoId) {
+      this.participanteService.loadParticipantes(jogoId, 'PENDENTE').subscribe(() => {
+        this.buildMenu();
+      });
+    } else {
+      this.buildMenu();
+    }
   }
 
-  private updateMenuItems() {
+  private buildMenu() {
     const isMestre = this.authService.isMestre();
     const isJogador = this.authService.isJogador();
+    const jogoId = this.currentGameService.currentGameId();
+
+    const pendentesCount = isMestre && jogoId
+      ? this.participanteService.countPendentes(jogoId)
+      : 0;
 
     const items: MenuItem[] = [
       {
@@ -83,6 +101,12 @@ export class SidebarComponent implements OnInit {
             command: () => this.router.navigate(['/mestre/jogos/novo'])
           },
           {
+            label: 'Participantes',
+            icon: 'pi pi-users',
+            badge: pendentesCount > 0 ? String(pendentesCount) : undefined,
+            command: () => this.router.navigate(['/mestre/participantes'])
+          },
+          {
             label: 'Prospecções Pendentes',
             icon: 'pi pi-clock',
             command: () => this.router.navigate(['/mestre/prospeccao-pendentes'])
@@ -105,11 +129,6 @@ export class SidebarComponent implements OnInit {
             label: 'Minhas Fichas',
             icon: 'pi pi-id-card',
             command: () => this.router.navigate(['/jogador/fichas'])
-          },
-          {
-            label: 'Criar Ficha',
-            icon: 'pi pi-plus',
-            command: () => this.router.navigate(['/jogador/fichas/nova'])
           },
           {
             label: 'Jogos Disponíveis',
