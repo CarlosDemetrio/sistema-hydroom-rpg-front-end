@@ -259,3 +259,29 @@ export interface ConcederProspeccaoRequest {
 export interface UsarProspeccaoRequest {
   dadoProspeccaoConfigId: number;
 }
+
+// ==================== ESTADO DE COMBATE ====================
+
+/**
+ * Estado de um membro do corpo em combate.
+ * Retornado por GET /api/v1/fichas/{id}/estado-combate dentro de FichaEstadoCombate.
+ */
+export interface MembroEstado {
+  membroCorpoConfigId: number;
+  nome: string;
+  vida: number;
+  danoRecebido: number;
+  vidaRestante: number;
+}
+
+/**
+ * Estado completo de combate de uma ficha.
+ * Alinhado com backend GET /api/v1/fichas/{id}/estado-combate.
+ */
+export interface FichaEstadoCombate {
+  vidaAtual: number;
+  vidaTotal: number;
+  essenciaAtual: number;
+  essenciaTotal: number;
+  membros: MembroEstado[];
+}

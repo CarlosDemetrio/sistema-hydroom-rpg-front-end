@@ -18,7 +18,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
-import { FichaResumo } from '@core/models/ficha.model';
+import { FichaResumo, FichaEstadoCombate } from '@core/models/ficha.model';
 import { MembroCorpoConfig } from '@core/models/config.models';
 import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigStore } from '@core/stores/config.store';
@@ -283,20 +283,46 @@ export class FichaSessaoTabComponent {
       this.vidaAtualEditando.set(r.vidaAtual);
       this.essenciaAtualEditando.set(r.essenciaAtual);
       this.atualizarUltimaAtualizacao();
-      this.inicializarMembros();
+      // Inicializa membros com danoRecebido=0 imediatamente para renderização rápida,
+      // depois sobrescreve com os valores reais do backend via getEstadoCombate
+      this.inicializarMembros([]);
+      this.carregarEstadoCombate();
       this.iniciarPolling();
       this.inicializado.set(true);
     });
   }
 
-  private inicializarMembros(): void {
+  private inicializarMembros(estadoMembros: FichaEstadoCombate['membros']): void {
     const configs: MembroCorpoConfig[] = this.configStore.membrosCorpo();
-    const lista: MembroSessao[] = configs.map(m => ({
-      membroCorpoConfigId: m.id,
-      nome: m.nome,
-      danoRecebido: 0,
-    }));
+    const lista: MembroSessao[] = configs.map(config => {
+      const estado = estadoMembros.find(m => m.membroCorpoConfigId === config.id);
+      return {
+        membroCorpoConfigId: config.id,
+        nome: config.nome,
+        danoRecebido: estado?.danoRecebido ?? 0,
+      };
+    });
     this.membros.set(lista);
+  }
+
+  private carregarEstadoCombate(): void {
+    this.fichasApi.getEstadoCombate(this.fichaId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (estado: FichaEstadoCombate) => {
+          // Atualiza vida/essência apenas se não há edição pendente
+          if (!this.dirty()) {
+            this.vidaAtualEditando.set(estado.vidaAtual);
+            this.essenciaAtualEditando.set(estado.essenciaAtual);
+          }
+          // Membros: sempre sobrescreve danoRecebido com valores reais (não afeta dirty da vida)
+          this.inicializarMembros(estado.membros);
+          this.atualizarUltimaAtualizacao();
+        },
+        error: () => {
+          // Falha silenciosa — mantém valores do resumo já populados
+        },
+      });
   }
 
   private iniciarPolling(): void {

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import {
   Ficha,
   FichaResumo,
+  FichaEstadoCombate,
   DuplicarFichaResponse,
   AtualizarAtributoDto,
   AtualizarAptidaoDto,
@@ -287,6 +288,15 @@ export class FichasApiService {
   }
 
   // ==================== ESTADO DE COMBATE ====================
+
+  /**
+   * GET /api/v1/fichas/{id}/estado-combate
+   * Retorna o estado atual de combate da ficha: vida, essência e dano por membro.
+   * Autorizado para MESTRE ou JOGADOR (própria ficha).
+   */
+  getEstadoCombate(fichaId: number): Observable<FichaEstadoCombate> {
+    return this.http.get<FichaEstadoCombate>(`${this.baseUrl}/fichas/${fichaId}/estado-combate`);
+  }
 
   /**
    * POST /api/v1/fichas/{id}/resetar-estado

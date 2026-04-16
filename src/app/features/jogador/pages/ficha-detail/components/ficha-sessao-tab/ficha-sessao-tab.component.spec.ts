@@ -20,6 +20,7 @@
  * 8.  Resetar chama resetarEstado e atualiza vida/essencia
  * 9.  Polling nao sobrescreve valores quando dirty=true
  * 10. vidaPercent calculado corretamente
+ * 11. Carrega danoRecebido real dos membros via getEstadoCombate ao inicializar
  */
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -34,7 +35,7 @@ import { FichaSessaoTabComponent } from './ficha-sessao-tab.component';
 import { FichasApiService } from '@core/services/api/fichas-api.service';
 import { ConfigStore } from '@core/stores/config.store';
 import { ToastService } from '@services/toast.service';
-import { FichaResumo } from '@core/models/ficha.model';
+import { FichaResumo, FichaEstadoCombate } from '@core/models/ficha.model';
 
 // ============================================================
 // Helper JIT (Armadilha 1 — input.required())
@@ -83,6 +84,22 @@ const membrosCorpoMock = [
   { id: 2, jogoId: 10, nome: 'Torso', porcentagemVida: 0.4, ordemExibicao: 2, dataCriacao: '', dataUltimaAtualizacao: '' },
 ];
 
+function criarEstadoCombate(overrides: Partial<FichaEstadoCombate> = {}): FichaEstadoCombate {
+  return {
+    vidaAtual: 80,
+    vidaTotal: 100,
+    essenciaAtual: 30,
+    essenciaTotal: 50,
+    membros: [
+      { membroCorpoConfigId: 1, nome: 'Cabeca', vida: 10, danoRecebido: 5, vidaRestante: 5 },
+      { membroCorpoConfigId: 2, nome: 'Torso', vida: 40, danoRecebido: 10, vidaRestante: 30 },
+    ],
+    ...overrides,
+  };
+}
+
+const estadoCombatePadrao = criarEstadoCombate();
+
 // ============================================================
 // Mock factories
 // ============================================================
@@ -92,6 +109,7 @@ function criarFichasApiMock(overrides: Record<string, unknown> = {}) {
     getFichaResumo: vi.fn().mockReturnValue(of(resumoPadrao)),
     atualizarVida: vi.fn().mockReturnValue(of(resumoPadrao)),
     resetarEstado: vi.fn().mockReturnValue(of(criarResumo({ vidaAtual: 100, essenciaAtual: 50 }))),
+    getEstadoCombate: vi.fn().mockReturnValue(of(estadoCombatePadrao)),
     ...overrides,
   };
 }
@@ -183,9 +201,12 @@ describe('FichaSessaoTabComponent', () => {
       expect(screen.getAllByText(/80\s*\/\s*100/).length).toBeGreaterThan(0);
     });
 
-    it('deve inicializar vidaAtualEditando com o valor do resumo', async () => {
+    it('deve inicializar vidaAtualEditando com o valor do estado-combate', async () => {
       const { component } = await renderComponent({
         resumo: criarResumo({ vidaAtual: 75, vidaTotal: 100 }),
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(of(criarEstadoCombate({ vidaAtual: 75, vidaTotal: 100 }))),
+        },
       });
 
       const comp = component as unknown as { vidaAtualEditando: () => number };
@@ -195,6 +216,9 @@ describe('FichaSessaoTabComponent', () => {
     it('deve calcular vidaPercent corretamente', async () => {
       const { component } = await renderComponent({
         resumo: criarResumo({ vidaAtual: 50, vidaTotal: 100 }),
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(of(criarEstadoCombate({ vidaAtual: 50, vidaTotal: 100 }))),
+        },
       });
 
       const comp = component as unknown as { vidaPercent: () => number };
@@ -224,9 +248,12 @@ describe('FichaSessaoTabComponent', () => {
       expect(screen.getAllByText(/30\s*\/\s*50/).length).toBeGreaterThan(0);
     });
 
-    it('deve inicializar essenciaAtualEditando com o valor do resumo', async () => {
+    it('deve inicializar essenciaAtualEditando com o valor do estado-combate', async () => {
       const { component } = await renderComponent({
         resumo: criarResumo({ essenciaAtual: 20, essenciaTotal: 50 }),
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(of(criarEstadoCombate({ essenciaAtual: 20, essenciaTotal: 50 }))),
+        },
       });
 
       const comp = component as unknown as { essenciaAtualEditando: () => number };
@@ -506,9 +533,113 @@ describe('FichaSessaoTabComponent', () => {
   // 7. Membros do corpo
   // ----------------------------------------------------------
 
+  // ----------------------------------------------------------
+  // 8. Estado de combate real — GET /estado-combate
+  // ----------------------------------------------------------
+
+  describe('carregamento do estado de combate real', () => {
+    it('deve carregar danoRecebido real dos membros ao inicializar', async () => {
+      const estadoComDano = criarEstadoCombate({
+        membros: [
+          { membroCorpoConfigId: 1, nome: 'Cabeca', vida: 10, danoRecebido: 7, vidaRestante: 3 },
+          { membroCorpoConfigId: 2, nome: 'Torso', vida: 40, danoRecebido: 15, vidaRestante: 25 },
+        ],
+      });
+
+      const { component, fichasApi } = await renderComponent({
+        fichaId: 42,
+        membros: membrosCorpoMock,
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(of(estadoComDano)),
+        },
+      });
+
+      expect(fichasApi.getEstadoCombate).toHaveBeenCalledWith(42);
+
+      const comp = component as unknown as {
+        membros: () => Array<{ membroCorpoConfigId: number; danoRecebido: number }>;
+      };
+      const membros = comp.membros();
+      expect(membros.find(m => m.membroCorpoConfigId === 1)?.danoRecebido).toBe(7);
+      expect(membros.find(m => m.membroCorpoConfigId === 2)?.danoRecebido).toBe(15);
+    });
+
+    it('deve usar danoRecebido=0 para membros sem estado no backend', async () => {
+      const estadoSemMembro2 = criarEstadoCombate({
+        membros: [
+          { membroCorpoConfigId: 1, nome: 'Cabeca', vida: 10, danoRecebido: 3, vidaRestante: 7 },
+          // Membro 2 ausente no estado — deve receber danoRecebido=0
+        ],
+      });
+
+      const { component } = await renderComponent({
+        membros: membrosCorpoMock,
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(of(estadoSemMembro2)),
+        },
+      });
+
+      const comp = component as unknown as {
+        membros: () => Array<{ membroCorpoConfigId: number; danoRecebido: number }>;
+      };
+      expect(comp.membros().find(m => m.membroCorpoConfigId === 2)?.danoRecebido).toBe(0);
+    });
+
+    it('deve atualizar vidaAtual e essenciaAtual com os valores do estado-combate', async () => {
+      const estadoAtualizado = criarEstadoCombate({ vidaAtual: 45, essenciaAtual: 12 });
+
+      const { component } = await renderComponent({
+        resumo: criarResumo({ vidaAtual: 80, essenciaAtual: 30 }),
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(of(estadoAtualizado)),
+        },
+      });
+
+      const comp = component as unknown as {
+        vidaAtualEditando: () => number;
+        essenciaAtualEditando: () => number;
+      };
+      expect(comp.vidaAtualEditando()).toBe(45);
+      expect(comp.essenciaAtualEditando()).toBe(12);
+    });
+
+    it('deve manter valores editados quando estado-combate retornar erro', async () => {
+      const { component } = await renderComponent({
+        resumo: criarResumo({ vidaAtual: 80, essenciaAtual: 30 }),
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(throwError(() => new Error('network error'))),
+        },
+      });
+
+      const comp = component as unknown as {
+        vidaAtualEditando: () => number;
+        essenciaAtualEditando: () => number;
+      };
+      // Fallback: mantém os valores do resumo original
+      expect(comp.vidaAtualEditando()).toBe(80);
+      expect(comp.essenciaAtualEditando()).toBe(30);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // Membros do corpo
+  // ----------------------------------------------------------
+
   describe('membros do corpo', () => {
-    it('deve inicializar membros com danoRecebido=0', async () => {
-      const { component } = await renderComponent({ membros: membrosCorpoMock });
+    it('deve inicializar membros com danoRecebido=0 quando estado-combate retorna membros sem dano', async () => {
+      const estadoSemDano = criarEstadoCombate({
+        membros: [
+          { membroCorpoConfigId: 1, nome: 'Cabeca', vida: 10, danoRecebido: 0, vidaRestante: 10 },
+          { membroCorpoConfigId: 2, nome: 'Torso', vida: 40, danoRecebido: 0, vidaRestante: 40 },
+        ],
+      });
+
+      const { component } = await renderComponent({
+        membros: membrosCorpoMock,
+        fichasApiOverride: {
+          getEstadoCombate: vi.fn().mockReturnValue(of(estadoSemDano)),
+        },
+      });
 
       const comp = component as unknown as { membros: () => Array<{ danoRecebido: number }> };
       expect(comp.membros().every(m => m.danoRecebido === 0)).toBe(true);
