@@ -224,7 +224,22 @@ describe('BaseConfigTableComponent', () => {
       const { fixture } = await renderTabela({ labelNovo: 'Novo Atributo' });
       const el: HTMLElement = fixture.nativeElement;
 
-      expect(el.textContent).toContain('+ Novo Atributo');
+      expect(el.textContent).toContain('Novo Atributo');
+    });
+
+    it('BUG-002: botão não deve ter "+" duplicado no label (ícone pi-plus + "+" no texto)', async () => {
+      const { fixture } = await renderTabela({ labelNovo: 'Nova Aptidão' });
+      const el: HTMLElement = fixture.nativeElement;
+      const botao = el.querySelector('p-button[icon="pi pi-plus"]');
+
+      // Quando existe icon="pi pi-plus", o label NÃO deve começar com "+" pois
+      // o ícone já representa o "+". O label deve ser apenas "Nova Aptidão", não "+ Nova Aptidão".
+      if (botao) {
+        const label = botao.getAttribute('label') ?? botao.getAttribute('ng-reflect-label') ?? '';
+        expect(label).not.toMatch(/^\+\s/);
+      }
+      // Verificação adicional via textContent: "++ Nova" ou "+ + Nova" não deve aparecer
+      expect(el.textContent).not.toMatch(/\+\s*\+/);
     });
 
     it('deve emitir evento onCreate ao clicar no botão "+ Novo"', async () => {

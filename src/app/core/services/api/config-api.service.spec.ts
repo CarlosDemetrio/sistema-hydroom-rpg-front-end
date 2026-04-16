@@ -611,4 +611,32 @@ describe('ConfigApiService', () => {
       req.flush({ id: 1, jogoId: 10, nome: 'Físico', descricao: null, ordemExibicao: 1, dataCriacao: '', dataUltimaAtualizacao: '' });
     });
   });
+
+  // ============================================================
+  // BUG-010: listNpcDificuldades — URL correta
+  // ============================================================
+
+  describe('listNpcDificuldades', () => {
+    it('deve fazer GET em /api/v1/configuracoes/npc-dificuldades com jogoId como query param', () => {
+      service.listNpcDificuldades(10).subscribe();
+
+      const req = httpMock.expectOne(r =>
+        r.url === `${CONFIG_URL}/npc-dificuldades` && r.params.get('jogoId') === '10'
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
+    it('URL não deve conter jogoId no path (padrão correto: query param)', () => {
+      service.listNpcDificuldades(5).subscribe();
+
+      const req = httpMock.expectOne(r =>
+        r.url === `${CONFIG_URL}/npc-dificuldades` && r.params.get('jogoId') === '5'
+      );
+      // A URL não deve ter /api/jogos/{id}/config/... no path
+      expect(req.request.url).not.toContain('/api/jogos/');
+      expect(req.request.url).not.toContain('/config/');
+      req.flush([]);
+    });
+  });
 });

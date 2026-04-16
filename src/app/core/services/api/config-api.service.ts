@@ -803,10 +803,11 @@ export class ConfigApiService {
   }
 
   // ===== Níveis de Dificuldade de NPC =====
-  // Base: /api/jogos/{jogoId}/config/npc-dificuldades  (sem /v1/ — mesmo padrão de CategoriaVantagem)
+  // Base: /api/v1/configuracoes/npc-dificuldades?jogoId={jogoId}
 
   listNpcDificuldades(jogoId: number): Observable<NpcDificuldadeConfig[]> {
-    return this.http.get<NpcDificuldadeConfig[]>(`/api/jogos/${jogoId}/config/npc-dificuldades`);
+    const params = new HttpParams().set('jogoId', jogoId.toString());
+    return this.http.get<NpcDificuldadeConfig[]>(`${this.configUrl}/npc-dificuldades`, { params });
   }
 
   // ===== Habilidades =====

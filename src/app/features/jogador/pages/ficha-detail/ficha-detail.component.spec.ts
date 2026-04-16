@@ -45,6 +45,7 @@ import { ToastService } from '@services/toast.service';
 import { Ficha, FichaResumo, FichaVantagemResponse, FichaVisibilidadeResponse } from '@core/models/ficha.model';
 import { VantagemConfig } from '@core/models/vantagem-config.model';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { Router } from '@angular/router';
 
 // ============================================================
 // Dados de teste
@@ -179,6 +180,7 @@ async function criarComponente(opts: {
   const fichasApi = criarFichasApiMock(fichaXpAtualizada, resumoReset);
   const toastService = { success: vi.fn(), error: vi.fn() };
   const configApi = { listVantagens: vi.fn().mockReturnValue(of(vantagensConfig)) };
+  const routerSpy = { navigate: vi.fn() };
 
   // Template mínimo: sem filhos com input.required() para evitar NG0950
   TestBed.overrideComponent(FichaDetailComponent, {
@@ -201,6 +203,7 @@ async function criarComponente(opts: {
       { provide: AuthService,                useValue: authService },
       { provide: ToastService,               useValue: toastService },
       { provide: ActivatedRoute,             useValue: { snapshot: { params: { id: fichaId } } } },
+      { provide: Router,                     useValue: routerSpy },
     ],
     schemas: [NO_ERRORS_SCHEMA],
   }).compileComponents();
@@ -210,7 +213,7 @@ async function criarComponente(opts: {
   fixture.detectChanges();
   await fixture.whenStable();
 
-  return { fixture, component, fichaService, visibilidadeApi, fichasApi, toastService, configApi };
+  return { fixture, component, fichaService, visibilidadeApi, fichasApi, toastService, configApi, routerSpy };
 }
 
 // ============================================================
@@ -683,6 +686,39 @@ describe('FichaDetailComponent', () => {
       expect(insolitusConfig.every(v => v.tipoVantagem === 'INSOLITUS')).toBe(true);
       expect(insolitusConfig.some(v => v.nome === 'Visao Arcana')).toBe(true);
       expect(insolitusConfig.some(v => v.nome === 'Furia')).toBe(false);
+    });
+  });
+
+  // ----------------------------------------------------------
+  // BUG-015: irParaEdicao — rota correta
+  // ----------------------------------------------------------
+
+  describe('irParaEdicao (BUG-015)', () => {
+    it('Mestre navega para /mestre/fichas/:id/edit ao clicar em Editar', async () => {
+      const { component, routerSpy } = await criarComponente({
+        isMestre: true,
+        fichaId: '7',
+      });
+
+      const comp = component as unknown as {
+        irParaEdicao: () => void;
+        fichaId: () => number | null;
+      };
+
+      (component as unknown as { irParaEdicao: () => void }).irParaEdicao();
+
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/mestre', 'fichas', 7, 'edit']);
+    });
+
+    it('Jogador navega para /jogador/fichas/:id/edit ao clicar em Editar', async () => {
+      const { component, routerSpy } = await criarComponente({
+        isMestre: false,
+        fichaId: '3',
+      });
+
+      (component as unknown as { irParaEdicao: () => void }).irParaEdicao();
+
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/jogador', 'fichas', 3, 'edit']);
     });
   });
 });

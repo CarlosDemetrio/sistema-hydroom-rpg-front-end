@@ -105,6 +105,10 @@ export const routes: Routes = [
             path: 'fichas/:id',
             loadComponent: () => import('./features/jogador/pages/ficha-detail/ficha-detail.component').then(m => m.FichaDetailComponent)
           },
+          {
+            path: 'fichas/:id/edit',
+            loadComponent: () => import('./features/jogador/pages/ficha-form/ficha-wizard.component').then(m => m.FichaWizardComponent)
+          },
 
           // Rota de config — usa ConfigLayoutComponent próprio
           {

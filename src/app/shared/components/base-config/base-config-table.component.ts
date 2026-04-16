@@ -110,7 +110,7 @@ export interface ConfigTableColumn {
 
         <!-- Botão Novo -->
         <p-button
-          [label]="'+ ' + labelNovo()"
+          [label]="labelNovo()"
           icon="pi pi-plus"
           (onClick)="onCreate.emit()"
         />
@@ -247,10 +247,10 @@ export interface ConfigTableColumn {
                   Nenhum(a) {{ titulo().toLowerCase() }} cadastrado(a)
                 </p>
                 <p class="rpg-empty-state__subtitle">
-                  Clique em "+ {{ labelNovo() }}" para criar o primeiro registro.
+                  Clique em "{{ labelNovo() }}" para criar o primeiro registro.
                 </p>
                 <p-button
-                  [label]="'+ ' + labelNovo()"
+                  [label]="labelNovo()"
                   icon="pi pi-plus"
                   size="small"
                   (onClick)="onCreate.emit()"
