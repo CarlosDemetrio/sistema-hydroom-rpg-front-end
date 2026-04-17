@@ -337,6 +337,7 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
         [draggable]="false"
         [resizable]="false"
         styleClass="lg:hidden"
+        [style]="{ 'min-width': '320px', width: '480px', 'max-width': '95vw' }"
       >
         <app-npc-visibilidade
           [fichaId]="fichaId()!"
@@ -357,9 +358,9 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
         [modal]="true"
         [draggable]="false"
         [resizable]="false"
-        [style]="{ width: '360px' }"
+        [style]="{ 'min-width': '320px', width: '420px', 'max-width': '95vw' }"
       >
-        <div class="flex flex-col gap-3 p-2">
+        <div class="flex flex-col gap-3">
           <label for="qtdXp" class="font-medium">Quantidade de XP</label>
           <p-inputnumber
             inputId="qtdXp"
@@ -411,6 +412,7 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [style]="{ 'min-width': '320px', width: '500px', 'max-width': '95vw' }"
     >
       <div class="flex flex-col gap-4">
         <p class="text-color-secondary m-0">
@@ -447,12 +449,21 @@ import { LevelUpDialogComponent } from './components/level-up-dialog/level-up-di
       position: sticky;
       top: 0;
       z-index: 100;
+      /* background explicito garante que o header cubra elementos abaixo durante o scroll.
+         surface-card aplica apenas background-color via classe utilitaria, mas box-shadow
+         e border-radius de outros elementos PrimeNG (p-tablist, p-datatable-thead) podem
+         criar stacking contexts com z-index nao controlado que vazam visualmente.
+         A combinacao position:sticky + z-index nao funciona quando um ancestral cria
+         um novo stacking context — este componente eh filho direto de <main overflow-y-auto>
+         que EH o scroll container correto. */
+      background: var(--app-surface-card);
     }
 
     @media (max-width: 768px) {
       .ficha-header-sticky {
         position: static;
         z-index: auto;
+        background: transparent;
       }
     }
   `],

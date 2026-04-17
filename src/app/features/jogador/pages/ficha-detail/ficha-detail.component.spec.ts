@@ -798,5 +798,22 @@ describe('FichaDetailComponent', () => {
         expect(stylesStr).toMatch(/z-index\s*:\s*100/);
       }
     });
+
+    it('deve ter background explicito no CSS para cobrir elementos PrimeNG durante o scroll', async () => {
+      const { fixture } = await criarComponente();
+
+      expect(fixture.componentInstance).toBeTruthy();
+
+      // background explicito (nao apenas background-color via classe utilitaria) é necessario
+      // para que o header sticky cubra p-tablist e p-datatable-thead que podem ter z-index
+      // proprios criando stacking contexts. Sem background, o conteudo "vaza" visualmente
+      // sob o header durante o scroll — BUG-017.
+      const componentDef = (FichaDetailComponent as unknown as { ɵcmp?: { styles?: string[] } }).ɵcmp;
+      if (componentDef?.styles) {
+        const stylesStr = componentDef.styles.join('');
+        expect(stylesStr).toContain('background');
+        expect(stylesStr).toMatch(/background\s*:\s*var\(--app-surface-card\)/);
+      }
+    });
   });
 });
